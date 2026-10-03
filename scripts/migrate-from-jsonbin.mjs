@@ -2,7 +2,7 @@
 /**
  * One-time migration: JSONBin document -> Cloudflare Worker API.
  *
- *   JSONBIN_BIN_ID=...  JSONBIN_KEY=...  \
+ * Run with no arguments and it will ask for each value, or set env vars:
  *   API=https://<your-worker>.workers.dev  ADMIN_CODE=...  \
  *   node scripts/migrate-from-jsonbin.mjs [--dry-run] [--force]
  *
@@ -15,10 +15,24 @@
  * After a successful migration, revoke the old JSONBin key.
  */
 import { writeFileSync } from "node:fs";
+import { createInterface } from "node:readline/promises";
 
-const { JSONBIN_BIN_ID, JSONBIN_KEY, API, ADMIN_CODE } = process.env;
 const dry = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
+
+// Values come from the environment, or are asked for here (easier on Windows).
+const rl = createInterface({ input: process.stdin, output: process.stdout });
+async function ask(name, label) {
+  if (process.env[name]) return process.env[name].trim();
+  return (await rl.question(label + ": ")).trim();
+}
+const JSONBIN_BIN_ID = await ask("JSONBIN_BIN_ID", "Bin ID de JSONBin");
+const JSONBIN_KEY = await ask("JSONBIN_KEY", "Master Key actual de JSONBin");
+const API = dry
+  ? ""
+  : await ask("API", "Direccion del servidor (https://kitchen22-api.mariodiaz25.workers.dev)");
+const ADMIN_CODE = dry ? "" : await ask("ADMIN_CODE", "Codigo de admin NUEVO");
+rl.close();
 const OLD = "https://raw.githubusercontent.com/TheKitchenat22/The-Kitchen/main/";
 const NEW = "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/";
 const UA =
