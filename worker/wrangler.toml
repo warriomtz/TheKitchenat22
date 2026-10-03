@@ -1,0 +1,23 @@
+name = "kitchen22-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# One Durable Object holds all restaurant data (SQLite-backed), so concurrent
+# orders / stock changes are serialized and never overwrite each other.
+[[durable_objects.bindings]]
+name = "STORE"
+class_name = "KitchenStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["KitchenStore"]
+
+[vars]
+# Origins allowed to call the API from a browser (comma separated).
+ALLOWED_ORIGINS = "https://thekitchenat22.com,https://www.thekitchenat22.com,https://warriomtz.github.io,http://localhost:8765"
+# Link opened when tapping the phone notification.
+ADMIN_URL = "https://thekitchenat22.com/admin.html"
+
+# SECRETS (never commit; set with `npx wrangler secret put NAME`):
+#   ADMIN_CODE   - admin password typed at the admin login
+#   NTFY_TOPIC   - private ntfy topic for kitchen phone alerts
