@@ -1,0 +1,118 @@
+# The Kitchen at 22 — Digital Menu
+
+Design language inspired by [Action Black](https://www.actionblack.mx/): dark cinematic UI, Bebas Neue display type, lime accent, high contrast, noise grain.
+
+## Run (recommended — shared stock for everyone)
+
+```bash
+cd the-kitchen-at-22
+python server.py
+```
+
+Or double-click **START.bat**. Open **http://localhost:8765**
+
+`server.py` serves the site **and** saves out-of-stock items to `data/stock.json` so all visitors see the same status.
+
+## Admin (dedicated panel)
+
+1. Footer → **Admin** (or open **`/admin.html`**)
+2. Enter the **staff admin code** (set in `js/app.js`, `js/admin.js`, and `server.py` — keep it private) → you are redirected to a **separate admin page**
+3. Tabs:
+   - **Cocina** — live kitchen tickets (created when a guest sends via WhatsApp). Mark **Listo** / **Descartar**. Optimized for iPad & phone.
+   - **Aviso** — full-screen public overlay (logo + message). Spanish + English fields, **Traducir ES → EN**, on/off toggle.
+   - **Horarios** — open/close/delivery window, force open/closed
+   - **Stock** — product + option OOS (tacos Bistec/Pastor, beers, sodas, …)
+   - **Menú** — new / weekly special / price
+   - **Reportes** — consumption only (by day, apartment, top items/mods). **No prices.**
+4. Sync badge: **Servidor local** or **Nube (JSONBin)** means shared persistence
+
+### Shared saves on GitHub Pages (required for “everyone”)
+
+GitHub Pages is **static** — it cannot write files by itself.  
+To sync stock / hours / menu / photos for all visitors:
+
+1. Create a free account at [jsonbin.io](https://jsonbin.io)
+2. **Create a Bin** and paste the contents of `data/cloud-seed.json` → Save  
+3. Copy the **Bin ID** and your **X-Master-Key** (API Keys)
+4. Edit `js/config.js`:
+
+```js
+window.KITCHEN_CONFIG = {
+  jsonbin: {
+    binId: "YOUR_BIN_ID",
+    masterKey: "YOUR_MASTER_KEY",
+  },
+  apiBase: "",
+};
+```
+
+5. Commit & push `js/config.js` (and keep using Admin as usual)
+
+After that, admin changes sync for **everyone** (site polls about every 8s).
+
+| Where you run | How data is saved |
+|---------------|-------------------|
+| `python server.py` (PC) | Local files in `data/` + `assets/products/` |
+| GitHub Pages + JSONBin | Cloud bin (all visitors) |
+| No server / no JSONBin | Only this browser (`localStorage`) |
+
+If `data/menu.json` is missing, run: `python _export_menu.py` then refresh `cloud-seed.json` if needed.
+
+### Default order hours
+
+- Open every day **except Tuesday**
+- Venue: **2:00 PM – 9:00 PM**
+- WhatsApp / delivery orders until **8:30 PM** (device local time)
+- Outside that window the send button is grayed out
+
+## Your logo & restaurant photo
+
+1. Copy your files into the `assets/` folder with these exact names:
+
+| File | Use | Tips |
+|------|-----|------|
+| `assets/logo.png` | Header logo | PNG with transparent background works best |
+| `assets/restaurant.jpg` | Big hero image at the top | Wide photo (~1600×1000 or larger) |
+
+2. Refresh **http://localhost:8765**
+
+If a file is missing, the site falls back to the text “22” logo and a stock photo.
+
+Other formats work if you rename them (e.g. `logo.webp` → update `src` in `index.html`).
+
+## Product photos (menu items) — recommended workflow
+
+Browser “upload photo” on the **live GitHub site often fails** (cloud storage size limits).  
+Use this instead — simple and reliable:
+
+1. Open folder: **`assets/products/`**
+2. Read **`assets/products/README.txt`** — full list of file names (one per product)
+3. Save each photo as **`{product-id}.jpg`**  
+   Examples:
+   - Espresso → `d-espresso.jpg`
+   - Burger → `f-burger.jpg`
+   - Margarita → `b-margarita.jpg`
+4. Also OK: `.jpeg`, `.png`, `.webp`
+5. In **GitHub Desktop**: Commit → **Push**
+6. Hard-refresh the live site (`Ctrl+Shift+R`)
+
+The site prefers files in `assets/products/` over the old Unsplash stock images.
+
+| Method | Best for |
+|--------|----------|
+| Drop files in `assets/products/` + Push | **Live site (GitHub Pages)** — use this |
+| Admin upload in browser | Only with `python server.py` on your PC |
+
+## Features
+
+- Dark Action Black–style layout
+- ES / EN / JA · cart · apartment · WhatsApp
+- Admin stock + order hours
+
+## WhatsApp number
+
+Edit `js/app.js`:
+
+```js
+const WHATSAPP_NUMBER = "523329149245";
+```
