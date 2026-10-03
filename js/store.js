@@ -13,8 +13,6 @@
   const jsonbin = cfg.jsonbin || {};
   const ntfyCfg = cfg.ntfy || {};
   const API_BASE = (cfg.apiBase || "").replace(/\/$/, "");
-  const NTFY_ADMIN_CLICK =
-    "https://thekitchenat22.github.io/The-Kitchen/admin.html";
 
   let mode = "none"; // "local" | "jsonbin" | "none"
   let cloudCache = null;
@@ -22,6 +20,24 @@
 
   function apiUrl(path) {
     return `${API_BASE}${path}`;
+  }
+
+  const ADMIN_CODE_KEY = "kitchen-admin-code";
+
+  function storedAdminCode() {
+    try {
+      return sessionStorage.getItem(ADMIN_CODE_KEY) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  /** Admin code travels in a header (never in the URL, which gets logged). */
+  function adminHeaders(code, extra) {
+    const h = { ...(extra || {}) };
+    const c = code || storedAdminCode();
+    if (c) h["X-Admin-Code"] = c;
+    return h;
   }
 
   function hasJsonbin() {
@@ -351,7 +367,7 @@
       return mode === "local" || mode === "jsonbin";
     },
     label() {
-      if (mode === "local") return "local-server";
+      if (mode === "local") return API_BASE ? "cloud-api" : "local-server";
       if (mode === "jsonbin") return "cloud-jsonbin";
       return "this-device-only";
     },
@@ -375,6 +391,36 @@
       }
       mode = "none";
       return mode;
+    },
+
+    /** Verify the admin code on the server. Never compares it in the browser. */
+    async adminLogin(code) {
+      if (mode === "none") await Store.init();
+      if (mode !== "local") return { ok: false, error: "no_server" };
+      try {
+        const res = await fetch(apiUrl("/api/admin/login"), {
+          method: "POST",
+          headers: adminHeaders(code, { "Content-Type": "application/json" }),
+          body: "{}",
+        });
+        if (res.ok) {
+          sessionStorage.setItem(ADMIN_CODE_KEY, code);
+          return { ok: true };
+        }
+        return { ok: false, status: res.status };
+      } catch {
+        return { ok: false, error: "network" };
+      }
+    },
+
+    adminCode() {
+      return storedAdminCode();
+    },
+
+    adminLogout() {
+      try {
+        sessionStorage.removeItem(ADMIN_CODE_KEY);
+      } catch (_) {}
     },
 
     async getStock() {
@@ -420,8 +466,8 @@
     async getBarInventory(adminCode) {
       if (mode === "local") {
         const res = await fetch(
-          apiUrl(`/api/bar-inventory?code=${encodeURIComponent(adminCode || "")}`),
-          { cache: "no-store" }
+          apiUrl("/api/bar-inventory"),
+          { cache: "no-store", headers: adminHeaders(adminCode) }
         );
         if (!res.ok) throw new Error("bar_inventory");
         const data = await res.json();
@@ -737,8 +783,8 @@
     async getOrders(adminCode) {
       if (mode === "local") {
         const res = await fetch(
-          apiUrl(`/api/orders?code=${encodeURIComponent(adminCode || "")}`),
-          { cache: "no-store" }
+          apiUrl("/api/orders"),
+          { cache: "no-store", headers: adminHeaders(adminCode) }
         );
         if (!res.ok) throw new Error("orders");
         const data = await res.json();
@@ -929,8 +975,8 @@
     async getAnalytics(adminCode) {
       if (mode === "local") {
         const res = await fetch(
-          apiUrl(`/api/analytics?code=${encodeURIComponent(adminCode || "")}`),
-          { cache: "no-store" }
+          apiUrl("/api/analytics"),
+          { cache: "no-store", headers: adminHeaders(adminCode) }
         );
         if (!res.ok) throw new Error("analytics");
         const data = await res.json();

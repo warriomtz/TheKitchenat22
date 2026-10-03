@@ -43,7 +43,8 @@ ORDERS_FILE = ROOT / "data" / "orders.json"
 ANALYTICS_FILE = ROOT / "data" / "analytics.json"
 BAR_INV_FILE = ROOT / "data" / "bar-inventory.json"
 PRODUCTS_DIR = ROOT / "assets" / "products"
-ADMIN_CODE = "CHANGE_ME_ADMIN_CODE"
+# Set KITCHEN_ADMIN_CODE in your environment to use the admin panel locally.
+ADMIN_CODE = os.environ.get("KITCHEN_ADMIN_CODE", "")
 PORT = int(os.environ.get("PORT", "8765"))
 MAX_ORDERS = 800
 MAX_ANALYTICS = 2500
@@ -600,7 +601,7 @@ class Handler(SimpleHTTPRequestHandler):
     def _cors(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Code")
         self.send_header("Cache-Control", "no-store")
 
     def _json(self, code: int, data: dict) -> None:
@@ -625,8 +626,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/bar-inventory":
             qs = parse_qs(query or "")
-            code = (qs.get("code") or [""])[0]
-            if code != ADMIN_CODE:
+            code = self.headers.get("X-Admin-Code") or (qs.get("code") or [""])[0]
+            if not ADMIN_CODE or code != ADMIN_CODE:
                 self._json(401, {"error": "unauthorized"})
                 return
             self._json(200, {"inventory": read_bar_inventory()})
@@ -647,16 +648,16 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/orders":
             # Admin list: ?code=...
             qs = parse_qs(query or "")
-            code = (qs.get("code") or [""])[0]
-            if code != ADMIN_CODE:
+            code = self.headers.get("X-Admin-Code") or (qs.get("code") or [""])[0]
+            if not ADMIN_CODE or code != ADMIN_CODE:
                 self._json(401, {"error": "unauthorized"})
                 return
             self._json(200, {"orders": read_orders()})
             return
         if path == "/api/analytics":
             qs = parse_qs(query or "")
-            code = (qs.get("code") or [""])[0]
-            if code != ADMIN_CODE:
+            code = self.headers.get("X-Admin-Code") or (qs.get("code") or [""])[0]
+            if not ADMIN_CODE or code != ADMIN_CODE:
                 self._json(401, {"error": "unauthorized"})
                 return
             self._json(200, {"events": read_analytics()})
@@ -674,6 +675,7 @@ class Handler(SimpleHTTPRequestHandler):
             "/api/announcement",
             "/api/orders",
             "/api/analytics",
+            "/api/admin/login",
         }
         if path not in allowed:
             self.send_error(404, "Not found")
@@ -700,8 +702,13 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(code, payload)
             return
 
-        if str(data.get("code", "")) != ADMIN_CODE:
+        supplied = self.headers.get("X-Admin-Code") or str(data.get("code", ""))
+        if not ADMIN_CODE or supplied != ADMIN_CODE:
             self._json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/api/admin/login":
+            self._json(200, {"ok": True})
             return
 
         if path == "/api/stock":

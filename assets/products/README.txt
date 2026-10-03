@@ -120,4 +120,4 @@ FULL LIST (save as:  {id}.jpg )
   f-bolsa-p.jpg               Bolsa de papa pequeña
 
 After adding photos, Push from GitHub Desktop.
-Live site: https://thekitchenat22.github.io/The-Kitchen/
+Live site: https://warriomtz.github.io/TheKitchenat22/

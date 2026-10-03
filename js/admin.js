@@ -5,7 +5,7 @@
 (function () {
   "use strict";
 
-  const ADMIN_CODE = "CHANGE_ME_ADMIN_CODE";
+  let ADMIN_CODE = sessionStorage.getItem("kitchen-admin-code") || ""; // typed at login, kept for this tab only
   const ADMIN_KEY = "kitchen-admin";
   const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const DEFAULT_HOURS = {
@@ -22,7 +22,7 @@
   const ITEM_I18N = window.KITCHEN_ITEM_I18N || { es: {}, en: {} };
 
   const state = {
-    authed: sessionStorage.getItem(ADMIN_KEY) === "1",
+    authed: sessionStorage.getItem(ADMIN_KEY) === "1" && !!ADMIN_CODE,
     outOfStock: new Set(),
     hours: { ...DEFAULT_HOURS },
     orders: [],
@@ -174,14 +174,25 @@
     $("#adminShell")?.classList.toggle("is-hidden", show);
   }
 
-  function loginWithCode(code) {
+  async function loginWithCode(code) {
     // Strip spaces/newlines (paste / autocomplete glitches)
     const entered = String(code || "").replace(/\s+/g, "").trim();
-    if (entered !== ADMIN_CODE) {
+    let res = { ok: false };
+    try {
+      res = entered ? await KitchenStore.adminLogin(entered) : res;
+    } catch (_) {}
+    if (!res.ok) {
       $("#gateError")?.classList.remove("is-hidden");
-      toast("Código incorrecto");
+      toast(
+        res.status === 429
+          ? "Demasiados intentos. Espera unos minutos."
+          : res.error === "no_server"
+            ? "No hay conexión con el servidor"
+            : "Código incorrecto"
+      );
       return false;
     }
+    ADMIN_CODE = entered;
     state.authed = true;
     sessionStorage.setItem(ADMIN_KEY, "1");
     $("#gateError")?.classList.add("is-hidden");
@@ -192,6 +203,8 @@
 
   function logout() {
     state.authed = false;
+    ADMIN_CODE = "";
+    window.KitchenStore?.adminLogout?.();
     sessionStorage.removeItem(ADMIN_KEY);
     stopKitchenPoll();
     showGate(true);
@@ -2347,9 +2360,11 @@
     el.textContent =
       label === "local-server"
         ? "Servidor local"
-        : label === "cloud-jsonbin"
-          ? "Nube (JSONBin)"
-          : "Solo este dispositivo";
+        : label === "cloud-api"
+          ? "Nube (servidor seguro)"
+          : label === "cloud-jsonbin"
+            ? "Nube (JSONBin)"
+            : "Solo este dispositivo";
   }
 
   function bindDashboard() {

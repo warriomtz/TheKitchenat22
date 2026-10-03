@@ -1,5 +1,10 @@
 # The Kitchen at 22 — Digital Menu
 
+> **Backend:** orders, stock, hours and the admin login now run on a Cloudflare
+> Worker (see [worker/README.md](worker/README.md)). The JSONBin and `server.py`
+> instructions below are legacy. No credentials are stored in this repo.
+
+
 Design language inspired by [Action Black](https://www.actionblack.mx/): dark cinematic UI, Bebas Neue display type, lime accent, high contrast, noise grain.
 
 ## Run (recommended — shared stock for everyone)

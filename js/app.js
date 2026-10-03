@@ -3,7 +3,7 @@
  * Change restaurant number (Mexico +52, digits only):
  */
 const WHATSAPP_NUMBER = "523329149245"; // 33 29 14 92 45
-const ADMIN_CODE = "CHANGE_ME_ADMIN_CODE";
+let ADMIN_CODE = sessionStorage.getItem("kitchen-admin-code") || ""; // typed at login, kept for this tab only
 const STOCK_KEY = "kitchen-out-of-stock";
 const HOURS_KEY = "kitchen-hours";
 const ADMIN_KEY = "kitchen-admin";
@@ -59,7 +59,7 @@ const DEFAULT_HOURS = {
     // raw.githubusercontent always has the committed files (Pages deploy can lag)
     const raw = PRODUCT_IMG_EXTS.map(
       (ext) =>
-        `https://raw.githubusercontent.com/TheKitchenat22/The-Kitchen/main/assets/products/${id}.${ext}`
+        `https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/${id}.${ext}`
     );
     const onPages = /github\.io$/i.test(window.location.hostname || "");
     // On GitHub Pages prefer raw first so photos show even if Pages asset deploy is stuck
@@ -243,7 +243,7 @@ const DEFAULT_HOURS = {
     pendingItem: null,
     outOfStock: loadLocalStock(),
     hours: loadLocalHours(),
-    isAdmin: sessionStorage.getItem(ADMIN_KEY) === "1",
+    isAdmin: sessionStorage.getItem(ADMIN_KEY) === "1" && !!ADMIN_CODE,
   };
 
   const isOut = (id) => state.outOfStock.has(String(id));
@@ -1619,16 +1619,22 @@ const DEFAULT_HOURS = {
     closeModal("adminModal");
   }
 
-  function adminLogin() {
+  async function adminLogin() {
     const input = $("#adminCodeInput");
     const code = String(input?.value || "").replace(/\s+/g, "").trim();
     const err = $("#adminCodeError");
-    if (code !== ADMIN_CODE) {
+    let res = { ok: false };
+    try {
+      res =
+        code && window.KitchenStore ? await KitchenStore.adminLogin(code) : res;
+    } catch (_) {}
+    if (!res.ok) {
       err?.classList.remove("is-hidden");
       input?.classList.add("is-invalid");
       toast(t("adminCodeError"));
       return;
     }
+    ADMIN_CODE = code;
     state.isAdmin = true;
     sessionStorage.setItem(ADMIN_KEY, "1");
     err?.classList.add("is-hidden");
@@ -1639,6 +1645,8 @@ const DEFAULT_HOURS = {
 
   function adminLogout() {
     state.isAdmin = false;
+    ADMIN_CODE = "";
+    window.KitchenStore?.adminLogout?.();
     sessionStorage.removeItem(ADMIN_KEY);
     setAdminUI();
     renderAll();
