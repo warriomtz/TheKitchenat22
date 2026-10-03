@@ -21,10 +21,13 @@ const dry = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
 
 // Values come from the environment, or are asked for here (easier on Windows).
-const rl = createInterface({ input: process.stdin, output: process.stdout });
+const rl = createInterface({ input: process.stdin });
+const lines = rl[Symbol.asyncIterator]();
 async function ask(name, label) {
   if (process.env[name]) return process.env[name].trim();
-  return (await rl.question(label + ": ")).trim();
+  process.stdout.write(label + ": ");
+  const { value } = await lines.next();
+  return String(value || "").trim();
 }
 const JSONBIN_BIN_ID = await ask("JSONBIN_BIN_ID", "Bin ID de JSONBin");
 const JSONBIN_KEY = await ask("JSONBIN_KEY", "Master Key actual de JSONBin");
