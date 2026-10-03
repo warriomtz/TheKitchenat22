@@ -1,7 +1,7 @@
-// Placeholder config. Real credentials are NOT stored in this public repo.
-// The backend migration (server-side API + admin login) replaces this file.
+// Public configuration. No secrets here: the admin code and the kitchen alert
+// topic are stored as secrets in the Cloudflare Worker (see worker/README.md).
 window.KITCHEN_CONFIG = {
-  jsonbin: { binId: "", masterKey: "" },
-  ntfy: { server: "https://ntfy.sh", topic: "" },
-  apiBase: "",
+  jsonbin: { binId: "", masterKey: "" }, // legacy, unused
+  ntfy: { server: "https://ntfy.sh", topic: "" }, // legacy, alerts are sent by the Worker
+  apiBase: "https://kitchen22-api.mariodiaz25.workers.dev",
 };
