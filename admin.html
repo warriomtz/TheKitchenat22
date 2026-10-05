@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
-  <link rel="stylesheet" href="css/styles.css?v=admin-20260914d" />
-  <link rel="stylesheet" href="css/admin.css?v=admin-20260914d" />
+  <link rel="stylesheet" href="css/styles.css?v=admin-20261005a" />
+  <link rel="stylesheet" href="css/admin.css?v=admin-20261005a" />
 </head>
 <body class="admin-page">
   <div class="noise" aria-hidden="true"></div>
@@ -58,6 +58,7 @@
       <button type="button" class="admin-nav__btn" data-tab="quote" role="tab">🖋 Cotización</button>
       <button type="button" class="admin-nav__btn" data-tab="report" role="tab">📊 Reportes</button>
       <button type="button" class="admin-nav__btn" data-tab="traffic" role="tab">👁 Tráfico</button>
+      <button type="button" class="admin-nav__btn" data-tab="surveys" role="tab">📋 Encuestas</button>
     </nav>
 
     <main class="admin-main">
@@ -408,6 +409,28 @@
           <div class="traffic-table-wrap" id="trafficRecent"></div>
         </div>
       </section>
+
+      <!-- Surveys -->
+      <section class="admin-panel" id="tab-surveys" role="tabpanel" hidden>
+        <div class="admin-panel__head">
+          <div>
+            <h2>Encuestas</h2>
+            <p class="admin-panel__desc">Respuestas de clientes por encuesta y por elevador (QR). Sin nombres ni IPs.</p>
+          </div>
+          <div class="admin-panel__tools">
+            <select id="surveySelect" class="adm-select" aria-label="Encuesta" hidden></select>
+            <button type="button" class="btn btn--ghost btn--sm" id="surveyRefresh">Actualizar</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="surveyCsv">Descargar CSV</button>
+          </div>
+        </div>
+        <div class="report-grid" id="surveyGrid">
+          <p class="admin-empty">Cargando…</p>
+        </div>
+        <div class="adm-card" style="margin-top:1rem">
+          <h3 class="report-apt-title">Respuestas abiertas</h3>
+          <div id="surveyAnswers"></div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -431,13 +454,13 @@
 
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="js/config.js?v=admin-20260914d"></script>
-  <script src="js/store.js?v=admin-20260914d"></script>
-  <script src="js/menu-data.js?v=admin-20260914d"></script>
-  <script src="js/i18n.js?v=admin-20260914d"></script>
-  <script src="js/item-i18n.js?v=admin-20260914d"></script>
-  <script src="js/quote.js?v=admin-20260914d"></script>
-  <script src="js/bar-inventory.js?v=admin-20260914d"></script>
-  <script src="js/admin.js?v=admin-20260914d"></script>
+  <script src="js/config.js?v=admin-20261005a"></script>
+  <script src="js/store.js?v=admin-20261005a"></script>
+  <script src="js/menu-data.js?v=admin-20261005a"></script>
+  <script src="js/i18n.js?v=admin-20261005a"></script>
+  <script src="js/item-i18n.js?v=admin-20261005a"></script>
+  <script src="js/quote.js?v=admin-20261005a"></script>
+  <script src="js/bar-inventory.js?v=admin-20261005a"></script>
+  <script src="js/admin.js?v=admin-20261005a"></script>
 </body>
 </html>

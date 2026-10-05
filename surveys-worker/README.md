@@ -19,6 +19,16 @@ The survey page (`encuesta/index.html`) already points at
 `https://kitchen22-surveys.mariodiaz25.workers.dev/api/surveys/menu-2026-10`.
 If `wrangler deploy` prints a different address, change `ENDPOINT` in that page.
 
+## Admin dashboard (tab "Encuestas")
+
+The admin page reads the answers with the same code typed at the admin login. Set it once as a secret
+on this Worker (use the same value as `ADMIN_CODE` in `kitchen22-api`), then redeploy:
+
+```bash
+npx wrangler secret put ADMIN_CODE
+npx wrangler deploy
+```
+
 ## Read the answers
 
 ```

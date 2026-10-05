@@ -1411,3 +1411,11 @@
     padding-right: 1.25rem;
   }
 }
+
+/* Surveys tab */
+.survey-resp { padding: 0.75rem 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.survey-resp:first-child { border-top: 0; padding-top: 0; }
+.survey-meta { font-size: 0.8rem; opacity: 0.8; margin-bottom: 0.35rem; }
+.survey-a { margin: 0.2rem 0; line-height: 1.45; }
+.survey-q { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
+.survey-chip { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-size: 0.72rem; }

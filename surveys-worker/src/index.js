@@ -8,7 +8,7 @@ const json = (o, status = 200, h = {}) =>
 function corsHeaders(req, env) {
   const origin = req.headers.get("Origin") || "";
   const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const h = { Vary: "Origin", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+  const h = { Vary: "Origin", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Admin-Code, X-Export-Key" };
   if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
   return h;
 }
@@ -40,9 +40,13 @@ const cell = (v) => {
   return `"${s.replace(/"/g, '""')}"`;
 };
 
+// Private routes accept the export key (EXPORT_KEY) or the admin dashboard code (ADMIN_CODE, same
+// one typed at the admin login). Both are Worker secrets; neither is ever shipped to a page.
 function authorized(req, url, env) {
   const k = url.searchParams.get("key") || req.headers.get("X-Export-Key") || "";
-  return !!env.EXPORT_KEY && k.length > 0 && k === env.EXPORT_KEY;
+  if (env.EXPORT_KEY && k.length > 0 && k === env.EXPORT_KEY) return true;
+  const a = req.headers.get("X-Admin-Code") || "";
+  return !!env.ADMIN_CODE && a.length > 0 && a === env.ADMIN_CODE;
 }
 
 // ── Worker ───────────────────────────────────────────────────────────────────
@@ -52,7 +56,12 @@ export default {
     const cors = corsHeaders(req, env);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
 
-    const m = url.pathname.match(/^\/api\/surveys\/([a-z0-9-]{1,40})(?:\/(export\.csv|summary|responses))?$/);
+    if (url.pathname === "/api/surveys" && req.method === "GET") {
+      if (!authorized(req, url, env)) return new Response("forbidden", { status: 403, headers: cors });
+      return json(Object.entries(SURVEYS).map(([id, v]) => ({ id, title: v.title })), 200, cors);
+    }
+
+    const m = url.pathname.match(/^\/api\/surveys\/([a-z0-9-]{1,40})(?:\/(export\.csv|summary|responses\.json|responses))?$/);
     if (!m) return new Response("not found", { status: 404, headers: cors });
     const [, id, action] = m;
     const spec = SURVEYS[id];
@@ -88,9 +97,9 @@ export default {
       return json({ survey: id, deleted: await store.wipe(id) });
     }
 
-    // private: export + summary
-    if ((action === "export.csv" || action === "summary") && req.method === "GET") {
-      if (!authorized(req, url, env)) return new Response("forbidden", { status: 403 });
+    // private: export + summary + json (for the admin dashboard)
+    if ((action === "export.csv" || action === "summary" || action === "responses.json") && req.method === "GET") {
+      if (!authorized(req, url, env)) return new Response("forbidden", { status: 403, headers: cors });
       const rows = await store.list(id);
       if (action === "export.csv") {
         const head = ["fecha", "idioma", "origen", ...spec.fields.map((f) => f.label)];
@@ -100,7 +109,7 @@ export default {
           lines.push([r.ts, r.lang, r.src, ...spec.fields.map((f) => d[f.key])].map(cell).join(","));
         }
         return new Response("﻿" + lines.join("\n"), {
-          headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${id}.csv"` },
+          headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${id}.csv"`, ...cors },
         });
       }
       const count = (arr) => arr.reduce((a, k) => ((a[k || "(vacío)"] = (a[k || "(vacío)"] || 0) + 1), a), {});
@@ -111,7 +120,12 @@ export default {
         if (f.type === "choice") summary.choices[f.label] = count(vals.filter(Boolean));
         if (f.type === "multi") summary.choices[f.label] = count(vals.flat());
       }
-      return json(summary);
+      if (action === "responses.json") {
+        const fields = spec.fields.map((f) => ({ key: f.key, label: f.label, type: f.type, q: f.q || f.label, names: f.names || null }));
+        const out = rows.map((r) => ({ ts: r.ts, lang: r.lang, src: r.src, data: JSON.parse(r.data) })).reverse(); // newest first
+        return json({ ...summary, fields, rows: out }, 200, cors);
+      }
+      return json(summary, 200, cors);
     }
     return new Response("method not allowed", { status: 405, headers: cors });
   },

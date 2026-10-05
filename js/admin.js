@@ -1846,6 +1846,144 @@
     }
   }
 
+  /* —— Surveys (customer survey answers, read from the surveys Worker) —— */
+  const SURVEY_SRC_NAMES = { elev1: "Elevador 1", elev2: "Elevador 2", qr: "QR anterior", direct: "Directo" };
+  const surveyState = { list: [], id: "", data: null, error: "" };
+
+  function surveysApiBase() {
+    return String((window.KITCHEN_CONFIG && KITCHEN_CONFIG.surveysApi) || "").replace(/\/$/, "");
+  }
+
+  async function surveysFetch(path) {
+    const base = surveysApiBase();
+    if (!base) throw new Error("not_configured");
+    const res = await fetch(base + path, { cache: "no-store", headers: { "X-Admin-Code": ADMIN_CODE } });
+    if (res.status === 403) throw new Error("forbidden");
+    if (!res.ok) throw new Error("http_" + res.status);
+    return res;
+  }
+
+  async function loadSurveys() {
+    surveyState.error = "";
+    try {
+      if (!surveyState.list.length) {
+        surveyState.list = await (await surveysFetch("/api/surveys")).json();
+      }
+      if (!surveyState.id || !surveyState.list.some((x) => x.id === surveyState.id)) {
+        surveyState.id = (surveyState.list[surveyState.list.length - 1] || {}).id || "";
+      }
+      surveyState.data = surveyState.id
+        ? await (await surveysFetch(`/api/surveys/${encodeURIComponent(surveyState.id)}/responses.json`)).json()
+        : null;
+    } catch (e) {
+      surveyState.data = null;
+      surveyState.error = e.message === "forbidden" ? "forbidden" : e.message === "not_configured" ? "not_configured" : "network";
+    }
+    renderSurveys();
+  }
+
+  async function downloadSurveyCsv() {
+    if (!surveyState.id) return;
+    try {
+      const res = await surveysFetch(`/api/surveys/${encodeURIComponent(surveyState.id)}/export.csv`);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${surveyState.id}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      toast("No se pudo descargar el CSV");
+    }
+  }
+
+  function renderSurveys() {
+    const host = $("#surveyGrid");
+    const answers = $("#surveyAnswers");
+    const sel = $("#surveySelect");
+    if (!host) return;
+    if (sel) {
+      sel.hidden = surveyState.list.length < 2;
+      sel.innerHTML = surveyState.list
+        .map((x) => `<option value="${escapeHtml(x.id)}"${x.id === surveyState.id ? " selected" : ""}>${escapeHtml(x.title)}</option>`)
+        .join("");
+    }
+    if (surveyState.error) {
+      const msg = {
+        forbidden: "El Worker de encuestas no aceptó el código de admin. Hay que desplegarlo con ADMIN_CODE (ver instrucciones) y volver a actualizar.",
+        not_configured: "Falta configurar surveysApi en js/config.js.",
+        network: "No se pudo conectar con el Worker de encuestas. Intenta de nuevo en un momento.",
+      }[surveyState.error];
+      host.innerHTML = `<p class="admin-empty">${escapeHtml(msg)}</p>`;
+      if (answers) answers.innerHTML = "";
+      return;
+    }
+    const d = surveyState.data;
+    if (!d) {
+      host.innerHTML = `<p class="admin-empty">No hay encuestas registradas.</p>`;
+      if (answers) answers.innerHTML = "";
+      return;
+    }
+    const nameOf = (k) => SURVEY_SRC_NAMES[k] || k;
+    const rowsHtml = (obj) => {
+      const e = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
+      return e.length ? e.map(([k, v]) => `<tr><td>${escapeHtml(nameOf(k))}</td><td>${v}</td></tr>`).join("") : `<tr><td colspan="2">Sin respuestas aún</td></tr>`;
+    };
+    const langName = { es: "Español", en: "English" };
+    const choiceCards = d.fields
+      .filter((f) => f.type === "choice" || f.type === "multi")
+      .map((f) => {
+        const counts = (d.choices && d.choices[f.label]) || {};
+        const label = (f.q || f.key);
+        const tr = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `<tr><td>${escapeHtml((f.names && f.names[k]) || k)}</td><td>${v}</td></tr>`)
+          .join("");
+        return `<div class="report-card"><h3>${escapeHtml(label)}</h3><table>${tr || `<tr><td colspan="2">Sin respuestas aún</td></tr>`}</table></div>`;
+      })
+      .join("");
+    host.innerHTML = `
+      <div class="report-card">
+        <h3>Resumen</h3>
+        <p class="report-big">${d.total}</p>
+        <p class="adm-muted">respuestas</p>
+        <table>
+          <tr><th>Elevador / origen</th><th>Respuestas</th></tr>
+          ${rowsHtml(d.by_src)}
+        </table>
+      </div>
+      <div class="report-card">
+        <h3>Idioma</h3>
+        <table>
+          <tr><th>Idioma</th><th>Respuestas</th></tr>
+          ${Object.entries(d.by_lang || {}).map(([k, v]) => `<tr><td>${escapeHtml(langName[k] || k)}</td><td>${v}</td></tr>`).join("") || `<tr><td colspan="2">Sin respuestas aún</td></tr>`}
+        </table>
+      </div>
+      ${choiceCards}`;
+    if (!answers) return;
+    const textFields = d.fields.filter((f) => f.type === "text");
+    answers.innerHTML = d.rows.length
+      ? d.rows
+          .map((r) => {
+            const lines = textFields
+              .filter((f) => r.data[f.key])
+              .map((f) => `<p class="survey-a"><span class="survey-q">${escapeHtml(f.q || f.key)}</span> ${escapeHtml(r.data[f.key])}</p>`)
+              .join("");
+            const ch = d.fields
+              .filter((f) => f.type === "choice" && r.data[f.key])
+              .map((f) => `<span class="survey-chip">${escapeHtml((f.names && f.names[r.data[f.key]]) || r.data[f.key])}</span>`)
+              .join("");
+            return `<div class="survey-resp">
+              <div class="survey-meta"><b>${escapeHtml(nameOf(r.src))}</b> · ${escapeHtml(langName[r.lang] || r.lang)} · ${escapeHtml(formatDateTime(r.ts))} ${ch}</div>
+              ${lines || `<p class="adm-muted">Sin texto</p>`}
+            </div>`;
+          })
+          .join("")
+      : `<p class="adm-muted">Aún no hay respuestas. Escanea el QR de un elevador para probar.</p>`;
+  }
+
   /* —— Quotations (The Experience) —— */
   const quoteState = {
     current: null,
@@ -2338,6 +2476,7 @@
       });
     }
     if (tab === "traffic") loadTraffic();
+    if (tab === "surveys") loadSurveys();
     if (tab === "announce") loadAnnouncementForm();
     if (tab === "hours") fillHoursForm();
     if (tab === "quote") {
@@ -2443,6 +2582,12 @@
     $("#catalogFilterAdm")?.addEventListener("input", () => renderCatalog());
     $("#reportRefresh")?.addEventListener("click", () => loadOrders().then(renderReport));
     $("#trafficRefresh")?.addEventListener("click", () => loadTraffic());
+    $("#surveyRefresh")?.addEventListener("click", () => loadSurveys());
+    $("#surveyCsv")?.addEventListener("click", () => downloadSurveyCsv());
+    $("#surveySelect")?.addEventListener("change", (e) => {
+      surveyState.id = e.target.value;
+      loadSurveys();
+    });
     $("#trafficClear")?.addEventListener("click", () => clearTraffic());
     bindQuoteTab();
   }
