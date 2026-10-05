@@ -3,7 +3,7 @@ import { SURVEYS } from "./surveys.js";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const json = (o, status = 200, h = {}) =>
-  new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", ...h } });
+  new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...h } });
 
 function corsHeaders(req, env) {
   const origin = req.headers.get("Origin") || "";
@@ -52,7 +52,7 @@ export default {
     const cors = corsHeaders(req, env);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
 
-    const m = url.pathname.match(/^\/api\/surveys\/([a-z0-9-]{1,40})(?:\/(export\.csv|summary))?$/);
+    const m = url.pathname.match(/^\/api\/surveys\/([a-z0-9-]{1,40})(?:\/(export\.csv|summary|responses))?$/);
     if (!m) return new Response("not found", { status: 404, headers: cors });
     const [, id, action] = m;
     const spec = SURVEYS[id];
@@ -81,8 +81,15 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
+    // private: wipe all responses of one survey (DELETE ...?key=...&confirm=yes)
+    if (action === "responses" && req.method === "DELETE") {
+      if (!authorized(req, url, env)) return new Response("forbidden", { status: 403 });
+      if (url.searchParams.get("confirm") !== "yes") return new Response("add &confirm=yes", { status: 400 });
+      return json({ survey: id, deleted: await store.wipe(id) });
+    }
+
     // private: export + summary
-    if (action && req.method === "GET") {
+    if ((action === "export.csv" || action === "summary") && req.method === "GET") {
       if (!authorized(req, url, env)) return new Response("forbidden", { status: 403 });
       const rows = await store.list(id);
       if (action === "export.csv") {
@@ -126,6 +133,12 @@ export class SurveyStore extends DurableObject {
     this.sql.exec("INSERT INTO hits(h, day, n) VALUES(?, ?, 1) ON CONFLICT(h) DO UPDATE SET n = n + 1", hash, day);
     this.sql.exec("INSERT INTO responses(survey, ts, lang, src, data) VALUES(?, ?, ?, ?, ?)", survey, new Date().toISOString(), rec.lang, rec.src, JSON.stringify(rec.data));
     return "ok";
+  }
+  wipe(survey) {
+    const n = this.sql.exec("SELECT COUNT(*) AS n FROM responses WHERE survey = ?", survey).one().n;
+    this.sql.exec("DELETE FROM responses WHERE survey = ?", survey);
+    this.sql.exec("DELETE FROM hits");
+    return n;
   }
   list(survey) {
     return this.sql.exec("SELECT ts, lang, src, data FROM responses WHERE survey = ? ORDER BY id", survey).toArray();

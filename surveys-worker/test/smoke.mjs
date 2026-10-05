@@ -39,5 +39,11 @@ for (let i = 0; i < 32; i++) last = await post("menu-2026-10", { menu: "spam " +
 t("rate limit → 429 after daily limit", last.status === 429, last.status);
 r = await post("menu-2026-10", { menu: "other person" }, OK, "8.8.8.8");
 t("different person unaffected", r.status === 204, r.status);
+r = await fetch(`${BASE}/api/surveys/menu-2026-10/responses?key=${KEY}&confirm=yes`, { method: "DELETE" });
+t("wipe needs no-key → 403", (await fetch(`${BASE}/api/surveys/menu-2026-10/responses?confirm=yes`, { method: "DELETE" })).status === 403);
+t("wipe without confirm → 400", (await fetch(`${BASE}/api/surveys/menu-2026-10/responses?key=${KEY}`, { method: "DELETE" })).status === 400);
+t("wipe ok", r.status === 200 && (await r.json()).deleted >= 2);
+r = await fetch(`${BASE}/api/surveys/menu-2026-10/summary?key=${KEY}`);
+t("summary empty after wipe", (await r.json()).total === 0);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
