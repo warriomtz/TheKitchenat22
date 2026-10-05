@@ -1,0 +1,21 @@
+name = "kitchen22-surveys"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# One Durable Object (SQLite) stores every survey's responses, so no KV/D1 ids to create.
+[[durable_objects.bindings]]
+name = "SURVEYS"
+class_name = "SurveyStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SurveyStore"]
+
+[vars]
+# Origins allowed to submit from a browser (comma separated).
+ALLOWED_ORIGINS = "https://thekitchenat22.com,https://www.thekitchenat22.com,https://warriomtz.github.io,http://localhost:8765"
+# Max submissions per person (hashed, daily-rotating) per survey per day.
+DAILY_LIMIT = "30"
+
+# SECRET (never commit; set with `npx wrangler secret put EXPORT_KEY`):
+#   EXPORT_KEY - long random string that unlocks the CSV export and summary.
