@@ -77,6 +77,20 @@ ok(s === 200, "menu delete");
 [s, j] = await call("GET", "/api/stock"); ok(!j.outOfStock.includes("f-burger"), "deleted item cleaned from stock");
 [s] = await call("POST", "/api/menu/image", { itemId: pid, data: "x" }, CODE); ok(s === 501, "image upload not supported (explicit)");
 
+// meal prep
+[s, j] = await call("POST", "/api/menu/item", { action: "add", section: "mealprep", subKey: "Plan", name: "Bowl Pollo", price: 150 }, CODE);
+ok(s === 200 && j.item.id.startsWith("m-bowl") && Object.keys(j.menu)[0] === "mealprep", "mealprep add creates section first");
+const fut = new Date(Date.now() + 3 * 86400000); const p2 = (n) => String(n).padStart(2, "0");
+const sched = `${fut.getUTCFullYear()}-${p2(fut.getUTCMonth() + 1)}-${p2(fut.getUTCDate())}T12:30`;
+[s, j] = await call("POST", "/api/orders", { action: "create", orderType: "dinein", items: [{ id: j.item.id, name: "Bowl Pollo", qty: 2 }], mealPrep: true, scheduledFor: sched });
+ok(s === 200 && j.order.mealPrep === true && j.order.scheduledFor === sched, "scheduled mealprep order saved");
+[s, j] = await call("POST", "/api/orders", { action: "create", orderType: "dinein", items: [{ id: "x", name: "Bowl", qty: 1 }], mealPrep: true, scheduledFor: "hola" });
+ok(s === 400 && j.error === "bad_schedule", "bad schedule rejected");
+[s, j] = await call("POST", "/api/orders", { action: "create", orderType: "dinein", items: [{ id: "x", name: "Bowl", qty: 1 }], mealPrep: true });
+ok(s === 200 && j.order.mealPrep === true && j.order.scheduledFor === "", "mealprep now order");
+[s, j] = await call("POST", "/api/orders", { action: "create", orderType: "dinein", items: [{ id: "x", name: "Taco", qty: 1 }], scheduledFor: sched });
+ok(s === 200 && !("mealPrep" in j.order), "scheduledFor ignored without mealPrep flag");
+
 // analytics
 [s, j] = await call("POST", "/api/analytics", { action: "track", events: [{ type: "pageview", path: "/" }, { type: "weird" }] }); ok(s === 200 && j.added === 2, "analytics track (public)");
 [s, j] = await call("GET", "/api/analytics", null, CODE); ok(j.events.length === 2 && j.events[1].type === "pageview", "analytics read (admin)");

@@ -159,6 +159,7 @@ const DEFAULT_HOURS = {
 
   function applyMenuData(menu) {
     if (!menu || typeof menu !== "object") return false;
+    ensureMealPrepSection(menu);
     MENU = menu;
     rebuildFlat();
     return true;
@@ -238,7 +239,10 @@ const DEFAULT_HOURS = {
     // "dinein" | "apartment" | "amenity" | null
     orderType: sessionStorage.getItem("kitchen-order-type") || null,
     amenity: sessionStorage.getItem("kitchen-amenity") || null,
-    activeSub: { drinks: "all", bar: "all", food: "all" },
+    activeSub: { mealprep: "all", drinks: "all", bar: "all", food: "all" },
+    mpMode: "",
+    mpDate: "",
+    mpTime: "",
     openSection: "",
     pendingItem: null,
     outOfStock: loadLocalStock(),
@@ -543,11 +547,12 @@ const DEFAULT_HOURS = {
     const hint = $("#waHint");
     const send = $("#sendWhatsApp");
     const count = state.cart.reduce((s, l) => s + l.qty, 0);
-    const canSend = !!status.dineIn && count > 0;
+    const scheduled = isScheduledMealPrep();
+    const canSend = (!!status.dineIn || scheduled) && count > 0;
     const notice = closedMessage(status);
 
     if (banner) {
-      if (notice) {
+      if (notice && !scheduled) {
         banner.textContent = notice;
         banner.classList.remove("is-hidden");
       } else {
@@ -556,14 +561,20 @@ const DEFAULT_HOURS = {
       }
     }
     if (hint) {
-      hint.textContent = status.dineIn && status.togo ? t("waHint") : notice || t("waHint");
-      hint.classList.toggle("is-closed-hint", !status.togo);
+      hint.textContent = scheduled
+        ? t("mpHintScheduled")
+        : status.dineIn && status.togo
+          ? t("waHint")
+          : notice || t("waHint");
+      hint.classList.toggle("is-closed-hint", !status.togo && !scheduled);
     }
     if (send) {
       send.disabled = !canSend;
-      send.classList.toggle("is-disabled", !status.dineIn);
-      send.setAttribute("aria-disabled", status.dineIn ? "false" : "true");
-      if (!status.dineIn) send.title = notice;
+      const openish = !!status.dineIn || scheduled;
+      send.classList.toggle("is-disabled", !openish);
+      send.setAttribute("aria-disabled", openish ? "false" : "true");
+      if (scheduled) send.removeAttribute("title");
+      else if (!status.dineIn) send.title = notice;
       else if (!status.togo) send.title = notice;
       else send.removeAttribute("title");
     }
@@ -571,7 +582,7 @@ const DEFAULT_HOURS = {
     $$("[data-order-type]").forEach((btn) => {
       const togoBtn =
         btn.dataset.orderType === "apartment" || btn.dataset.orderType === "amenity";
-      const off = togoBtn && !status.togo;
+      const off = togoBtn && !status.togo && !scheduled;
       btn.classList.toggle("is-disabled", off);
       btn.disabled = off;
       btn.setAttribute("aria-disabled", off ? "true" : "false");
@@ -579,7 +590,7 @@ const DEFAULT_HOURS = {
       else btn.removeAttribute("title");
     });
 
-    document.body.classList.toggle("orders-closed", !status.dineIn);
+    document.body.classList.toggle("orders-closed", !status.dineIn && !scheduled);
   }
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -658,6 +669,7 @@ const DEFAULT_HOURS = {
   /* Menu cards — fixed structure for alignment */
   function itemsFor(sectionKey) {
     const section = MENU[sectionKey];
+    if (!section) return [];
     const active = state.activeSub[sectionKey];
     const list = [];
     Object.entries(section.subcategories).forEach(([k, sub]) => {
@@ -779,6 +791,7 @@ const DEFAULT_HOURS = {
     const host = $(`.tabs[data-section="${sectionKey}"]`);
     if (!host) return;
     const section = MENU[sectionKey];
+    if (!section) return;
     host.innerHTML = "";
 
     const mk = (label, key) => {
@@ -808,40 +821,139 @@ const DEFAULT_HOURS = {
     bindAdds(grid);
   }
 
-  /** Active weekly specials (duplicated at top; still listed in their normal section) */
-  function getWeeklySpecialItems() {
-    return FLAT.filter((item) => isWeeklySpecial(item) && !isHiddenItem(item));
+  /* ---------- Meal Prep (pre-order / order now) ---------- */
+  const MEALPREP_MIN_LEAD_HOURS = 2;
+  const MEALPREP_MAX_DAYS = 14;
+
+  function mealPrepItems() {
+    return FLAT.filter((item) => item.sectionId === "mealprep" && !isHiddenItem(item));
   }
 
-  function renderSpecials() {
-    const section = $("#specials");
-    const grid = $("#specialsGrid");
-    const navLink = $("#navSpecials");
-    const switcher = $("#switcherSpecials");
-    const specials = getWeeklySpecialItems();
-    const has = specials.length > 0;
+  function renderMealPrepVisibility() {
+    const has = mealPrepItems().length > 0;
+    ["#mealprep", "#navMealPrep", "#switcherMealPrep"].forEach((sel) => {
+      $(sel)?.classList.toggle("is-hidden", !has);
+    });
+    if (!has && state.openSection === "mealprep") closeMenuSections();
+  }
 
-    if (section) section.classList.toggle("is-hidden", !has);
-    if (navLink) navLink.classList.toggle("is-hidden", !has);
-    if (switcher) switcher.classList.toggle("is-hidden", !has);
-    if (!has && state.openSection === "specials") {
-      closeMenuSections();
-    }
+  function ensureMealPrepSection(menu) {
+    if (!menu || menu.mealprep) return;
+    // Put Meal Prep first so it is the first thing customers see
+    const rest = { ...menu };
+    Object.keys(menu).forEach((k) => delete menu[k]);
+    menu.mealprep = {
+      id: "mealprep",
+      title: "MEAL PREP",
+      icon: "🥗",
+      subcategories: { Plan: { label: "Meal Prep", items: [] } },
+    };
+    Object.assign(menu, rest);
+  }
 
-    if (grid) {
-      if (has) {
-        // Feature cards at top — same product ids, so cart/customize work as usual
-        grid.innerHTML = specials.map((item) => cardHTML(item)).join("");
-        bindAdds(grid);
-      } else {
-        grid.innerHTML = "";
-      }
+  function cartHasMealPrep() {
+    return state.cart.some((line) => {
+      const it = FLAT.find((x) => x.id === line.id);
+      return it && it.sectionId === "mealprep";
+    });
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function localDateStr(d) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  /** True when this order is a scheduled Meal Prep (allowed even when closed). */
+  function isScheduledMealPrep() {
+    return cartHasMealPrep() && state.mpMode === "schedule";
+  }
+
+  /** Returns { ok, value, error } for the chosen schedule. */
+  function validateMealPrepSchedule() {
+    const date = state.mpDate;
+    const time = state.mpTime;
+    if (!date || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
+      return { ok: false, error: t("mpErrPick") };
     }
+    const when = new Date(`${date}T${time}:00`);
+    if (Number.isNaN(when.getTime())) return { ok: false, error: t("mpErrPick") };
+    const now = Date.now();
+    if (when.getTime() < now + MEALPREP_MIN_LEAD_HOURS * 3600 * 1000 - 60 * 1000) {
+      return { ok: false, error: t("mpErrLead").replace("{n}", MEALPREP_MIN_LEAD_HOURS) };
+    }
+    if (when.getTime() > now + MEALPREP_MAX_DAYS * 86400 * 1000) {
+      return { ok: false, error: t("mpErrFar").replace("{n}", MEALPREP_MAX_DAYS) };
+    }
+    return { ok: true, value: `${date}T${time}` };
+  }
+
+  function formatScheduled(value) {
+    const [d, tm] = String(value).split("T");
+    const dt = new Date(`${d}T${tm}:00`);
+    const loc = state.lang === "en" ? "en-US" : state.lang === "ja" ? "ja-JP" : "es-MX";
+    try {
+      return dt.toLocaleString(loc, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return `${d} ${tm}`;
+    }
+  }
+
+  function renderMealPrepField() {
+    const field = $("#mealprepField");
+    if (!field) return;
+    const has = cartHasMealPrep();
+    field.classList.toggle("is-hidden", !has);
+    if (!has) {
+      state.mpMode = "";
+      return;
+    }
+    $$("[data-mp-mode]", field).forEach((btn) => {
+      btn.classList.toggle("is-selected", btn.dataset.mpMode === state.mpMode);
+    });
+    const when = $("#mpWhen");
+    if (when) when.classList.toggle("is-hidden", state.mpMode !== "schedule");
+    const dateEl = $("#mpDate");
+    if (dateEl) {
+      const now = new Date();
+      dateEl.min = localDateStr(now);
+      dateEl.max = localDateStr(new Date(now.getTime() + MEALPREP_MAX_DAYS * 86400 * 1000));
+      if (dateEl.value !== (state.mpDate || "")) dateEl.value = state.mpDate || "";
+    }
+    const timeEl = $("#mpTime");
+    if (timeEl && timeEl.value !== (state.mpTime || "")) timeEl.value = state.mpTime || "";
+    $("#mpError")?.classList.add("is-hidden");
+  }
+
+  function setMealPrepMode(mode) {
+    if (!["now", "schedule"].includes(mode)) return;
+    state.mpMode = mode;
+    renderMealPrepField();
+    updateHoursUI();
+    updateOrderTypeUI();
+  }
+
+  function showMealPrepError(msg) {
+    const el = $("#mpError");
+    if (el) {
+      el.textContent = msg;
+      el.classList.remove("is-hidden");
+    }
+    toast(msg);
   }
 
   function renderAll() {
-    renderSpecials();
-    ["drinks", "bar", "food"].forEach((k) => {
+    renderMealPrepVisibility();
+    renderMealPrepField();
+    ["mealprep", "drinks", "bar", "food"].forEach((k) => {
       renderTabs(k);
       renderGrid(k);
     });
@@ -1734,7 +1846,7 @@ const DEFAULT_HOURS = {
     }
   }
 
-  async function registerKitchenOrder({ orderType, apartment, amenity }) {
+  async function registerKitchenOrder({ orderType, apartment, amenity, mealPrep = false, scheduledFor = "" }) {
     const items = state.cart.map((line) => {
       const it = FLAT.find((x) => x.id === line.id);
       const sectionId = it?.sectionId || it?.section || "";
@@ -1761,6 +1873,8 @@ const DEFAULT_HOURS = {
           amenity: amenityText,
           amenityId: orderType === "amenity" ? amenity || "" : "",
           items,
+          mealPrep: !!mealPrep,
+          scheduledFor: scheduledFor || "",
         });
       } else {
         await fetch("/api/orders", {
@@ -1773,6 +1887,8 @@ const DEFAULT_HOURS = {
             amenity: amenityText,
             amenityId: orderType === "amenity" ? amenity || "" : "",
             items,
+            mealPrep: !!mealPrep,
+            scheduledFor: scheduledFor || "",
           }),
         });
       }
@@ -2425,6 +2541,7 @@ const DEFAULT_HOURS = {
   function renderCart() {
     const host = $("#cartLines");
     if (!host) return;
+    renderMealPrepField();
 
     if (!state.cart.length) {
       host.innerHTML = `<p class="empty">${t("cartEmpty")}</p>`;
@@ -2541,7 +2658,7 @@ const DEFAULT_HOURS = {
   function setOrderType(type) {
     if (!["dinein", "apartment", "amenity"].includes(type)) return;
     const hours = getOrderStatus();
-    if ((type === "apartment" || type === "amenity") && !hours.togo) {
+    if ((type === "apartment" || type === "amenity") && !hours.togo && !isScheduledMealPrep()) {
       toast(t("togoClosedNow"));
       return;
     }
@@ -2630,6 +2747,7 @@ const DEFAULT_HOURS = {
     $("#cartDrawer").setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
     setApartmentError(false);
+    renderMealPrepField();
     updateOrderTypeUI();
     updateHoursUI();
   }
@@ -2721,7 +2839,7 @@ const DEFAULT_HOURS = {
     }
   }
 
-  function buildWhatsAppMessage({ orderType, apartment, amenity }) {
+  function buildWhatsAppMessage({ orderType, apartment, amenity, mealPrep = false, scheduledFor = "" }) {
     const lines = [];
     lines.push("🍽️ *The Kitchen at 22*");
     lines.push(t("waOrderTitle"));
@@ -2733,6 +2851,13 @@ const DEFAULT_HOURS = {
     } else if (orderType === "amenity") {
       lines.push(`🏊 *${t("waService")}:* ${t("orderTypeAmenity")}`);
       if (amenity) lines.push(`📌 *${t("waAmenity")}:* ${amenityLabel(amenity)}`);
+    }
+    if (mealPrep) {
+      lines.push(
+        scheduledFor
+          ? `📅 *${t("waMealPrep")} · ${t("mpScheduleTitle")}:* ${formatScheduled(scheduledFor)}`
+          : `⚡ *${t("waMealPrep")} · ${t("mpNowTitle")}*`
+      );
     }
     lines.push("————————————");
     state.cart.forEach((line, i) => {
@@ -2756,12 +2881,28 @@ const DEFAULT_HOURS = {
   function sendWhatsApp() {
     if (sendingOrder) return;
     const status = getOrderStatus();
-    if (!status.dineIn) {
+    const hasMP = cartHasMealPrep();
+    if (hasMP && !["now", "schedule"].includes(state.mpMode)) {
+      showMealPrepError(t("mpErrMode"));
+      return;
+    }
+    let scheduledFor = "";
+    if (hasMP && state.mpMode === "schedule") {
+      const v = validateMealPrepSchedule();
+      if (!v.ok) {
+        showMealPrepError(v.error);
+        return;
+      }
+      scheduledFor = v.value;
+    }
+    const scheduled = !!scheduledFor;
+    if (!status.dineIn && !scheduled) {
       updateHoursUI();
       toast(closedMessage(status));
       return;
     }
     if (
+      !scheduled &&
       (state.orderType === "apartment" || state.orderType === "amenity") &&
       !status.togo
     ) {
@@ -2817,12 +2958,16 @@ const DEFAULT_HOURS = {
       orderType: state.orderType,
       apartment,
       amenity: state.amenity,
+      mealPrep: hasMP,
+      scheduledFor,
     }).finally(() => {
       const text = encodeURIComponent(
         buildWhatsAppMessage({
           orderType: state.orderType,
           apartment,
           amenity: state.amenity,
+          mealPrep: hasMP,
+          scheduledFor,
         })
       );
       const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
@@ -2880,7 +3025,7 @@ const DEFAULT_HOURS = {
       });
       // Fade only — translateY on staggered cards breaks equal-height grid rows
       // (looks "disaligned" until a re-render, e.g. language change).
-      ["#specialsGrid", "#drinksGrid", "#barGrid", "#foodGrid"].forEach((sel) => {
+      ["#mealprepGrid", "#drinksGrid", "#barGrid", "#foodGrid"].forEach((sel) => {
         ScrollTrigger.batch(sel + " .menu-card", {
           start: "top 94%",
           onEnter: (batch) => {
@@ -2914,7 +3059,7 @@ const DEFAULT_HOURS = {
     }
   }
 
-  const ACCORDION_IDS = ["specials", "drinks", "bar", "food"];
+  const ACCORDION_IDS = ["mealprep", "drinks", "bar", "food"];
 
   function closeMenuSections() {
     state.openSection = "";
@@ -3030,6 +3175,17 @@ const DEFAULT_HOURS = {
       saveCart();
     });
     $("#sendWhatsApp")?.addEventListener("click", sendWhatsApp);
+    $$("[data-mp-mode]").forEach((btn) => {
+      btn.addEventListener("click", () => setMealPrepMode(btn.dataset.mpMode));
+    });
+    $("#mpDate")?.addEventListener("change", (e) => {
+      state.mpDate = e.target.value;
+      $("#mpError")?.classList.add("is-hidden");
+    });
+    $("#mpTime")?.addEventListener("change", (e) => {
+      state.mpTime = e.target.value;
+      $("#mpError")?.classList.add("is-hidden");
+    });
 
     $$("[data-order-type]").forEach((btn) => {
       btn.addEventListener("click", () => setOrderType(btn.dataset.orderType));

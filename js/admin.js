@@ -433,6 +433,27 @@
     return false;
   }
 
+  /** Meal Prep tag: scheduled date/time, or "para ahora". */
+  function mealPrepBadge(o) {
+    if (!o || !o.mealPrep) return "";
+    if (o.scheduledFor) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(o.scheduledFor));
+      let label = String(o.scheduledFor).replace("T", " ");
+      if (m) {
+        const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+        label = d.toLocaleString("es-MX", {
+          weekday: "long",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      return `<div class="k-ticket__mp k-ticket__mp--scheduled">📅 MEAL PREP PROGRAMADO · ${escapeHtml(label)}</div>`;
+    }
+    return `<div class="k-ticket__mp">🥗 MEAL PREP · para ahora</div>`;
+  }
+
   function orderTypeLabel(o) {
     if (o.orderType === "dinein")
       return { text: "Comer aquí", cls: "k-ticket__where--dinein", ico: "🍽️", togo: false };
@@ -626,6 +647,7 @@
             </div>
           </div>
           <div class="k-ticket__where ${where.cls}">${where.ico} ${escapeHtml(where.text)}</div>
+          ${mealPrepBadge(o)}
           <ul class="k-ticket__items">${items}</ul>
           ${empty}
           ${
@@ -739,7 +761,12 @@
       .slice(0, 3)
       .map((it) => `×${it.qty || 1} ${it.name || it.id}`)
       .join(", ");
-    return `${where.text}${items ? " · " + items : ""}`;
+    const mp = o.mealPrep
+      ? o.scheduledFor
+        ? `Meal Prep ${String(o.scheduledFor).replace("T", " ")} · `
+        : "Meal Prep ahora · "
+      : "";
+    return `${mp}${where.text}${items ? " · " + items : ""}`;
   }
 
   function playKitchenBeep() {

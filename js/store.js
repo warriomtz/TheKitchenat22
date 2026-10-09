@@ -54,6 +54,12 @@
     return "Pedido";
   }
 
+  function ntfyWhen(o) {
+    if (!o || !o.mealPrep) return "";
+    if (o.scheduledFor) return `🥗 MEAL PREP PROGRAMADO: ${String(o.scheduledFor).replace("T", " ")}`;
+    return "🥗 MEAL PREP · para ahora";
+  }
+
   function ntfyBody(order) {
     const o = order || {};
     const lines = (o.items || []).slice(0, 10).map((it) => {
@@ -67,7 +73,7 @@
     });
     const extraCount = (o.items || []).length - 10;
     if (extraCount > 0) lines.push(`+${extraCount} más`);
-    return [ntfyWhere(o), ...lines].join("\n");
+    return [ntfyWhen(o), ntfyWhere(o), ...lines].filter(Boolean).join("\n");
   }
 
   function notifyNtfy(title, message, tags) {
@@ -93,7 +99,9 @@
   function notifyKitchenNtfy(order) {
     if (!order) return;
     notifyNtfy(
-      "The Kitchen · nuevo pedido",
+      order.mealPrep && order.scheduledFor
+        ? "The Kitchen · Meal Prep programado"
+        : "The Kitchen · nuevo pedido",
       ntfyBody(order).slice(0, 1200),
       "rotating_light,fork_and_knife"
     );
@@ -719,6 +727,10 @@
         throw new Error("amenity_required");
       }
 
+      const mealPrep = !!orderPayload.mealPrep;
+      const sf = String(orderPayload.scheduledFor || "");
+      const scheduledFor = mealPrep && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(sf) ? sf : "";
+
       const body = {
         action: "create",
         orderType,
@@ -726,6 +738,8 @@
         amenity,
         amenityId,
         items,
+        mealPrep,
+        scheduledFor,
         source: "whatsapp",
       };
 
@@ -738,6 +752,8 @@
         amenity: orderType === "amenity" ? amenity : "",
         amenityId: orderType === "amenity" ? amenityId : "",
         items,
+        mealPrep,
+        scheduledFor,
         source: "whatsapp",
       };
       // Ping phones first — cloud save can fail; WhatsApp still goes out.
@@ -1111,7 +1127,7 @@
       const section = payload.section;
       const subKey = payload.subKey;
       if (!menu[section]?.subcategories?.[subKey]) throw new Error("bad_section");
-      const prefix = { drinks: "d", bar: "b", food: "f" }[section] || "x";
+      const prefix = { drinks: "d", bar: "b", food: "f", mealprep: "m" }[section] || "x";
       let id = String(payload.id || "").trim() || slugId(payload.name, prefix);
       if (findItem(menu, id)) id = slugId(payload.name, prefix);
       const item = {

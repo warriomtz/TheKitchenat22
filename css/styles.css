@@ -3340,3 +3340,96 @@ body.announce-open .fab {
 }
 
 
+
+/* ---------- Meal Prep (pre-order / order now) ---------- */
+.mp-field.is-hidden,
+.mp-field__when.is-hidden,
+.nav__link--new.is-hidden,
+.menu-switcher__btn--new.is-hidden { display: none !important; }
+
+.new-pill {
+  display: inline-block;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 0.12rem 0.45rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  background: var(--accent-2);
+  color: #fff;
+  vertical-align: middle;
+  line-height: 1.3;
+}
+
+.nav__link--new,
+.menu-switcher__btn--new { font-weight: 700; color: var(--text); }
+
+.mp-intro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.mp-intro__opt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.03);
+}
+.mp-intro__ico { font-size: 1.3rem; }
+.mp-intro__title { font-weight: 600; }
+.mp-intro__desc { font-size: 0.85rem; color: var(--text-muted); }
+@media (max-width: 520px) { .mp-intro { grid-template-columns: 1fr; } }
+
+.mp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  margin-bottom: 0.9rem;
+}
+.mp-field__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mp-field__opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.mp-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  min-height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.mp-opt.is-selected {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(164, 52, 58, 0.18);
+}
+.mp-opt__title { font-weight: 600; font-size: 0.92rem; }
+.mp-opt__desc { font-size: 0.74rem; color: var(--text-muted); }
+.mp-field__when { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.mp-field__when label { display: flex; flex-direction: column; gap: 0.3rem; }
+.mp-field__when input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 16px;
+  color-scheme: dark;
+}

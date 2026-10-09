@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@500;600&family=Outfit:wght@300;400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet" />
   <!-- Flood Std Regular via Adobe Fonts -->
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
-  <link rel="stylesheet" href="css/styles.css?v=pub-20260914d" />
+  <link rel="stylesheet" href="css/styles.css?v=pub-20261009a" />
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -48,7 +48,7 @@
       </a>
 
       <nav class="nav" id="nav">
-        <a href="#specials" class="nav__link is-hidden" id="navSpecials" data-i18n="navSpecials">Especiales</a>
+        <a href="#mealprep" class="nav__link nav__link--new is-hidden" id="navMealPrep"><span data-i18n="navMealPrep">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em></a>
         <a href="#drinks" class="nav__link" data-i18n="navDrinks">Bebidas</a>
         <a href="#bar" class="nav__link" data-i18n="navBar">Bar</a>
         <a href="#food" class="nav__link" data-i18n="navFood">Comida</a>
@@ -75,12 +75,13 @@
     </div>
   </header>
 
-  <!-- Sticky menu switcher: Specials / Drinks / Bar / Food -->
+  <!-- Sticky menu switcher: Meal Prep / Drinks / Bar / Food -->
   <nav class="menu-switcher" id="menuSwitcher" aria-label="Menú">
     <div class="container menu-switcher__inner">
-      <a href="#specials" class="menu-switcher__btn is-hidden" data-section="specials" id="switcherSpecials">
-        <span class="menu-switcher__ico">⭐</span>
-        <span data-i18n="navSpecials">Especiales</span>
+      <a href="#mealprep" class="menu-switcher__btn menu-switcher__btn--new is-hidden" data-section="mealprep" id="switcherMealPrep">
+        <span class="menu-switcher__ico">🥗</span>
+        <span data-i18n="navMealPrep">Meal Prep</span>
+        <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em>
       </a>
       <a href="#drinks" class="menu-switcher__btn" data-section="drinks">
         <span class="menu-switcher__ico">☕</span>
@@ -160,19 +161,29 @@
       <div class="menu-grid" id="resultsGrid"></div>
     </section>
 
-    <!-- Weekly specials (only shown when products are flagged) — duplicates also stay in their normal sections -->
-    <section class="section section--specials section--accordion container is-hidden" id="specials" aria-labelledby="specialsTitle">
-      <button type="button" class="section__toggle" data-open-section="specials" aria-expanded="false" aria-controls="specialsBody">
+    <!-- Meal Prep (pre-order or order now). Shown only when it has items; always first. -->
+    <section class="section section--mealprep section--accordion container is-hidden" id="mealprep" aria-labelledby="mealprepTitle">
+      <button type="button" class="section__toggle" data-open-section="mealprep" aria-expanded="false" aria-controls="mealprepBody">
         <div class="section__head">
-          <p class="section__tag">⭐ <span data-i18n="specialsTag">Especial de la semana</span></p>
-          <h2 class="section__title" id="specialsTitle" data-i18n="navSpecials">Especiales</h2>
-          <p class="section__desc" data-i18n="specialsDesc">Disponibles por tiempo limitado · cantidad limitada.</p>
+          <p class="section__tag">🥗 <span data-i18n="mealprepTag">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em></p>
+          <h2 class="section__title" id="mealprepTitle" data-i18n="navMealPrep">Meal Prep</h2>
+          <p class="section__desc" data-i18n="mealprepDesc">Pre-ordena para otro día o pídelo ahora.</p>
         </div>
         <span class="section__hint" data-i18n="menuOpenHint" aria-hidden="true">abrir</span>
         <span class="section__chevron" aria-hidden="true"></span>
       </button>
-      <div class="section__body" id="specialsBody">
-        <div class="menu-grid" id="specialsGrid"></div>
+      <div class="section__body" id="mealprepBody">
+        <div class="mp-intro">
+          <div class="mp-intro__opt">
+            <span class="mp-intro__ico" aria-hidden="true">⚡</span>
+            <div><strong data-i18n="mpNowTitle">Pídelo ahora</strong><span data-i18n="mpNowDesc">Lo preparamos en este momento.</span></div>
+          </div>
+          <div class="mp-intro__opt">
+            <span class="mp-intro__ico" aria-hidden="true">📅</span>
+            <div><strong data-i18n="mpScheduleTitle">Prográmalo</strong><span data-i18n="mpScheduleDesc">Elige el día y la hora que lo quieres.</span></div>
+          </div>
+        </div>
+        <div class="menu-grid" id="mealprepGrid"></div>
       </div>
     </section>
 
@@ -274,6 +285,33 @@
       </div>
       <div class="drawer__body" id="cartLines"></div>
       <div class="drawer__foot">
+        <div class="mp-field is-hidden" id="mealprepField" role="group" aria-labelledby="mpLabel">
+          <span class="order-type__label" id="mpLabel">🥗 <span data-i18n="mpLabel">Meal Prep: ¿cuándo lo quieres?</span></span>
+          <div class="mp-field__opts">
+            <button type="button" class="mp-opt" data-mp-mode="now">
+              <span class="mp-opt__ico" aria-hidden="true">⚡</span>
+              <span class="mp-opt__title" data-i18n="mpNowTitle">Pídelo ahora</span>
+              <span class="mp-opt__desc" data-i18n="mpNowShort">Lo preparan en este momento</span>
+            </button>
+            <button type="button" class="mp-opt" data-mp-mode="schedule">
+              <span class="mp-opt__ico" aria-hidden="true">📅</span>
+              <span class="mp-opt__title" data-i18n="mpScheduleTitle">Prográmalo</span>
+              <span class="mp-opt__desc" data-i18n="mpScheduleShort">Elige día y hora</span>
+            </button>
+          </div>
+          <div class="mp-field__when is-hidden" id="mpWhen">
+            <label class="apt-field">
+              <span class="apt-field__label" data-i18n="mpDateLabel">Día</span>
+              <input type="date" id="mpDate" />
+            </label>
+            <label class="apt-field">
+              <span class="apt-field__label" data-i18n="mpTimeLabel">Hora</span>
+              <input type="time" id="mpTime" step="900" />
+            </label>
+          </div>
+          <p class="order-type__error is-hidden" id="mpError"></p>
+        </div>
+
         <div class="order-type" role="group" aria-labelledby="orderTypeLabel">
           <span class="order-type__label" id="orderTypeLabel" data-i18n="orderTypeLabel">¿Cómo quieres tu pedido?</span>
           <div class="order-type__options order-type__options--3">
@@ -490,12 +528,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <script src="js/config.js?v=pub-20260914d"></script>
-  <script src="js/store.js?v=pub-20260914d"></script>
-  <script src="js/menu-data.js?v=pub-20260914d"></script>
-  <script src="js/i18n.js?v=pub-20260914d"></script>
-  <script src="js/item-i18n.js?v=pub-20260914d"></script>
-  <script src="js/app.js?v=pub-20260914d"></script>
-  <script src="js/analytics.js?v=pub-20260914d"></script>
+  <script src="js/config.js?v=pub-20261009a"></script>
+  <script src="js/store.js?v=pub-20261009a"></script>
+  <script src="js/menu-data.js?v=pub-20261009a"></script>
+  <script src="js/i18n.js?v=pub-20261009a"></script>
+  <script src="js/item-i18n.js?v=pub-20261009a"></script>
+  <script src="js/app.js?v=pub-20261009a"></script>
+  <script src="js/analytics.js?v=pub-20261009a"></script>
 </body>
 </html>

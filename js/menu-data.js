@@ -4,6 +4,15 @@
  * WhatsApp: set in app.js as WHATSAPP_NUMBER
  */
 window.KITCHEN_MENU = {
+  // Meal Prep: shown (first) only once it has items. Add dishes from Admin → Menú.
+  mealprep: {
+    id: "mealprep",
+    title: "MEAL PREP",
+    icon: "🥗",
+    subcategories: {
+      Plan: { label: "Meal Prep", items: [] },
+    },
+  },
   drinks: {
     id: "drinks",
     title: "THE DRINKS",

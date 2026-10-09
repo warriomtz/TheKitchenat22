@@ -1419,3 +1419,19 @@
 .survey-a { margin: 0.2rem 0; line-height: 1.45; }
 .survey-q { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
 .survey-chip { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-size: 0.72rem; }
+
+/* Meal Prep tag on kitchen tickets */
+.k-ticket__mp {
+  margin: 0.4rem 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: rgba(90, 170, 90, 0.18);
+  color: #9be29b;
+}
+.k-ticket__mp--scheduled {
+  background: rgba(255, 190, 60, 0.2);
+  color: #ffd27a;
+  text-transform: capitalize;
+}

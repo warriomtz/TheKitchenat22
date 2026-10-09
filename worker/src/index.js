@@ -97,6 +97,12 @@ function ntfyWhere(o) {
   return "Pedido";
 }
 
+function ntfyWhen(o) {
+  if (!o || !o.mealPrep) return "";
+  if (o.scheduledFor) return `🥗 MEAL PREP PROGRAMADO: ${String(o.scheduledFor).replace("T", " ")}`;
+  return "🥗 MEAL PREP · para ahora";
+}
+
 function ntfyBody(o) {
   const items = o.items || [];
   const lines = items.slice(0, 10).map((it) => {
@@ -109,7 +115,7 @@ function ntfyBody(o) {
     return line;
   });
   if (items.length > 10) lines.push(`+${items.length - 10} más`);
-  return [ntfyWhere(o), ...lines].join("\n").slice(0, 1200);
+  return [ntfyWhen(o), ntfyWhere(o), ...lines].filter(Boolean).join("\n").slice(0, 1200);
 }
 
 /** Phone ping for the kitchen. No prices. Never throws. */
@@ -118,7 +124,9 @@ async function notifyKitchen(env, order) {
   if (!topic) return;
   const url =
     `https://ntfy.sh/${encodeURIComponent(topic)}` +
-    `?title=${encodeURIComponent("The Kitchen · nuevo pedido")}` +
+    `?title=${encodeURIComponent(
+      order.mealPrep && order.scheduledFor ? "The Kitchen · Meal Prep programado" : "The Kitchen · nuevo pedido"
+    )}` +
     `&priority=5&tags=${encodeURIComponent("rotating_light,fork_and_knife")}` +
     (env.ADMIN_URL ? `&click=${encodeURIComponent(env.ADMIN_URL)}` : "");
   try {
@@ -388,6 +396,18 @@ export class KitchenStore extends DurableObject {
     if (action === "add") {
       const section = String(data.section || "");
       const subKey = String(data.subKey || "");
+      if (!menu[section] && section === "mealprep") {
+        // Meal Prep section is created on demand and always listed first
+        const rest = { ...menu };
+        for (const k of Object.keys(menu)) delete menu[k];
+        menu.mealprep = {
+          id: "mealprep",
+          title: "MEAL PREP",
+          icon: "🥗",
+          subcategories: { Plan: { label: "Meal Prep", items: [] } },
+        };
+        Object.assign(menu, rest);
+      }
       if (!menu[section]) return [400, { error: "bad_section" }];
       menu[section].subcategories = menu[section].subcategories || {};
       const subs = menu[section].subcategories;
@@ -396,7 +416,7 @@ export class KitchenStore extends DurableObject {
       if (!name) return [400, { error: "name_required" }];
       const price = Math.trunc(Number(data.price == null ? 0 : data.price));
       if (!Number.isFinite(price) || price < 0) return [400, { error: "bad_price" }];
-      const prefix = { drinks: "d", bar: "b", food: "f" }[section] || "x";
+      const prefix = { drinks: "d", bar: "b", food: "f", mealprep: "m" }[section] || "x";
       let itemId = String(data.id || "").trim() || this.slugId(name, prefix);
       if (this.findItem(menu, itemId)) itemId = this.slugId(name, prefix);
       const item = {
@@ -502,6 +522,21 @@ export class KitchenStore extends DurableObject {
     if (orderType === "apartment" && !apartment) return [400, { error: "apartment_required" }];
     if (orderType === "amenity" && !amenity && !amenityId) return [400, { error: "amenity_required" }];
 
+    const mealPrep = data.mealPrep === true;
+    let scheduledFor = "";
+    if (mealPrep && data.scheduledFor) {
+      const sf = String(data.scheduledFor);
+      const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(sf);
+      if (!m) return [400, { error: "bad_schedule" }];
+      const ms = Date.parse(`${sf}:00Z`);
+      const now = Date.now();
+      // Local Mexico time vs UTC: allow ±1 day slack around a 0..30 day window
+      if (!Number.isFinite(ms) || ms < now - 86400000 || ms > now + 30 * 86400000) {
+        return [400, { error: "bad_schedule" }];
+      }
+      scheduledFor = sf;
+    }
+
     const order = {
       id: hex(12),
       createdAt: nowIso(),
@@ -511,6 +546,7 @@ export class KitchenStore extends DurableObject {
       amenity: orderType === "amenity" ? amenity : "",
       amenityId: orderType === "amenity" ? amenityId : "",
       items,
+      ...(mealPrep ? { mealPrep: true, scheduledFor } : {}),
       source: "whatsapp",
     };
     this.ctx.storage.transactionSync(() => {
