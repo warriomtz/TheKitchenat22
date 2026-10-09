@@ -3433,3 +3433,15 @@ body.announce-open .fab {
   font-size: 16px;
   color-scheme: dark;
 }
+
+.cart-line__tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(255, 190, 60, 0.18);
+  color: #ffd27a;
+  white-space: nowrap;
+}

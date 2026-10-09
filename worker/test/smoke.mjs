@@ -78,6 +78,8 @@ ok(s === 200, "menu delete");
 [s] = await call("POST", "/api/menu/image", { itemId: pid, data: "x" }, CODE); ok(s === 501, "image upload not supported (explicit)");
 
 // meal prep
+[s, j] = await call("GET", "/api/menu");
+ok(Object.keys(j.menu)[0] === "mealprep" && j.menu.mealprep.subcategories.Plan.items.length === 6 && j.menu.mealprep.subcategories.Plan.items[0].flags.includes("sides2"), "mealprep seeded with 6 dishes (first section)");
 [s, j] = await call("POST", "/api/menu/item", { action: "add", section: "mealprep", subKey: "Plan", name: "Bowl Pollo", price: 150 }, CODE);
 ok(s === 200 && j.item.id.startsWith("m-bowl") && Object.keys(j.menu)[0] === "mealprep", "mealprep add creates section first");
 const fut = new Date(Date.now() + 3 * 86400000); const p2 = (n) => String(n).padStart(2, "0");

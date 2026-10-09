@@ -386,6 +386,45 @@ export class KitchenStore extends DurableObject {
       String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "item";
     return `${prefix}-${base}-${hex(6)}`;
   }
+  /** One-time: create the Meal Prep section (first) with the starting dishes. */
+  seedMealPrep(menu) {
+    if (this.kvGet("mealprepSeeded", false)) return;
+    if (!menu.mealprep) {
+      const rest = { ...menu };
+      for (const k of Object.keys(menu)) delete menu[k];
+      menu.mealprep = {
+        id: "mealprep",
+        title: "MEAL PREP",
+        icon: "🥗",
+        subcategories: { Plan: { label: "Meal Prep", items: [] } },
+      };
+      Object.assign(menu, rest);
+    }
+    const sub = menu.mealprep.subcategories.Plan || Object.values(menu.mealprep.subcategories)[0];
+    if (sub && !(sub.items || []).length) {
+      const mk = (id, name, en, ja, price) => ({
+        id,
+        name,
+        price,
+        notes: "",
+        notesKey: "mpIncludesSides",
+        flags: ["sides2"],
+        img: "",
+        name_en: en,
+        name_ja: ja,
+      });
+      sub.items = [
+        mk("m-pollo-100", "Pollo · 100 g", "Chicken · 100 g", "チキン · 100g", 119),
+        mk("m-pollo-200", "Pollo · 200 g", "Chicken · 200 g", "チキン · 200g", 179),
+        mk("m-atun", "Atún · 1 pieza (~160 g)", "Tuna · 1 piece (~160 g)", "ツナ · 1枚 (約160g)", 169),
+        mk("m-carne-molida", "Carne molida · 180 g", "Ground beef · 180 g", "牛ひき肉 · 180g", 199),
+        mk("m-sirloin", "Sirloin · 1 pieza (230-250 g)", "Sirloin · 1 piece (230-250 g)", "サーロイン · 1枚 (230-250g)", 259),
+        mk("m-salmon", "Salmón · 1 pieza (180-200 g)", "Salmon · 1 piece (180-200 g)", "サーモン · 1枚 (180-200g)", 259),
+      ];
+    }
+    this.kvSet("menu", menu);
+    this.kvSet("mealprepSeeded", true);
+  }
   menuItem(data) {
     const menu = this.kvGet("menu", null);
     if (!menu || !Object.keys(menu).length) {
@@ -719,6 +758,7 @@ export class KitchenStore extends DurableObject {
         case "/api/menu": {
           const menu = this.kvGet("menu", null);
           if (!menu || !Object.keys(menu).length) return [404, { error: "menu_missing" }];
+          this.seedMealPrep(menu);
           return [200, { menu }];
         }
         case "/api/announcement":

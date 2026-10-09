@@ -563,6 +563,8 @@ const DEFAULT_HOURS = {
     if (hint) {
       hint.textContent = scheduled
         ? t("mpHintScheduled")
+        : !status.dineIn && partitionCart().scheduled.length
+          ? t("mpMixedClosed")
         : status.dineIn && status.togo
           ? t("waHint")
           : notice || t("waHint");
@@ -822,6 +824,7 @@ const DEFAULT_HOURS = {
   }
 
   /* ---------- Meal Prep (pre-order / order now) ---------- */
+  const MEALPREP_SIDES = ["ensalada", "arroz", "frijol", "quinoa", "sopaTomate", "cremaEspinacas", "vegetales"];
   const MEALPREP_MIN_LEAD_HOURS = 2;
   const MEALPREP_MAX_DAYS = 14;
 
@@ -867,8 +870,23 @@ const DEFAULT_HOURS = {
   }
 
   /** True when this order is a scheduled Meal Prep (allowed even when closed). */
+  function isMealPrepLine(line) {
+    const it = FLAT.find((x) => x.id === line.id);
+    return !!(it && it.sectionId === "mealprep");
+  }
+
+  /** Scheduled Meal Prep lines vs everything that is ordered "now". */
+  function partitionCart() {
+    const sched = state.mpMode === "schedule";
+    const scheduled = sched ? state.cart.filter(isMealPrepLine) : [];
+    const now = sched ? state.cart.filter((l) => !isMealPrepLine(l)) : state.cart.slice();
+    return { scheduled, now };
+  }
+
+  /** True when the whole order is scheduled Meal Prep (allowed while closed). */
   function isScheduledMealPrep() {
-    return cartHasMealPrep() && state.mpMode === "schedule";
+    const p = partitionCart();
+    return p.scheduled.length > 0 && p.now.length === 0;
   }
 
   /** Returns { ok, value, error } for the chosen schedule. */
@@ -936,7 +954,7 @@ const DEFAULT_HOURS = {
   function setMealPrepMode(mode) {
     if (!["now", "schedule"].includes(mode)) return;
     state.mpMode = mode;
-    renderMealPrepField();
+    renderCart();
     updateHoursUI();
     updateOrderTypeUI();
   }
@@ -1846,8 +1864,8 @@ const DEFAULT_HOURS = {
     }
   }
 
-  async function registerKitchenOrder({ orderType, apartment, amenity, mealPrep = false, scheduledFor = "" }) {
-    const items = state.cart.map((line) => {
+  async function registerKitchenOrder({ orderType, apartment, amenity, mealPrep = false, scheduledFor = "", lines = null }) {
+    const items = (lines || state.cart).map((line) => {
       const it = FLAT.find((x) => x.id === line.id);
       const sectionId = it?.sectionId || it?.section || "";
       const subKey = it?.subKey || "";
@@ -1929,12 +1947,12 @@ const DEFAULT_HOURS = {
   }
 
   /* Customize */
-  function chips(field, label, options, { multi = false, hint = "" } = {}) {
+  function chips(field, label, options, { multi = false, hint = "", max = 0 } = {}) {
     return `
       <div class="field">
         <span>${label}</span>
         ${hint ? `<small class="field-hint">${hint}</small>` : ""}
-        <div class="chips" data-field="${field}" data-mode="${multi ? "multi" : "single"}">
+        <div class="chips" data-field="${field}" data-mode="${multi ? "multi" : "single"}"${max ? ` data-max="${max}"` : ""}>
           ${options
             .map((o) => {
               const disabled = !!o.disabled;
@@ -2059,6 +2077,14 @@ const DEFAULT_HOURS = {
       );
     }
 
+    if (flags.includes("sides2")) {
+      fields += chips(
+        "mpSides",
+        t("mpSidesLabel"),
+        MEALPREP_SIDES.map((k) => ({ k, v: t(`mpSide_${k}`) })),
+        { multi: true, max: 2, hint: t("mpSidesHint") }
+      );
+    }
     if (flags.includes("martini")) {
       fields += chips("martini", t("martiniStyle"), [
         { v: t("dry"), k: "dry" },
@@ -2230,6 +2256,11 @@ const DEFAULT_HOURS = {
         if (!group) return;
         const multi = group.dataset.mode === "multi";
         if (multi) {
+          const max = parseInt(group.dataset.max, 10) || 0;
+          if (max && !chip.classList.contains("is-selected") && $$(".chip.is-selected", group).length >= max) {
+            toast(t("mpSidesMax"));
+            return;
+          }
           chip.classList.toggle("is-selected");
           chip.setAttribute("aria-checked", chip.classList.contains("is-selected") ? "true" : "false");
         } else {
@@ -2280,6 +2311,11 @@ const DEFAULT_HOURS = {
     if (!item) return { extra, parts };
     const f = item.flags || [];
 
+    if (f.includes("sides2")) {
+      const picked = selectedAll("mpSides");
+      if (picked.length)
+        parts.push(`${t("mpSidesShort")}: ${picked.map((k) => t(`mpSide_${k}`)).join(", ")}`);
+    }
     if (f.includes("martini")) {
       const v = selected("martini");
       if (v === "dry") parts.push(t("dry"));
@@ -2505,6 +2541,10 @@ const DEFAULT_HOURS = {
         return;
       }
     }
+    if (flags.includes("sides2") && selectedAll("mpSides").length !== 2) {
+      toast(t("mpSidesNeed"));
+      return;
+    }
     const { extra, parts } = computeExtras();
     let qty = Math.min(99, Math.max(1, parseInt($("#customizeQty")?.value, 10) || 1));
     if (isWeeklySpecial(item)) {
@@ -2556,7 +2596,11 @@ const DEFAULT_HOURS = {
           })} />
           <div class="cart-line__content">
             <div class="cart-line__top">
-              <div class="cart-line__name">${escapeHtml(nameFor(line.id, line.name))}</div>
+              <div class="cart-line__name">${escapeHtml(nameFor(line.id, line.name))}${
+                state.mpMode === "schedule" && isMealPrepLine(line)
+                  ? ` <span class="cart-line__tag">📅 ${escapeHtml(t("waMealPrep"))}</span>`
+                  : ""
+              }</div>
               <div class="cart-line__price">${fmt(line.unitPrice * line.qty)}</div>
             </div>
             ${
@@ -2839,7 +2883,7 @@ const DEFAULT_HOURS = {
     }
   }
 
-  function buildWhatsAppMessage({ orderType, apartment, amenity, mealPrep = false, scheduledFor = "" }) {
+  function buildWhatsAppMessage({ orderType, apartment, amenity, scheduledFor = "" }) {
     const lines = [];
     lines.push("🍽️ *The Kitchen at 22*");
     lines.push(t("waOrderTitle"));
@@ -2852,25 +2896,34 @@ const DEFAULT_HOURS = {
       lines.push(`🏊 *${t("waService")}:* ${t("orderTypeAmenity")}`);
       if (amenity) lines.push(`📌 *${t("waAmenity")}:* ${amenityLabel(amenity)}`);
     }
-    if (mealPrep) {
-      lines.push(
-        scheduledFor
-          ? `📅 *${t("waMealPrep")} · ${t("mpScheduleTitle")}:* ${formatScheduled(scheduledFor)}`
-          : `⚡ *${t("waMealPrep")} · ${t("mpNowTitle")}*`
-      );
+    const part = partitionCart();
+    const pushLines = (list) => {
+      list.forEach((line, i) => {
+        const nm = nameFor(line.id, line.name);
+        // No prices in WhatsApp (items or total)
+        lines.push(`${i + 1}. ${nm} ×${line.qty}`);
+        if (line.customizations) lines.push(`   · ${line.customizations}`);
+        if (line.notes) lines.push(`   📝 ${t("itemNotesShort")}: ${line.notes}`);
+        const it = FLAT.find((x) => x.id === line.id);
+        if (line.dineInOnly || isDineInOnly(it)) {
+          lines.push(`   ⚠️ ${t("dineInOnlyShort")}`);
+        }
+      });
+    };
+    if (scheduledFor && part.scheduled.length) {
+      lines.push("————————————");
+      lines.push(`📅 *${t("waMealPrepScheduled")}:* ${formatScheduled(scheduledFor)}`);
+      pushLines(part.scheduled);
     }
-    lines.push("————————————");
-    state.cart.forEach((line, i) => {
-      const nm = nameFor(line.id, line.name);
-      // No prices in WhatsApp (items or total)
-      lines.push(`${i + 1}. ${nm} ×${line.qty}`);
-      if (line.customizations) lines.push(`   · ${line.customizations}`);
-      if (line.notes) lines.push(`   📝 ${t("itemNotesShort")}: ${line.notes}`);
-      const it = FLAT.find((x) => x.id === line.id);
-      if (line.dineInOnly || isDineInOnly(it)) {
-        lines.push(`   ⚠️ ${t("dineInOnlyShort")}`);
+    if (part.now.length) {
+      lines.push("————————————");
+      if (scheduledFor && part.scheduled.length) {
+        lines.push(`⚡ *${t("waNowSection")}*`);
+      } else if (part.now.some(isMealPrepLine)) {
+        lines.push(`⚡ *${t("waMealPrep")} · ${t("mpNowTitle")}*`);
       }
-    });
+      pushLines(part.now);
+    }
     lines.push("————————————");
     lines.push("");
     lines.push(t("waThanks"));
@@ -2895,7 +2948,7 @@ const DEFAULT_HOURS = {
       }
       scheduledFor = v.value;
     }
-    const scheduled = !!scheduledFor;
+    const scheduled = !!scheduledFor && isScheduledMealPrep();
     if (!status.dineIn && !scheduled) {
       updateHoursUI();
       toast(closedMessage(status));
@@ -2954,19 +3007,31 @@ const DEFAULT_HOURS = {
     const sendBtn = $("#sendWhatsApp");
     if (sendBtn) sendBtn.disabled = true;
     // Register kitchen ticket at the moment the customer starts WhatsApp
-    registerKitchenOrder({
-      orderType: state.orderType,
-      apartment,
-      amenity: state.amenity,
-      mealPrep: hasMP,
-      scheduledFor,
-    }).finally(() => {
+    // Scheduled Meal Prep and "normal" items become separate kitchen tickets
+    const part = partitionCart();
+    const base = { orderType: state.orderType, apartment, amenity: state.amenity };
+    const regs = [];
+    if (scheduledFor && part.scheduled.length) {
+      regs.push(
+        registerKitchenOrder({ ...base, mealPrep: true, scheduledFor, lines: part.scheduled })
+      );
+    }
+    if (part.now.length) {
+      regs.push(
+        registerKitchenOrder({
+          ...base,
+          mealPrep: part.now.some(isMealPrepLine),
+          scheduledFor: "",
+          lines: part.now,
+        })
+      );
+    }
+    Promise.all(regs).finally(() => {
       const text = encodeURIComponent(
         buildWhatsAppMessage({
           orderType: state.orderType,
           apartment,
           amenity: state.amenity,
-          mealPrep: hasMP,
           scheduledFor,
         })
       );
