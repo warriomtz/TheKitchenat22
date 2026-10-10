@@ -3495,3 +3495,9 @@ body.announce-open .fab {
     margin: 0;
   }
 }
+
+/* Phone hero: tighten "Menú digital" + lead toward the buttons */
+@media (max-width: 640px) {
+  .hero__eyebrow { margin-bottom: 0.5rem; }
+  .hero__lead { margin-bottom: 0.9rem; }
+}
