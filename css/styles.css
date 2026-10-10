@@ -3474,3 +3474,24 @@ body.announce-open .fab {
 .mp-intro__opt > div { display: flex; flex-direction: column; gap: 0.2rem; }
 .mp-intro__opt strong { display: block; font-weight: 600; }
 .mp-intro__opt span:not(.mp-intro__ico) { display: block; font-size: 0.85rem; color: var(--text-muted); }
+
+/* Phone hero: logo sits on the beam, just under the glass (desktop untouched) */
+@media (max-width: 640px) {
+  .hero__content {
+    position: static;
+  }
+  .hero__content > .hero__eyebrow,
+  .hero__content > .hero__lead,
+  .hero__content > .hero__actions {
+    position: relative;
+    z-index: 1;
+  }
+  .hero__title--logo {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    right: 0;
+    top: calc(33.5% + 1.9rem);
+    margin: 0;
+  }
+}
