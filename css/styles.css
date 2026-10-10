@@ -3445,3 +3445,28 @@ body.announce-open .fab {
   color: #ffd27a;
   white-space: nowrap;
 }
+
+/* Meal Prep side photos */
+.chips:has(.chip--img) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.5rem;
+}
+.chip--img {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.3rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.chip__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #161616;
+}

@@ -1956,9 +1956,12 @@ const DEFAULT_HOURS = {
           ${options
             .map((o) => {
               const disabled = !!o.disabled;
-              return `<button type="button" class="chip${disabled ? " is-disabled" : ""}" data-value="${escapeHtml(
+              const pic = o.img
+                ? `<img class="chip__img" src="${escapeHtml(o.img)}" alt="" loading="lazy" />`
+                : "";
+              return `<button type="button" class="chip${o.img ? " chip--img" : ""}${disabled ? " is-disabled" : ""}" data-value="${escapeHtml(
                 o.k
-              )}" aria-checked="false"${disabled ? " disabled aria-disabled=\"true\"" : ""}>${escapeHtml(o.v)}${
+              )}" aria-checked="false"${disabled ? " disabled aria-disabled=\"true\"" : ""}>${pic}${escapeHtml(o.v)}${
                 disabled ? ` · ${escapeHtml(t("outOfStock"))}` : ""
               }</button>`;
             })
@@ -2081,7 +2084,7 @@ const DEFAULT_HOURS = {
       fields += chips(
         "mpSides",
         t("mpSidesLabel"),
-        MEALPREP_SIDES.map((k) => ({ k, v: t(`mpSide_${k}`) })),
+        MEALPREP_SIDES.map((k) => ({ k, v: t(`mpSide_${k}`), img: `assets/sides/${k}.jpg` })),
         { multi: true, max: 2, hint: t("mpSidesHint") }
       );
     }
