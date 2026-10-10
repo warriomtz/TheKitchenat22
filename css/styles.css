@@ -3544,3 +3544,13 @@ body.announce-open .fab {
     top: 0.6rem;
   }
 }
+
+/* Phone: header is a solid black strip (no blue showing through behind logo/language/cart) */
+@media (max-width: 640px) {
+  .header,
+  .header.is-scrolled {
+    background: #000;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
