@@ -3554,3 +3554,6 @@ body.announce-open .fab {
     -webkit-backdrop-filter: none;
   }
 }
+
+.mp-hint { margin: .4rem 0 0; font-size: .8rem; color: var(--muted, #9a9a9a); }
+#mpWhen.is-hidden + .mp-hint { display: none; }

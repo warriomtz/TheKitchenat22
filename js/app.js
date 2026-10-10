@@ -905,6 +905,18 @@ const DEFAULT_HOURS = {
     if (when.getTime() > now + MEALPREP_MAX_DAYS * 86400 * 1000) {
       return { ok: false, error: t("mpErrFar").replace("{n}", MEALPREP_MAX_DAYS) };
     }
+    const h = state.hours;
+    if (h.closedDays.includes(when.getDay())) {
+      const days = [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.closedDays.includes(d)).map(dayName).join(", ");
+      return { ok: false, error: t("mpErrClosedDay").replace("{days}", days) };
+    }
+    const mins = when.getHours() * 60 + when.getMinutes();
+    if (mins < toMinutes(h.open) || mins > toMinutes(h.close)) {
+      return {
+        ok: false,
+        error: t("mpErrHours").replace("{open}", formatTime12(h.open)).replace("{close}", formatTime12(h.close)),
+      };
+    }
     return { ok: true, value: `${date}T${time}` };
   }
 
@@ -948,6 +960,16 @@ const DEFAULT_HOURS = {
     }
     const timeEl = $("#mpTime");
     if (timeEl && timeEl.value !== (state.mpTime || "")) timeEl.value = state.mpTime || "";
+    if (timeEl) {
+      timeEl.min = state.hours.open;
+      timeEl.max = state.hours.close;
+    }
+    const hint = $("#mpHoursHint");
+    if (hint) {
+      const h = state.hours;
+      const days = [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.closedDays.includes(d)).map(dayName).join(", ");
+      hint.textContent = t("mpHoursHint").replace("{days}", days).replace("{open}", formatTime12(h.open)).replace("{close}", formatTime12(h.close));
+    }
     $("#mpError")?.classList.add("is-hidden");
   }
 
