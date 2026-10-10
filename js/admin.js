@@ -164,6 +164,16 @@
     return null;
   }
 
+  const MEALPREP_SIDES = [
+    { k: "ensalada", stockId: "mp-side-ensalada", label: "Ensalada" },
+    { k: "arroz", stockId: "mp-side-arroz", label: "Arroz" },
+    { k: "frijol", stockId: "mp-side-frijol", label: "Frijol" },
+    { k: "quinoa", stockId: "mp-side-quinoa", label: "Quinoa" },
+    { k: "sopaTomate", stockId: "mp-side-sopaTomate", label: "Sopa de tomate" },
+    { k: "cremaEspinacas", stockId: "mp-side-cremaEspinacas", label: "Crema de espinacas" },
+    { k: "vegetales", stockId: "mp-side-vegetales", label: "Vegetales salteados" },
+  ];
+
   function isOut(id) {
     return state.outOfStock.has(String(id));
   }
@@ -1122,7 +1132,25 @@
       const n = nameFor(item.id, item.name).toLowerCase();
       return n.includes(q) || String(item.id).toLowerCase().includes(q);
     });
-    host.innerHTML = rows
+    const sidesRow = MEALPREP_SIDES.filter(
+      (sd) => !q || sd.label.toLowerCase().includes(q) || "complementos meal prep".includes(q)
+    );
+    const sidesHtml = sidesRow.length
+      ? `<div class="stock-row">
+          <div class="stock-row__name">Complementos Meal Prep
+            <div class="stock-row__id">Aplica a todos los platillos de Meal Prep</div>
+          </div>
+          <div class="stock-row__opts">${sidesRow
+            .map((sd) => {
+              const bad = isOut(sd.stockId);
+              return `<button type="button" class="btn-stock-pill${bad ? " is-oos" : ""}" data-stock="${escapeHtml(
+                sd.stockId
+              )}">${escapeHtml(sd.label)}${bad ? " ✕" : ""}</button>`;
+            })
+            .join("")}</div>
+        </div>`
+      : "";
+    host.innerHTML = sidesHtml + rows
       .map((item) => {
         const opts = variantOpts(item);
         const oos = isOut(item.id);

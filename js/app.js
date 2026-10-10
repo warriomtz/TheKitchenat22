@@ -2084,7 +2084,12 @@ const DEFAULT_HOURS = {
       fields += chips(
         "mpSides",
         t("mpSidesLabel"),
-        MEALPREP_SIDES.map((k) => ({ k, v: t(`mpSide_${k}`), img: `assets/sides/${k}.jpg` })),
+        MEALPREP_SIDES.map((k) => ({
+          k,
+          v: t(`mpSide_${k}`),
+          img: `assets/sides/${k}.jpg`,
+          disabled: isOut(`mp-side-${k}`),
+        })),
         { multi: true, max: 2, hint: t("mpSidesHint") }
       );
     }
