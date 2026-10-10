@@ -898,8 +898,11 @@ const DEFAULT_HOURS = {
     if (tEl && tEl.value) state.mpTime = tEl.value;
     const date = state.mpDate;
     const time = (state.mpTime || "").slice(0, 5);
-    if (!date || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
-      return { ok: false, error: t("mpErrPick") };
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return { ok: false, error: t("mpErrPick") + " [día: " + (date || "vacío") + "]" };
+    }
+    if (!time || !/^\d{2}:\d{2}$/.test(time)) {
+      return { ok: false, error: t("mpErrPick") + " [hora: " + (time || "vacía") + "]" };
     }
     const when = new Date(`${date}T${time}:00`);
     if (Number.isNaN(when.getTime())) return { ok: false, error: t("mpErrPick") };
