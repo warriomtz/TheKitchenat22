@@ -3518,3 +3518,14 @@ body.announce-open .fab {
     object-position: 50% 0;
   }
 }
+
+/* Phone: the (hidden-at-top) section switcher must not reserve space above the hero —
+   that was the black band between the header and the glass. Fixed = out of flow. */
+@media (max-width: 640px) {
+  .menu-switcher {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--header-offset);
+  }
+}
