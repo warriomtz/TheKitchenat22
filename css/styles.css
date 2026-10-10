@@ -3501,3 +3501,20 @@ body.announce-open .fab {
   .hero__eyebrow { margin-bottom: 0.5rem; }
   .hero__lead { margin-bottom: 0.9rem; }
 }
+
+/* Phone hero: sit the text block lower so the restaurant photo stays clean,
+   and keep the photo anchored to the top edge of the hero */
+@media (max-width: 640px) {
+  .hero {
+    padding-bottom: 1rem;
+  }
+  .hero__content {
+    padding-bottom: 0.5rem;
+  }
+  .hero__bg {
+    top: 0;
+  }
+  .hero__img {
+    object-position: 50% 0;
+  }
+}
