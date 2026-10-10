@@ -3470,3 +3470,7 @@ body.announce-open .fab {
   border-radius: 8px;
   background: #161616;
 }
+
+.mp-intro__opt > div { display: flex; flex-direction: column; gap: 0.2rem; }
+.mp-intro__opt strong { display: block; font-weight: 600; }
+.mp-intro__opt span:not(.mp-intro__ico) { display: block; font-size: 0.85rem; color: var(--text-muted); }
