@@ -942,6 +942,33 @@ const DEFAULT_HOURS = {
     }
   }
 
+  /** Day picker: closed days and days past the booking window are greyed out. */
+  function renderMealPrepDays() {
+    const box = $("#mpDays");
+    if (!box) return;
+    const h = state.hours;
+    const now = new Date();
+    const loc = state.lang === "en" ? "en-US" : state.lang === "ja" ? "ja-JP" : "es-MX";
+    const minStart = now.getTime() + MEALPREP_MIN_LEAD_HOURS * 3600 * 1000;
+    let html = "";
+    for (let i = 0; i <= MEALPREP_MAX_DAYS; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const val = localDateStr(d);
+      // Latest possible slot that day (closing time) must still be after the minimum lead
+      const [ch, cm] = padTime(h.close).split(":").map(Number);
+      const endOfService = new Date(d.getFullYear(), d.getMonth(), d.getDate(), ch, cm).getTime();
+      const off = h.closedDays.includes(d.getDay()) || endOfService < minStart;
+      let mon = "";
+      try { mon = d.toLocaleDateString(loc, { month: "short" }); } catch { mon = String(d.getMonth() + 1); }
+      html += `<button type="button" class="mp-day${state.mpDate === val ? " is-selected" : ""}" data-date="${val}"${off ? " disabled" : ""}>
+        <span class="mp-day__dow">${dayName(d.getDay())}</span>
+        <span class="mp-day__num">${d.getDate()}</span>
+        <span class="mp-day__mon">${mon}</span>
+      </button>`;
+    }
+    box.innerHTML = html;
+  }
+
   function renderMealPrepField() {
     const field = $("#mealprepField");
     if (!field) return;
@@ -957,12 +984,8 @@ const DEFAULT_HOURS = {
     const when = $("#mpWhen");
     if (when) when.classList.toggle("is-hidden", state.mpMode !== "schedule");
     const dateEl = $("#mpDate");
-    if (dateEl) {
-      const now = new Date();
-      dateEl.min = localDateStr(now);
-      dateEl.max = localDateStr(new Date(now.getTime() + MEALPREP_MAX_DAYS * 86400 * 1000));
-      if (dateEl.value !== (state.mpDate || "")) dateEl.value = state.mpDate || "";
-    }
+    if (dateEl && dateEl.value !== (state.mpDate || "")) dateEl.value = state.mpDate || "";
+    renderMealPrepDays();
     const timeEl = $("#mpTime");
     if (timeEl && timeEl.value !== (state.mpTime || "")) timeEl.value = state.mpTime || "";
     if (timeEl) {
@@ -3278,12 +3301,15 @@ const DEFAULT_HOURS = {
     $$("[data-mp-mode]").forEach((btn) => {
       btn.addEventListener("click", () => setMealPrepMode(btn.dataset.mpMode));
     });
-    ["change", "input"].forEach((ev) =>
-      $("#mpDate")?.addEventListener(ev, (e) => {
-        state.mpDate = e.target.value;
-        $("#mpError")?.classList.add("is-hidden");
-      })
-    );
+    $("#mpDays")?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".mp-day");
+      if (!btn || btn.disabled) return;
+      state.mpDate = btn.dataset.date;
+      const dEl = $("#mpDate");
+      if (dEl) dEl.value = state.mpDate;
+      $$(".mp-day", $("#mpDays")).forEach((b) => b.classList.toggle("is-selected", b === btn));
+      $("#mpError")?.classList.add("is-hidden");
+    });
     ["change", "input"].forEach((ev) =>
       $("#mpTime")?.addEventListener(ev, (e) => {
         state.mpTime = e.target.value;

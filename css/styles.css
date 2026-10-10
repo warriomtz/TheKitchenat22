@@ -3557,3 +3557,17 @@ body.announce-open .fab {
 
 .mp-hint { margin: .4rem 0 0; font-size: .8rem; color: var(--muted, #9a9a9a); }
 #mpWhen.is-hidden + .mp-hint { display: none; }
+
+/* Meal Prep day picker */
+.mp-days-wrap { grid-column: 1 / -1; }
+.mp-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: .4rem; }
+.mp-day {
+  display: flex; flex-direction: column; align-items: center; gap: .05rem;
+  padding: .5rem .2rem; border-radius: 12px; cursor: pointer;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: inherit; font: inherit;
+}
+.mp-day__dow { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+.mp-day__num { font-size: 1.15rem; font-weight: 700; }
+.mp-day__mon { font-size: .7rem; opacity: .7; }
+.mp-day.is-selected { border-color: var(--accent, #c9444a); background: rgba(201,68,74,.18); }
+.mp-day:disabled { opacity: .3; cursor: not-allowed; }
