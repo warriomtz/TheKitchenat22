@@ -891,8 +891,13 @@ const DEFAULT_HOURS = {
 
   /** Returns { ok, value, error } for the chosen schedule. */
   function validateMealPrepSchedule() {
+    // Read straight from the inputs: mobile pickers may not have fired "change" yet
+    const dEl = $("#mpDate");
+    const tEl = $("#mpTime");
+    if (dEl && dEl.value) state.mpDate = dEl.value;
+    if (tEl && tEl.value) state.mpTime = tEl.value;
     const date = state.mpDate;
-    const time = state.mpTime;
+    const time = (state.mpTime || "").slice(0, 5);
     if (!date || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
       return { ok: false, error: t("mpErrPick") };
     }
@@ -3273,14 +3278,18 @@ const DEFAULT_HOURS = {
     $$("[data-mp-mode]").forEach((btn) => {
       btn.addEventListener("click", () => setMealPrepMode(btn.dataset.mpMode));
     });
-    $("#mpDate")?.addEventListener("change", (e) => {
-      state.mpDate = e.target.value;
-      $("#mpError")?.classList.add("is-hidden");
-    });
-    $("#mpTime")?.addEventListener("change", (e) => {
-      state.mpTime = e.target.value;
-      $("#mpError")?.classList.add("is-hidden");
-    });
+    ["change", "input"].forEach((ev) =>
+      $("#mpDate")?.addEventListener(ev, (e) => {
+        state.mpDate = e.target.value;
+        $("#mpError")?.classList.add("is-hidden");
+      })
+    );
+    ["change", "input"].forEach((ev) =>
+      $("#mpTime")?.addEventListener(ev, (e) => {
+        state.mpTime = e.target.value;
+        $("#mpError")?.classList.add("is-hidden");
+      })
+    );
 
     $$("[data-order-type]").forEach((btn) => {
       btn.addEventListener("click", () => setOrderType(btn.dataset.orderType));
