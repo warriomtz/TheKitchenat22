@@ -3529,3 +3529,18 @@ body.announce-open .fab {
     top: var(--header-offset);
   }
 }
+
+/* Phone: header sits on a black strip; the photo (glass) starts right below it,
+   and the hero is shorter by the same amount so the search bar stays on screen */
+@media (max-width: 640px) {
+  main {
+    padding-top: var(--header-offset);
+  }
+  .hero {
+    min-height: calc(min(78dvh, 640px) - 3.5rem);
+    padding-top: 1rem;
+  }
+  .hours-chip--float {
+    top: 0.6rem;
+  }
+}
