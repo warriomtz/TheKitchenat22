@@ -463,6 +463,20 @@ export class KitchenStore extends DurableObject {
     }
     this.kvSet("beerNASeeded", true);
   }
+  /** One-time: the Ramen is discontinued — remove it from the menu. */
+  seedRemoveRamen(menu) {
+    if (this.kvGet("ramenRemoved", false)) return;
+    let changed = false;
+    for (const sec of Object.values(menu)) {
+      for (const sb of Object.values((sec && sec.subcategories) || {})) {
+        const before = (sb.items || []).length;
+        sb.items = (sb.items || []).filter((it) => it.id !== "f-ramen-chicharron");
+        if (sb.items.length !== before) changed = true;
+      }
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("ramenRemoved", true);
+  }
   menuItem(data) {
     const menu = this.kvGet("menu", null);
     if (!menu || !Object.keys(menu).length) {
@@ -798,6 +812,7 @@ export class KitchenStore extends DurableObject {
           if (!menu || !Object.keys(menu).length) return [404, { error: "menu_missing" }];
           this.seedMealPrep(menu);
           this.seedBeerNA(menu);
+          this.seedRemoveRamen(menu);
           return [200, { menu }];
         }
         case "/api/announcement":

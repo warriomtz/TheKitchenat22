@@ -163,15 +163,6 @@ window.KITCHEN_MENU = {
           { id: "f-waffle-m", name: "Chicken and Waffle", price: 175, notes: "", flags: [], img: "assets/products/f-waffle-m.jpg" },
           { id: "f-burger", name: "Hamburguesa Res o Pollo", price: 189, notesKey: "includesSide", flags: ["burger", "side"], img: "assets/products/f-burger.jpg" },
           { id: "f-empanadas", name: "Empanadas de carne (orden de 3)", price: 189, notesKey: "empanadasNote", flags: ["side"], img: "assets/products/f-empanadas.jpg" },
-          {
-            id: "f-ramen-chicharron",
-            name: "Ramen con Chicharrón Ramos",
-            price: 155,
-            notesKey: "dineInOnly",
-            flags: ["dineInOnly"],
-            dineInOnly: true,
-            img: "assets/products/f-ramen-chicharron.jpg",
-          },
         ],
       },
       Pastas: {
