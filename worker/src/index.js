@@ -425,6 +425,30 @@ export class KitchenStore extends DurableObject {
     this.kvSet("menu", menu);
     this.kvSet("mealprepSeeded", true);
   }
+  /** One-time: add "Cerveza sin alcohol" ($65) inside the bar's Cerveza subcategory. */
+  seedBeerNA(menu) {
+    if (this.kvGet("beerNASeeded", false)) return;
+    const subs = (menu.bar && menu.bar.subcategories) || null;
+    const sub = subs && (subs.Cerveza || Object.values(subs).find((x) => /cerveza/i.test(x.label || "")));
+    if (sub) {
+      sub.items = sub.items || [];
+      if (!sub.items.some((i) => i.id === "b-cerveza-na")) {
+        sub.items.push({
+          id: "b-cerveza-na",
+          name: "Cerveza sin alcohol",
+          price: 65,
+          notes: "",
+          notesKey: "",
+          flags: [],
+          img: "assets/products/b-cerveza.jpg",
+          name_en: "Non-alcoholic beer",
+          name_ja: "ノンアルコールビール",
+        });
+      }
+      this.kvSet("menu", menu);
+    }
+    this.kvSet("beerNASeeded", true);
+  }
   menuItem(data) {
     const menu = this.kvGet("menu", null);
     if (!menu || !Object.keys(menu).length) {
@@ -759,6 +783,7 @@ export class KitchenStore extends DurableObject {
           const menu = this.kvGet("menu", null);
           if (!menu || !Object.keys(menu).length) return [404, { error: "menu_missing" }];
           this.seedMealPrep(menu);
+          this.seedBeerNA(menu);
           return [200, { menu }];
         }
         case "/api/announcement":

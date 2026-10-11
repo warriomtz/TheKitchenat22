@@ -101,6 +101,14 @@ window.KITCHEN_MENU = {
             flags: ["beer"],
             img: "assets/products/b-cerveza.jpg",
           },
+          {
+            id: "b-cerveza-na",
+            name: "Cerveza sin alcohol",
+            price: 65,
+            notes: "",
+            flags: [],
+            img: "assets/products/b-cerveza.jpg",
+          },
         ],
       },
       Destilados: {
