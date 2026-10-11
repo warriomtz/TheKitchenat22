@@ -418,7 +418,7 @@ export class KitchenStore extends DurableObject {
         mk("m-pollo-200", "Pollo · 200 g", "Chicken · 200 g", "チキン · 200g", 179),
         mk("m-atun", "Atún · 1 pieza (~160 g)", "Tuna · 1 piece (~160 g)", "ツナ · 1枚 (約160g)", 169),
         mk("m-carne-molida", "Carne molida · 180 g", "Ground beef · 180 g", "牛ひき肉 · 180g", 199),
-        mk("m-sirloin", "Sirloin · 1 pieza (230-250 g)", "Sirloin · 1 piece (230-250 g)", "サーロイン · 1枚 (230-250g)", 259),
+        mk("m-sirloin", "Res · 1 pieza (230-250 g)", "Beef · 1 piece (230-250 g)", "牛肉 · 1枚 (230-250g)", 259),
         mk("m-salmon", "Salmón · 1 pieza (180-200 g)", "Salmon · 1 piece (180-200 g)", "サーモン · 1枚 (180-200g)", 259),
       ];
     }
@@ -462,6 +462,23 @@ export class KitchenStore extends DurableObject {
       this.kvSet("menu", menu);
     }
     this.kvSet("beerNASeeded", true);
+  }
+  /** One-time: Meal Prep "Sirloin" is now called "Res" (keeps id, price, photo and stock). */
+  seedRenameSirloin(menu) {
+    if (this.kvGet("sirloinRenamed", false)) return;
+    let changed = false;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id === "m-sirloin" && /sirloin/i.test(it.name || "")) {
+          it.name = "Res · 1 pieza (230-250 g)";
+          it.name_en = "Beef · 1 piece (230-250 g)";
+          it.name_ja = "牛肉 · 1枚 (230-250g)";
+          changed = true;
+        }
+      }
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("sirloinRenamed", true);
   }
   /** One-time: the Ramen is discontinued — remove it from the menu. */
   seedRemoveRamen(menu) {
@@ -813,6 +830,7 @@ export class KitchenStore extends DurableObject {
           this.seedMealPrep(menu);
           this.seedBeerNA(menu);
           this.seedRemoveRamen(menu);
+          this.seedRenameSirloin(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
