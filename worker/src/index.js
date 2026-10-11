@@ -427,7 +427,21 @@ export class KitchenStore extends DurableObject {
   }
   /** One-time: add "Cerveza sin alcohol" ($65) inside the bar's Cerveza subcategory. */
   seedBeerNA(menu) {
-    if (this.kvGet("beerNASeeded", false)) return;
+    if (this.kvGet("beerNASeeded", false)) {
+      // one-time photo swap for the item seeded earlier (only if still the placeholder photo)
+      const subs0 = (menu.bar && menu.bar.subcategories) || {};
+      let changed = false;
+      for (const sb of Object.values(subs0)) {
+        for (const it of sb.items || []) {
+          if (it.id === "b-cerveza-na" && it.img === "assets/products/b-cerveza.jpg") {
+            it.img = "assets/products/b-cerveza-na.jpg";
+            changed = true;
+          }
+        }
+      }
+      if (changed) this.kvSet("menu", menu);
+      return;
+    }
     const subs = (menu.bar && menu.bar.subcategories) || null;
     const sub = subs && (subs.Cerveza || Object.values(subs).find((x) => /cerveza/i.test(x.label || "")));
     if (sub) {
@@ -440,7 +454,7 @@ export class KitchenStore extends DurableObject {
           notes: "",
           notesKey: "",
           flags: [],
-          img: "assets/products/b-cerveza.jpg",
+          img: "assets/products/b-cerveza-na.jpg",
           name_en: "Non-alcoholic beer",
           name_ja: "ノンアルコールビール",
         });

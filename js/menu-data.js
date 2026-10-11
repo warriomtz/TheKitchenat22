@@ -107,7 +107,7 @@ window.KITCHEN_MENU = {
             price: 65,
             notes: "",
             flags: [],
-            img: "assets/products/b-cerveza.jpg",
+            img: "assets/products/b-cerveza-na.jpg",
           },
         ],
       },
