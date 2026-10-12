@@ -206,7 +206,7 @@ export default {
     // Public: create order
     if (path === "/api/orders" && (action === "" || action === "create")) {
       const [status, body] = await stub.op(path, "CREATE", data, ip);
-      if (status === 200 && body.order) ctx.waitUntil(notifyKitchen(env, body.order));
+      if (status === 200 && body.order && !body.duplicate) ctx.waitUntil(notifyKitchen(env, body.order));
       return reply(request, env, status, body);
     }
     // Public: analytics tracking
@@ -645,8 +645,17 @@ export class KitchenStore extends DurableObject {
       scheduledFor = sf;
     }
 
+    // Idempotency: the browser may re-send the same order (retry / back online)
+    const clientRef = str(data.clientRef, 40).trim();
+    if (clientRef) {
+      const dup = this.sql
+        .exec("SELECT json FROM orders WHERE json LIKE ?", `%"clientRef":${JSON.stringify(clientRef)}%`)
+        .toArray()[0];
+      if (dup) return [200, { ok: true, order: JSON.parse(dup.json), duplicate: true }];
+    }
     const order = {
       id: hex(12),
+      ...(clientRef ? { clientRef } : {}),
       createdAt: nowIso(),
       status: "open",
       orderType,

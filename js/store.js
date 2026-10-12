@@ -305,6 +305,58 @@
     savePendingOrders(loadPendingOrders().filter((o) => String(o.id) !== String(orderId)));
   }
 
+  /** POST an order to the shared API; retries on network errors, 429 and 5xx. Returns data or null. */
+  async function postOrderWithRetry(body) {
+    const waits = [0, 900, 2500];
+    for (const w of waits) {
+      if (w) await new Promise((r) => setTimeout(r, w));
+      try {
+        const res = await fetch(apiUrl("/api/orders"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) return await res.json();
+        if (res.status !== 429 && res.status < 500) return null; // permanent (validation) error
+      } catch (_) {
+        /* network error: retry */
+      }
+    }
+    return null;
+  }
+
+  /** Re-send orders that never reached the API (e.g. the phone lost signal). */
+  let flushingApi = false;
+  async function flushPendingOrdersApi() {
+    if (flushingApi || !API_BASE) return;
+    const pending = loadPendingOrders();
+    if (!pending.length) return;
+    flushingApi = true;
+    try {
+      for (const o of pending) {
+        const body = {
+          action: "create",
+          orderType: o.orderType,
+          apartment: o.apartment || "",
+          amenity: o.amenity || "",
+          amenityId: o.amenityId || "",
+          items: o.items || [],
+          mealPrep: !!o.mealPrep,
+          scheduledFor: o.scheduledFor || "",
+          source: "whatsapp",
+          clientRef: String(o.id),
+        };
+        if (await postOrderWithRetry(body)) forgetPendingOrder(o.id);
+      }
+    } finally {
+      flushingApi = false;
+    }
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", () => flushPendingOrdersApi().catch(() => {}));
+    setTimeout(() => flushPendingOrdersApi().catch(() => {}), 3000);
+  }
+
   function mergeOrdersInto(list, extras) {
     const arr = Array.isArray(list) ? list : [];
     const have = new Set(arr.map((o) => String(o && o.id)));
@@ -742,9 +794,11 @@
         scheduledFor,
         source: "whatsapp",
       };
+      const clientId = makeOrderId();
+      body.clientRef = clientId;
 
       const order = {
-        id: makeOrderId(),
+        id: clientId,
         createdAt: new Date().toISOString(),
         status: "open",
         orderType,
@@ -760,16 +814,18 @@
       notifyKitchenNtfy(order);
       rememberPendingOrder(order);
 
-      if (mode === "local") {
-        const res = await fetch(apiUrl("/api/orders"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "order_create");
-        forgetPendingOrder(order.id);
-        return data.order || order;
+      // The shared API is the source of truth. Try it even if the startup probe failed
+      // (a weak phone signal at page load must not turn the order into a device-only one).
+      if (mode === "local" || API_BASE) {
+        const saved = await postOrderWithRetry(body);
+        if (saved) {
+          mode = "local";
+          forgetPendingOrder(order.id);
+          flushPendingOrdersApi().catch(() => {});
+          return saved.order || order;
+        }
+        // Stays in the pending list; it is re-sent on the next visit / when back online.
+        throw new Error("order_not_saved");
       }
       if (mode === "jsonbin") {
         const next = await patchCloud((s) => {
