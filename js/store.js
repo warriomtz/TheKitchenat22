@@ -345,6 +345,7 @@
           scheduledFor: o.scheduledFor || "",
           source: "whatsapp",
           clientRef: String(o.id),
+          clientCreatedAt: o.createdAt || "",
         };
         if (await postOrderWithRetry(body)) forgetPendingOrder(o.id);
       }
@@ -796,6 +797,7 @@
       };
       const clientId = makeOrderId();
       body.clientRef = clientId;
+      body.clientCreatedAt = new Date().toISOString();
 
       const order = {
         id: clientId,

@@ -136,6 +136,30 @@ async function notifyKitchen(env, order) {
   }
 }
 
+/** Second channel: Telegram message (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets). No prices. Never throws. */
+async function notifyTelegram(env, order) {
+  const token = String(env.TELEGRAM_BOT_TOKEN || "").trim();
+  const chat = String(env.TELEGRAM_CHAT_ID || "").trim();
+  if (!token || !chat) return;
+  let late = "";
+  if (order.clientCreatedAt) {
+    const mins = Math.round((Date.parse(order.createdAt) - Date.parse(order.clientCreatedAt)) / 60000);
+    if (Number.isFinite(mins) && mins >= 5) {
+      late = `⏱ PEDIDO RETRASADO: lo hicieron hace ${mins >= 120 ? Math.round(mins / 60) + " h" : mins + " min"} y apenas llegó al sistema. Confirma con el cliente.\n`;
+    }
+  }
+  const head = order.mealPrep && order.scheduledFor ? "🥗 Meal Prep programado" : "🔔 Nuevo pedido";
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chat, text: `${head}\n${late}${ntfyBody(order)}`.slice(0, 3500) }),
+    });
+  } catch (_) {
+    /* the order is already saved; ignore */
+  }
+}
+
 // ----------------------------------------------------------------- Worker
 
 const PUBLIC_GET = new Set(["/api/stock", "/api/hours", "/api/menu", "/api/announcement"]);
@@ -206,7 +230,10 @@ export default {
     // Public: create order
     if (path === "/api/orders" && (action === "" || action === "create")) {
       const [status, body] = await stub.op(path, "CREATE", data, ip);
-      if (status === 200 && body.order && !body.duplicate) ctx.waitUntil(notifyKitchen(env, body.order));
+      if (status === 200 && body.order && !body.duplicate) {
+        ctx.waitUntil(notifyKitchen(env, body.order));
+        ctx.waitUntil(notifyTelegram(env, body.order));
+      }
       return reply(request, env, status, body);
     }
     // Public: analytics tracking
@@ -653,9 +680,16 @@ export class KitchenStore extends DurableObject {
         .toArray()[0];
       if (dup) return [200, { ok: true, order: JSON.parse(dup.json), duplicate: true }];
     }
+    let clientCreatedAt = "";
+    const cc = str(data.clientCreatedAt, 40);
+    const ccMs = Date.parse(cc);
+    if (cc && Number.isFinite(ccMs) && ccMs <= Date.now() + 60000 && ccMs > Date.now() - 7 * 86400000) {
+      clientCreatedAt = new Date(ccMs).toISOString();
+    }
     const order = {
       id: hex(12),
       ...(clientRef ? { clientRef } : {}),
+      ...(clientCreatedAt ? { clientCreatedAt } : {}),
       createdAt: nowIso(),
       status: "open",
       orderType,
