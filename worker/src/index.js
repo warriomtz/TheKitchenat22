@@ -118,6 +118,12 @@ function ntfyBody(o) {
   return [ntfyWhen(o), ntfyWhere(o), ...lines].filter(Boolean).join("\n").slice(0, 1200);
 }
 
+/** Optional ntfy access token (NTFY_TOKEN secret): avoids ntfy.sh's shared-IP rate limit (429). */
+function ntfyHeaders(env) {
+  const t = envVar(env, "NTFY_TOKEN");
+  return t ? { Authorization: "Bearer " + t } : {};
+}
+
 /** Phone ping for the kitchen. No prices. Never throws. */
 async function notifyKitchen(env, order) {
   const topic = envVar(env, "NTFY_TOPIC");
@@ -133,7 +139,7 @@ async function notifyKitchen(env, order) {
     `&priority=5&tags=${encodeURIComponent("rotating_light,fork_and_knife")}` +
     (env.ADMIN_URL ? `&click=${encodeURIComponent(env.ADMIN_URL)}` : "");
   try {
-    const r = await fetch(url, { method: "POST", body: ntfyBody(order) });
+    const r = await fetch(url, { method: "POST", headers: ntfyHeaders(env), body: ntfyBody(order) });
     if (!r.ok) console.log("ntfy_failed", r.status);
   } catch (e) {
     console.log("ntfy_error", String(e && e.message));
@@ -273,9 +279,12 @@ export default {
         try {
           const nr = await fetch(`https://ntfy.sh/${encodeURIComponent(nt)}?title=${encodeURIComponent("The Kitchen · prueba")}&priority=5`, {
             method: "POST",
+            headers: ntfyHeaders(env),
             body: "✅ Prueba de ntfy",
           });
-          ntfy = nr.ok ? "NTFY: enviado" : "NTFY: error " + nr.status;
+          ntfy = nr.ok
+            ? "NTFY: enviado"
+            : "NTFY: error " + nr.status + (nr.status === 429 ? " (límite de ntfy.sh; falta NTFY_TOKEN)" : "");
         } catch (e) {
           ntfy = "NTFY: no se pudo contactar";
         }

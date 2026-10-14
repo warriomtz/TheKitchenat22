@@ -21,4 +21,5 @@ ADMIN_URL = "https://thekitchenat22.com/admin.html"
 # SECRETS (never commit; set with `npx wrangler secret put NAME`):
 #   ADMIN_CODE   - admin password typed at the admin login
 #   NTFY_TOPIC   - private ntfy topic for kitchen phone alerts
+#   NTFY_TOKEN   - optional ntfy.sh access token (fixes 429 rate-limit errors)
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID - optional second alert channel (Telegram)
