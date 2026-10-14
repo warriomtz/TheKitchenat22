@@ -136,10 +136,20 @@ async function notifyKitchen(env, order) {
   }
 }
 
+/** Read a Worker variable by name, ignoring upper/lower case (Telegram_bot_token == TELEGRAM_BOT_TOKEN). */
+function envVar(env, name) {
+  if (env[name] != null) return String(env[name]).trim();
+  const want = name.toLowerCase();
+  for (const k of Object.keys(env || {})) {
+    if (k.toLowerCase() === want && env[k] != null) return String(env[k]).trim();
+  }
+  return "";
+}
+
 /** Second channel: Telegram message (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets). No prices. Never throws. */
 async function notifyTelegram(env, order) {
-  const token = String(env.TELEGRAM_BOT_TOKEN || "").trim();
-  const chat = String(env.TELEGRAM_CHAT_ID || "").trim();
+  const token = envVar(env, "TELEGRAM_BOT_TOKEN");
+  const chat = envVar(env, "TELEGRAM_CHAT_ID");
   if (!token || !chat) return;
   let late = "";
   if (order.clientCreatedAt) {
@@ -253,8 +263,8 @@ export default {
 
     if (path === "/api/admin/login") return reply(request, env, 200, { ok: true });
     if (path === "/api/admin/telegram-test") {
-      const token = String(env.TELEGRAM_BOT_TOKEN || "").trim();
-      const chat = String(env.TELEGRAM_CHAT_ID || "").trim();
+      const token = envVar(env, "TELEGRAM_BOT_TOKEN");
+      const chat = envVar(env, "TELEGRAM_CHAT_ID");
       if (!token || !chat) {
         return reply(request, env, 200, {
           ok: false,
