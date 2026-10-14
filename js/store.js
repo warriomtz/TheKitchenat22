@@ -454,6 +454,22 @@
       return mode;
     },
 
+    /** Admin: send a Telegram test message and report what Telegram answered. */
+    async telegramTest(code) {
+      try {
+        const res = await fetch(apiUrl("/api/admin/telegram-test"), {
+          method: "POST",
+          headers: adminHeaders(code, { "Content-Type": "application/json" }),
+          body: "{}",
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, description: "Error " + res.status + (data.error ? " (" + data.error + ")" : "") };
+        return data;
+      } catch {
+        return { ok: false, description: "Sin conexión con el servidor." };
+      }
+    },
+
     /** Verify the admin code on the server. Never compares it in the browser. */
     async adminLogin(code) {
       if (mode === "none") await Store.init();

@@ -2593,6 +2593,12 @@
     $("#reportAptSelect")?.addEventListener("change", () => renderApartmentDetail());
     $("#announceTranslate")?.addEventListener("click", translateEsToEn);
     $("#hoursSave")?.addEventListener("click", saveHours);
+    $("#telegramTestBtn")?.addEventListener("click", async () => {
+      const st = $("#telegramTestStatus");
+      if (st) st.textContent = "Enviando…";
+      const r = await KitchenStore.telegramTest();
+      if (st) st.textContent = r.ok ? "✅ Enviado. Revisa tu Telegram." : "❌ " + (r.description || "No se pudo enviar.");
+    });
     $("#hoursForceClosed")?.addEventListener("change", () => {
       if ($("#hoursForceClosed")?.checked) $("#hoursForceOpen").checked = false;
     });

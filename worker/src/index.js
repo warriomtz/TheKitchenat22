@@ -150,13 +150,14 @@ async function notifyTelegram(env, order) {
   }
   const head = order.mealPrep && order.scheduledFor ? "🥗 Meal Prep programado" : "🔔 Nuevo pedido";
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chat, text: `${head}\n${late}${ntfyBody(order)}`.slice(0, 3500) }),
     });
-  } catch (_) {
-    /* the order is already saved; ignore */
+    if (!resp.ok) console.error("telegram_failed", resp.status, await resp.text().catch(() => ""));
+  } catch (e) {
+    console.error("telegram_error", String(e));
   }
 }
 
@@ -175,6 +176,7 @@ const POST_ROUTES = new Set([
   "/api/analytics",
   "/api/admin/login",
   "/api/admin/import",
+  "/api/admin/telegram-test",
 ]);
 
 export default {
@@ -250,6 +252,30 @@ export default {
     if (denied) return reply(request, env, denied[0], denied[1]);
 
     if (path === "/api/admin/login") return reply(request, env, 200, { ok: true });
+    if (path === "/api/admin/telegram-test") {
+      const token = String(env.TELEGRAM_BOT_TOKEN || "").trim();
+      const chat = String(env.TELEGRAM_CHAT_ID || "").trim();
+      if (!token || !chat) {
+        return reply(request, env, 200, {
+          ok: false,
+          configured: false,
+          hasToken: !!token,
+          hasChatId: !!chat,
+          description: "Faltan TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID en el Worker (o falta volver a desplegar).",
+        });
+      }
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chat, text: "✅ Prueba de The Kitchen: Telegram está conectado." }),
+        });
+        const j = await r.json().catch(() => ({}));
+        return reply(request, env, 200, { ok: !!j.ok, configured: true, status: r.status, description: j.description || "" });
+      } catch (e) {
+        return reply(request, env, 200, { ok: false, configured: true, description: "No se pudo contactar a Telegram." });
+      }
+    }
     delete data.code;
 
     const [status, body] = await stub.op(path, "POST", data, ip);
