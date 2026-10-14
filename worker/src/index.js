@@ -120,8 +120,11 @@ function ntfyBody(o) {
 
 /** Phone ping for the kitchen. No prices. Never throws. */
 async function notifyKitchen(env, order) {
-  const topic = String(env.NTFY_TOPIC || "").trim();
-  if (!topic) return;
+  const topic = envVar(env, "NTFY_TOPIC");
+  if (!topic) {
+    console.log("ntfy_not_configured");
+    return;
+  }
   const url =
     `https://ntfy.sh/${encodeURIComponent(topic)}` +
     `?title=${encodeURIComponent(
@@ -130,9 +133,10 @@ async function notifyKitchen(env, order) {
     `&priority=5&tags=${encodeURIComponent("rotating_light,fork_and_knife")}` +
     (env.ADMIN_URL ? `&click=${encodeURIComponent(env.ADMIN_URL)}` : "");
   try {
-    await fetch(url, { method: "POST", body: ntfyBody(order) });
-  } catch (_) {
-    /* the order is already saved; ignore */
+    const r = await fetch(url, { method: "POST", body: ntfyBody(order) });
+    if (!r.ok) console.log("ntfy_failed", r.status);
+  } catch (e) {
+    console.log("ntfy_error", String(e && e.message));
   }
 }
 
@@ -263,6 +267,19 @@ export default {
 
     if (path === "/api/admin/login") return reply(request, env, 200, { ok: true });
     if (path === "/api/admin/telegram-test") {
+      let ntfy = "NTFY: falta la variable NTFY_TOPIC en el Worker.";
+      const nt = envVar(env, "NTFY_TOPIC");
+      if (nt) {
+        try {
+          const nr = await fetch(`https://ntfy.sh/${encodeURIComponent(nt)}?title=${encodeURIComponent("The Kitchen · prueba")}&priority=5`, {
+            method: "POST",
+            body: "✅ Prueba de ntfy",
+          });
+          ntfy = nr.ok ? "NTFY: enviado" : "NTFY: error " + nr.status;
+        } catch (e) {
+          ntfy = "NTFY: no se pudo contactar";
+        }
+      }
       const token = envVar(env, "TELEGRAM_BOT_TOKEN");
       const chat = envVar(env, "TELEGRAM_CHAT_ID");
       if (!token || !chat) {
@@ -271,6 +288,7 @@ export default {
           configured: false,
           hasToken: !!token,
           hasChatId: !!chat,
+          ntfy,
           description: "Faltan TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID en el Worker (o falta volver a desplegar).",
         });
       }
@@ -281,7 +299,7 @@ export default {
           body: JSON.stringify({ chat_id: chat, text: "✅ Prueba de The Kitchen: Telegram está conectado." }),
         });
         const j = await r.json().catch(() => ({}));
-        return reply(request, env, 200, { ok: !!j.ok, configured: true, status: r.status, description: j.description || "" });
+        return reply(request, env, 200, { ok: !!j.ok, configured: true, status: r.status, ntfy, description: j.description || "" });
       } catch (e) {
         return reply(request, env, 200, { ok: false, configured: true, description: "No se pudo contactar a Telegram." });
       }

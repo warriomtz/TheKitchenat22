@@ -2597,7 +2597,7 @@
       const st = $("#telegramTestStatus");
       if (st) st.textContent = "Enviando…";
       const r = await KitchenStore.telegramTest();
-      if (st) st.textContent = r.ok ? "✅ Enviado. Revisa tu Telegram." : "❌ " + (r.description || "No se pudo enviar.");
+      if (st) st.textContent = (r.ok ? "✅ Telegram enviado." : "❌ Telegram: " + (r.description || "No se pudo enviar.")) + (r.ntfy ? " · " + r.ntfy : "");
     });
     $("#hoursForceClosed")?.addEventListener("change", () => {
       if ($("#hoursForceClosed")?.checked) $("#hoursForceOpen").checked = false;
