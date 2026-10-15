@@ -2620,8 +2620,7 @@ const DEFAULT_HOURS = {
       return;
     }
     if (flags.includes("sides3")) {
-      const n = selectedAll("mpSides").length;
-      if (n < 1 || n > 3) {
+      if (selectedAll("mpSides").length !== 3) {
         toast(t("mpSides3Need"));
         return;
       }
