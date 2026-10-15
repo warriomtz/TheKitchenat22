@@ -2146,6 +2146,19 @@ const DEFAULT_HOURS = {
         { multi: true, max: 2, hint: t("mpSidesHint") }
       );
     }
+    if (flags.includes("sides3")) {
+      fields += chips(
+        "mpSides",
+        t("mpSides3Label"),
+        MEALPREP_SIDES.map((k) => ({
+          k,
+          v: t(`mpSide_${k}`),
+          img: `assets/sides/${k}.jpg`,
+          disabled: isOut(`mp-side-${k}`),
+        })),
+        { multi: true, max: 3, hint: t("mpSides3Hint") }
+      );
+    }
     if (flags.includes("martini")) {
       fields += chips("martini", t("martiniStyle"), [
         { v: t("dry"), k: "dry" },
@@ -2319,7 +2332,7 @@ const DEFAULT_HOURS = {
         if (multi) {
           const max = parseInt(group.dataset.max, 10) || 0;
           if (max && !chip.classList.contains("is-selected") && $$(".chip.is-selected", group).length >= max) {
-            toast(t("mpSidesMax"));
+            toast(max === 3 ? t("mpSides3Max") : t("mpSidesMax"));
             return;
           }
           chip.classList.toggle("is-selected");
@@ -2372,7 +2385,7 @@ const DEFAULT_HOURS = {
     if (!item) return { extra, parts };
     const f = item.flags || [];
 
-    if (f.includes("sides2")) {
+    if (f.includes("sides2") || f.includes("sides3")) {
       const picked = selectedAll("mpSides");
       if (picked.length)
         parts.push(`${t("mpSidesShort")}: ${picked.map((k) => t(`mpSide_${k}`)).join(", ")}`);
@@ -2605,6 +2618,13 @@ const DEFAULT_HOURS = {
     if (flags.includes("sides2") && selectedAll("mpSides").length !== 2) {
       toast(t("mpSidesNeed"));
       return;
+    }
+    if (flags.includes("sides3")) {
+      const n = selectedAll("mpSides").length;
+      if (n < 1 || n > 3) {
+        toast(t("mpSides3Need"));
+        return;
+      }
     }
     const { extra, parts } = computeExtras();
     let qty = Math.min(99, Math.max(1, parseInt($("#customizeQty")?.value, 10) || 1));

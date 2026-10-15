@@ -570,6 +570,29 @@ export class KitchenStore extends DurableObject {
     if (changed) this.kvSet("menu", menu);
     this.kvSet("sirloinRenamed", true);
   }
+  /** One-time: add the Meal Prep "Solo complementos" option (no protein, up to 3 sides, $120). */
+  seedMealPrepSidesOnly(menu) {
+    if (this.kvGet("mealprepSidesOnlySeeded", false)) return;
+    const sub = menu.mealprep && (menu.mealprep.subcategories.Plan || Object.values(menu.mealprep.subcategories)[0]);
+    if (sub) {
+      sub.items = sub.items || [];
+      if (!sub.items.some((i) => i.id === "m-solo-complementos")) {
+        sub.items.push({
+          id: "m-solo-complementos",
+          name: "Solo complementos · sin proteína",
+          price: 120,
+          notes: "",
+          notesKey: "mpIncludesSides3",
+          flags: ["sides3"],
+          img: "",
+          name_en: "Sides only · no protein",
+          name_ja: "サイドのみ · プロテインなし",
+        });
+      }
+      this.kvSet("menu", menu);
+      this.kvSet("mealprepSidesOnlySeeded", true);
+    }
+  }
   /** One-time: the Ramen is discontinued — remove it from the menu. */
   seedRemoveRamen(menu) {
     if (this.kvGet("ramenRemoved", false)) return;
@@ -937,6 +960,7 @@ export class KitchenStore extends DurableObject {
           this.seedBeerNA(menu);
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
+          this.seedMealPrepSidesOnly(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
