@@ -2135,8 +2135,8 @@ const DEFAULT_HOURS = {
 
     if (flags.includes("chickenSize")) {
       fields += chips("chickenSize", t("mpChickenSize"), [
-        { v: t("mpChicken200"), k: "200" },
-        { v: t("mpChicken100"), k: "100" },
+        { v: `${t("mpChicken200")} · $${Math.round(item.price)}`, k: "200" },
+        { v: `${t("mpChicken100")} · $${Math.round(item.price - 60)}`, k: "100" },
       ]);
     }
     if (flags.includes("sides2")) {
