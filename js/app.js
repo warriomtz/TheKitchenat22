@@ -2145,6 +2145,11 @@ const DEFAULT_HOURS = {
         })),
         { multi: true, max: 2, hint: t("mpSidesHint") }
       );
+      fields += `<div class="field">
+        <span>${t("mpThirdSide")}</span>
+        <small class="field-hint">${t("mpThirdSideHint")}</small>
+        <button type="button" class="chip chip--extra" id="thirdSideToggle">${t("mpThirdSideOption")}</button>
+      </div>`;
     }
     if (flags.includes("sides3")) {
       fields += chips(
@@ -2354,6 +2359,25 @@ const DEFAULT_HOURS = {
       refreshPrice();
     });
 
+    $("#thirdSideToggle")?.addEventListener("click", (e) => {
+      const btn = e.currentTarget;
+      const group = $('.chips[data-field="mpSides"]', body);
+      const on = !btn.classList.contains("is-selected");
+      btn.classList.toggle("is-selected", on);
+      if (group) {
+        group.dataset.max = on ? "3" : "2";
+        if (!on) {
+          const sel = $$(".chip.is-selected", group);
+          if (sel.length > 2) {
+            const last = sel[sel.length - 1];
+            last.classList.remove("is-selected");
+            last.setAttribute("aria-checked", "false");
+          }
+        }
+      }
+      refreshPrice();
+    });
+
     $("#extraChickenToggle")?.addEventListener("click", (e) => {
       e.currentTarget.classList.toggle("is-selected");
       refreshPrice();
@@ -2389,6 +2413,10 @@ const DEFAULT_HOURS = {
       const picked = selectedAll("mpSides");
       if (picked.length)
         parts.push(`${t("mpSidesShort")}: ${picked.map((k) => t(`mpSide_${k}`)).join(", ")}`);
+      if (f.includes("sides2") && $("#thirdSideToggle")?.classList.contains("is-selected")) {
+        extra += 60;
+        parts.push(t("mpThirdSideShort"));
+      }
     }
     if (f.includes("martini")) {
       const v = selected("martini");
@@ -2615,9 +2643,12 @@ const DEFAULT_HOURS = {
         return;
       }
     }
-    if (flags.includes("sides2") && selectedAll("mpSides").length !== 2) {
-      toast(t("mpSidesNeed"));
-      return;
+    if (flags.includes("sides2")) {
+      const third = !!$("#thirdSideToggle")?.classList.contains("is-selected");
+      if (selectedAll("mpSides").length !== (third ? 3 : 2)) {
+        toast(third ? t("mpSides3Need") : t("mpSidesNeed"));
+        return;
+      }
     }
     if (flags.includes("sides3")) {
       if (selectedAll("mpSides").length !== 3) {
