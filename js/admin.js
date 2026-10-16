@@ -170,7 +170,7 @@
     { k: "frijol", stockId: "mp-side-frijol", label: "Frijol" },
     { k: "quinoa", stockId: "mp-side-quinoa", label: "Quinoa" },
     { k: "sopaTomate", stockId: "mp-side-sopaTomate", label: "Sopa de tomate" },
-    { k: "cremaEspinacas", stockId: "mp-side-cremaEspinacas", label: "Crema de espinacas" },
+    { k: "cremaEspinacas", stockId: "mp-side-cremaEspinacas", label: "Crema de espinaca" },
     { k: "vegetales", stockId: "mp-side-vegetales", label: "Vegetales salteados" },
   ];
 
