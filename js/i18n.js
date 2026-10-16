@@ -440,7 +440,7 @@ window.KITCHEN_I18N = {
     mpSide_frijol: "Beans (120 g)",
     mpSide_quinoa: "Quinoa (120 g)",
     mpSide_sopaTomate: "Tomato soup (250 ml)",
-    mpSide_cremaEspinacas: "Cream of spinach (250 ml)",
+    mpSide_cremaEspinacas: "Cream of spinach soup (250 ml)",
     mpSide_vegetales: "Sautéed vegetables (180 g)",
     waMpNow: "For now",
     waMpWhen: "Scheduled for",
