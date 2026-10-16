@@ -2135,8 +2135,8 @@ const DEFAULT_HOURS = {
 
     if (flags.includes("chickenSize")) {
       fields += chips("chickenSize", t("mpChickenSize"), [
-        { v: t("mpChicken100"), k: "100" },
         { v: t("mpChicken200"), k: "200" },
+        { v: t("mpChicken100"), k: "100" },
       ]);
     }
     if (flags.includes("sides2")) {
@@ -2416,11 +2416,11 @@ const DEFAULT_HOURS = {
     const f = item.flags || [];
 
     if (f.includes("chickenSize")) {
-      if (selected("chickenSize") === "200") {
-        extra += 60;
-        parts.push(t("mpChicken200Short"));
-      } else {
+      if (selected("chickenSize") === "100") {
+        extra -= 60;
         parts.push(t("mpChicken100Short"));
+      } else {
+        parts.push(t("mpChicken200Short"));
       }
     }
     if (f.includes("sides2") || f.includes("sides3")) {

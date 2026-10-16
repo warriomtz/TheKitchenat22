@@ -604,13 +604,28 @@ export class KitchenStore extends DurableObject {
       p100.name = "Pollo";
       p100.name_en = "Chicken";
       p100.name_ja = "チキン";
-      p100.price = 119;
+      p100.price = 179;
       p100.flags = Array.from(new Set([...(p100.flags || []), "chickenSize"]));
       sb.items = items.filter((i) => i.id !== "m-pollo-200");
       changed = true;
     }
     if (changed) this.kvSet("menu", menu);
     this.kvSet("chickenMerged", true);
+  }
+  /** One-time: the merged "Pollo" now defaults to 200 g ($179); 100 g is the -$60 option. */
+  seedChickenDefault200(menu) {
+    if (this.kvGet("chickenDefault200", false)) return;
+    let changed = false;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id === "m-pollo-100" && (it.flags || []).includes("chickenSize") && it.price === 119) {
+          it.price = 179;
+          changed = true;
+        }
+      }
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("chickenDefault200", true);
   }
   /** One-time: the Ramen is discontinued — remove it from the menu. */
   seedRemoveRamen(menu) {
@@ -981,6 +996,7 @@ export class KitchenStore extends DurableObject {
           this.seedRenameSirloin(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedMergeChicken(menu);
+          this.seedChickenDefault200(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
