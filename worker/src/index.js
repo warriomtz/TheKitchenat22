@@ -593,6 +593,25 @@ export class KitchenStore extends DurableObject {
       this.kvSet("mealprepSidesOnlySeeded", true);
     }
   }
+  /** One-time: merge Meal Prep "Pollo 100 g" + "Pollo 200 g" into one "Pollo" dish with a portion option. */
+  seedMergeChicken(menu) {
+    if (this.kvGet("chickenMerged", false)) return;
+    let changed = false;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      const items = sb.items || [];
+      const p100 = items.find((i) => i.id === "m-pollo-100");
+      if (!p100) continue;
+      p100.name = "Pollo";
+      p100.name_en = "Chicken";
+      p100.name_ja = "チキン";
+      p100.price = 119;
+      p100.flags = Array.from(new Set([...(p100.flags || []), "chickenSize"]));
+      sb.items = items.filter((i) => i.id !== "m-pollo-200");
+      changed = true;
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("chickenMerged", true);
+  }
   /** One-time: the Ramen is discontinued — remove it from the menu. */
   seedRemoveRamen(menu) {
     if (this.kvGet("ramenRemoved", false)) return;
@@ -961,6 +980,7 @@ export class KitchenStore extends DurableObject {
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
           this.seedMealPrepSidesOnly(menu);
+          this.seedMergeChicken(menu);
           return [200, { menu }];
         }
         case "/api/announcement":

@@ -2133,6 +2133,12 @@ const DEFAULT_HOURS = {
       );
     }
 
+    if (flags.includes("chickenSize")) {
+      fields += chips("chickenSize", t("mpChickenSize"), [
+        { v: t("mpChicken100"), k: "100" },
+        { v: t("mpChicken200"), k: "200" },
+      ]);
+    }
     if (flags.includes("sides2")) {
       fields += chips(
         "mpSides",
@@ -2409,6 +2415,14 @@ const DEFAULT_HOURS = {
     if (!item) return { extra, parts };
     const f = item.flags || [];
 
+    if (f.includes("chickenSize")) {
+      if (selected("chickenSize") === "200") {
+        extra += 60;
+        parts.push(t("mpChicken200Short"));
+      } else {
+        parts.push(t("mpChicken100Short"));
+      }
+    }
     if (f.includes("sides2") || f.includes("sides3")) {
       const picked = selectedAll("mpSides");
       if (picked.length)
