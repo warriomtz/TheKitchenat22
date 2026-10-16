@@ -2654,6 +2654,19 @@ body.is-admin .btn--admin {
   font-weight: 600;
 }
 
+/* Optional 3rd side (+$60): colored outline (no fill) so guests notice it */
+#thirdSideToggle:not(.is-selected) {
+  border: 2px solid #3ddc84;
+  color: #3ddc84;
+  font-weight: 600;
+  background: transparent;
+}
+
+#thirdSideToggle:not(.is-selected):hover {
+  border-color: #6df0a7;
+  color: #6df0a7;
+}
+
 .chip.is-disabled,
 .chip:disabled {
   opacity: 0.4;
