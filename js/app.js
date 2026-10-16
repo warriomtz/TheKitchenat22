@@ -2000,12 +2000,12 @@ const DEFAULT_HOURS = {
   }
 
   /* Customize */
-  function chips(field, label, options, { multi = false, hint = "", max = 0 } = {}) {
+  function chips(field, label, options, { multi = false, hint = "", max = 0, qty = false } = {}) {
     return `
       <div class="field">
         <span>${label}</span>
         ${hint ? `<small class="field-hint">${hint}</small>` : ""}
-        <div class="chips" data-field="${field}" data-mode="${multi ? "multi" : "single"}"${max ? ` data-max="${max}"` : ""}>
+        <div class="chips" data-field="${field}" data-mode="${qty ? "qty" : multi ? "multi" : "single"}"${max ? ` data-max="${max}"` : ""}>
           ${options
             .map((o) => {
               const disabled = !!o.disabled;
@@ -2016,6 +2016,10 @@ const DEFAULT_HOURS = {
                 o.k
               )}" aria-checked="false"${disabled ? " disabled aria-disabled=\"true\"" : ""}>${pic}${escapeHtml(o.v)}${
                 disabled ? ` · ${escapeHtml(t("outOfStock"))}` : ""
+              }${
+                qty && !disabled
+                  ? `<span class="chip__qty" aria-hidden="true"></span><span class="chip__minus" role="button" tabindex="0" aria-label="${escapeHtml(t("mpSideRemove"))}">−</span>`
+                  : ""
               }</button>`;
             })
             .join("")}
@@ -2066,7 +2070,25 @@ const DEFAULT_HOURS = {
   }
 
   function selectedAll(field) {
-    return $$(`.chips[data-field="${field}"] .chip.is-selected`).map((c) => c.dataset.value);
+    const out = [];
+    $$(`.chips[data-field="${field}"] .chip.is-selected`).forEach((c) => {
+      const n = c.closest(".chips")?.dataset.mode === "qty" ? parseInt(c.dataset.qty, 10) || 1 : 1;
+      for (let i = 0; i < n; i++) out.push(c.dataset.value);
+    });
+    return out;
+  }
+
+  /** Quantity-mode chip groups (Meal Prep sides: the same side may be picked more than once). */
+  function qtyTotal(group) {
+    return $$(".chip", group).reduce((sum, c) => sum + (parseInt(c.dataset.qty, 10) || 0), 0);
+  }
+  function setChipQty(chip, n) {
+    n = Math.max(0, n);
+    chip.dataset.qty = String(n);
+    chip.classList.toggle("is-selected", n > 0);
+    chip.setAttribute("aria-checked", n > 0 ? "true" : "false");
+    const badge = chip.querySelector(".chip__qty");
+    if (badge) badge.textContent = n > 0 ? `×${n}` : "";
   }
 
   /** Placeholder text for item notes by drink/food category */
@@ -2149,7 +2171,7 @@ const DEFAULT_HOURS = {
           img: `assets/sides/${k}.jpg`,
           disabled: isOut(`mp-side-${k}`),
         })),
-        { multi: true, max: 2, hint: t("mpSidesHint") }
+        { qty: true, max: 2, hint: t("mpSidesHint") }
       );
       fields += `<div class="field">
         <span>${t("mpThirdSide")}</span>
@@ -2167,7 +2189,7 @@ const DEFAULT_HOURS = {
           img: `assets/sides/${k}.jpg`,
           disabled: isOut(`mp-side-${k}`),
         })),
-        { multi: true, max: 3, hint: t("mpSides3Hint") }
+        { qty: true, max: 3, hint: t("mpSides3Hint") }
       );
     }
     if (flags.includes("martini")) {
@@ -2322,7 +2344,7 @@ const DEFAULT_HOURS = {
 
     // Single-select groups: radio. Multi groups (extra sauce): toggle independently.
     $$(".chips", body).forEach((g) => {
-      const multi = g.dataset.mode === "multi";
+      const multi = g.dataset.mode === "multi" || g.dataset.mode === "qty";
       g.setAttribute("role", multi ? "group" : "radiogroup");
       if (!multi) {
         // Prefer first available (not disabled) chip — e.g. skip OOS beer brands
@@ -2335,10 +2357,24 @@ const DEFAULT_HOURS = {
     });
 
     $$(".chips .chip", body).forEach((chip) => {
-      chip.addEventListener("click", () => {
+      chip.addEventListener("click", (e) => {
         if (chip.disabled || chip.classList.contains("is-disabled")) return;
         const group = chip.closest(".chips");
         if (!group) return;
+        if (group.dataset.mode === "qty") {
+          const max = parseInt(group.dataset.max, 10) || 0;
+          const cur = parseInt(chip.dataset.qty, 10) || 0;
+          if (e.target.closest && e.target.closest(".chip__minus")) {
+            setChipQty(chip, cur - 1);
+          } else if (max && qtyTotal(group) >= max) {
+            toast(max === 3 ? t("mpSides3Max") : t("mpSidesMax"));
+            return;
+          } else {
+            setChipQty(chip, cur + 1);
+          }
+          refreshPrice();
+          return;
+        }
         const multi = group.dataset.mode === "multi";
         if (multi) {
           const max = parseInt(group.dataset.max, 10) || 0;
@@ -2373,11 +2409,11 @@ const DEFAULT_HOURS = {
       if (group) {
         group.dataset.max = on ? "3" : "2";
         if (!on) {
-          const sel = $$(".chip.is-selected", group);
-          if (sel.length > 2) {
-            const last = sel[sel.length - 1];
-            last.classList.remove("is-selected");
-            last.setAttribute("aria-checked", "false");
+          const sel = $$(".chip.is-selected", group).reverse();
+          for (const c of sel) {
+            while (qtyTotal(group) > 2 && (parseInt(c.dataset.qty, 10) || 0) > 0) {
+              setChipQty(c, (parseInt(c.dataset.qty, 10) || 0) - 1);
+            }
           }
         }
       }
@@ -2426,7 +2462,14 @@ const DEFAULT_HOURS = {
     if (f.includes("sides2") || f.includes("sides3")) {
       const picked = selectedAll("mpSides");
       if (picked.length)
-        parts.push(`${t("mpSidesShort")}: ${picked.map((k) => t(`mpSide_${k}`)).join(", ")}`);
+        parts.push(
+          `${t("mpSidesShort")}: ${[...new Set(picked)]
+            .map((k) => {
+              const n = picked.filter((x) => x === k).length;
+              return `${n > 1 ? `${n}× ` : ""}${t(`mpSide_${k}`)}`;
+            })
+            .join(", ")}`
+        );
       if (f.includes("sides2") && $("#thirdSideToggle")?.classList.contains("is-selected")) {
         extra += 60;
         parts.push(t("mpThirdSideShort"));

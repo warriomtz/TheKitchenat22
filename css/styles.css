@@ -2654,6 +2654,36 @@ body.is-admin .btn--admin {
   font-weight: 600;
 }
 
+/* Meal Prep sides: quantity badge + remove control on a chip */
+.chip[data-qty] { position: relative; }
+.chip__qty {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+.chip__minus {
+  display: none;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.chip.is-selected .chip__minus { display: block; }
+
 /* Optional 3rd side (+$60): colored outline (no fill) so guests notice it */
 #thirdSideToggle:not(.is-selected) {
   border: 2px solid #3ddc84;
