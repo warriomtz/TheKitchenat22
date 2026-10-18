@@ -599,7 +599,13 @@ const DEFAULT_HOURS = {
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const t = (k) => (I18N[state.lang] && I18N[state.lang][k]) || I18N.es[k] || k;
   const fmt = (n) => `$${Math.round(n)} MXN`;
-  const noteFor = (item) => (item.notesKey ? t(item.notesKey) : item.notes || "");
+  const noteFor = (item) => {
+    if (item && item.notesKey === "includesSide" && (item.flags || []).includes("burger")) return t("burgerNote");
+    return item.notesKey ? t(item.notesKey) : item.notes || "";
+  };
+  // Club sandwich + empanadas: chips can be swapped for french fries (+$15)
+  const chipsUpgradeItem = (item) =>
+    (item.flags || []).includes("chipsUpgrade") || item.id === "f-club" || item.id === "f-empanadas";
 
   /** Translate subcategory tab labels (Café, Street food, etc.) */
   function subLabelFor(subKey, fallback = "") {
@@ -2221,10 +2227,14 @@ const DEFAULT_HOURS = {
       });
     }
     if (flags.includes("side")) {
-      fields += chips("side", t("side"), [
-        { v: t("sideSalad"), k: "salad" },
-        { v: t("sideFries"), k: "fries" },
-      ]);
+      const sideOpts = [{ v: t("sideSalad"), k: "salad" }];
+      if (flags.includes("burger")) {
+        sideOpts.push({ v: t("sideFrench"), k: "french" }, { v: t("sideWedges"), k: "wedges" });
+      } else {
+        sideOpts.push({ v: t("sideFries"), k: "fries" });
+        if (chipsUpgradeItem(item)) sideOpts.push({ v: t("sideFrenchPlus"), k: "french" });
+      }
+      fields += chips("side", t("side"), sideOpts);
     }
     if (flags.includes("dressing")) {
       fields += chips("dressing", t("dressing"), [
@@ -2517,6 +2527,11 @@ const DEFAULT_HOURS = {
       const v = selected("side");
       if (v === "salad") parts.push(t("sideSalad"));
       if (v === "fries") parts.push(t("sideFries"));
+      if (v === "wedges") parts.push(t("sideWedges"));
+      if (v === "french") {
+        parts.push(t("sideFrench"));
+        if (!f.includes("burger")) extra += 15;
+      }
     }
     if (f.includes("dressing")) {
       const v = selected("dressing");
