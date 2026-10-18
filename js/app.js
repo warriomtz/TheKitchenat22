@@ -598,6 +598,16 @@ const DEFAULT_HOURS = {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const t = (k) => (I18N[state.lang] && I18N[state.lang][k]) || I18N.es[k] || k;
+  /** Run fn with the UI language temporarily forced (kitchen/dashboard always gets Spanish). */
+  function withLang(lang, fn) {
+    const prev = state.lang;
+    state.lang = lang;
+    try {
+      return fn();
+    } finally {
+      state.lang = prev;
+    }
+  }
   const fmt = (n) => `$${Math.round(n)} MXN`;
   const noteFor = (item) => {
     if (item && item.notesKey === "includesSide" && (item.flags || []).includes("burger")) return t("burgerNote");
@@ -1930,9 +1940,9 @@ const DEFAULT_HOURS = {
       const subKey = it?.subKey || "";
       return {
         id: line.id,
-        name: nameFor(line.id, line.name),
+        name: withLang("es", () => nameFor(line.id, line.nameEs || line.name)),
         qty: line.qty,
-        customizations: line.customizations || "",
+        customizations: line.customizationsEs != null ? line.customizationsEs : line.customizations || "",
         notes: line.notes || "",
         dineInOnly: !!(line.dineInOnly || isDineInOnly(it)),
         sectionId,
@@ -1941,7 +1951,7 @@ const DEFAULT_HOURS = {
     });
     // Store human-readable amenity label for kitchen board
     const amenityText =
-      orderType === "amenity" ? amenityLabel(amenity) || amenity || "" : amenity || "";
+      orderType === "amenity" ? withLang("es", () => amenityLabel(amenity)) || amenity || "" : amenity || "";
     try {
       if (window.KitchenStore) {
         await KitchenStore.createOrder({
@@ -2752,6 +2762,9 @@ const DEFAULT_HOURS = {
       unitPrice: item.price + extra,
       qty,
       customizations: parts.join(" · "),
+      // Kitchen copy is always Spanish, whatever language the resident ordered in
+      nameEs: withLang("es", () => nameFor(item)),
+      customizationsEs: withLang("es", () => computeExtras().parts.join(" · ")),
       notes,
       dineInOnly,
     });
