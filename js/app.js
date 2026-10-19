@@ -2203,8 +2203,8 @@ const DEFAULT_HOURS = {
       const only = isSidesOnly(item);
       if (only) {
         fields += chips("sidesCount", t("mpSidesCountLabel"), [
-          { v: t("mpSidesCount1"), k: "1" },
           { v: t("mpSidesCount3"), k: "3" },
+          { v: t("mpSidesCount1"), k: "1" },
         ]);
       }
       fields += chips(
@@ -2216,7 +2216,7 @@ const DEFAULT_HOURS = {
           img: `assets/sides/${k}.jpg`,
           disabled: isOut(`mp-side-${k}`),
         })),
-        { qty: true, max: only ? 1 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
+        { qty: true, max: 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
       );
     }
     if (flags.includes("martini")) {
