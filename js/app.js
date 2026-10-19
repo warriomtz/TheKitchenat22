@@ -609,7 +609,11 @@ const DEFAULT_HOURS = {
     }
   }
   const fmt = (n) => `$${Math.round(n)} MXN`;
+  // Meal Prep "Solo complementos": pick 1 for $60 or 3 for $120 (base price = the 3-sides price)
+  const isSidesOnly = (item) =>
+    !!item && ((item.flags || []).includes("sidesOnly") || item.id === "m-solo-complementos");
   const noteFor = (item) => {
+    if (isSidesOnly(item)) return t("mpSidesOnlyNote");
     if (item && item.notesKey === "includesSide" && (item.flags || []).includes("burger")) return t("burgerNote");
     return item.notesKey ? t(item.notesKey) : item.notes || "";
   };
@@ -780,7 +784,7 @@ const DEFAULT_HOURS = {
         <div class="menu-card__body">
           <div class="menu-card__top">
             <h3 class="menu-card__name">${escapeHtml(nameFor(item))}</h3>
-            <span class="menu-card__price">${fmt(item.price)}</span>
+            ${isSidesOnly(item) ? "" : `<span class="menu-card__price">${fmt(item.price)}</span>`}
           </div>
           <p class="menu-card__note">${noteHtml}</p>
           <div class="menu-card__mid">${optionStockAdmin}</div>
@@ -2196,16 +2200,23 @@ const DEFAULT_HOURS = {
       </div>`;
     }
     if (flags.includes("sides3")) {
+      const only = isSidesOnly(item);
+      if (only) {
+        fields += chips("sidesCount", t("mpSidesCountLabel"), [
+          { v: t("mpSidesCount1"), k: "1" },
+          { v: t("mpSidesCount3"), k: "3" },
+        ]);
+      }
       fields += chips(
         "mpSides",
-        t("mpSides3Label"),
+        only ? t("mpSidesShort") : t("mpSides3Label"),
         MEALPREP_SIDES.map((k) => ({
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
           disabled: isOut(`mp-side-${k}`),
         })),
-        { qty: true, max: 3, hint: t("mpSides3Hint") }
+        { qty: true, max: only ? 1 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
       );
     }
     if (flags.includes("martini")) {
@@ -2387,7 +2398,7 @@ const DEFAULT_HOURS = {
           if (e.target.closest && e.target.closest(".chip__minus")) {
             setChipQty(chip, cur - 1);
           } else if (max && qtyTotal(group) >= max) {
-            toast(max === 3 ? t("mpSides3Max") : t("mpSidesMax"));
+            toast(max === 3 ? t("mpSides3Max") : max === 1 ? t("mpSides1Max") : t("mpSidesMax"));
             return;
           } else {
             setChipQty(chip, cur + 1);
@@ -2399,7 +2410,7 @@ const DEFAULT_HOURS = {
         if (multi) {
           const max = parseInt(group.dataset.max, 10) || 0;
           if (max && !chip.classList.contains("is-selected") && $$(".chip.is-selected", group).length >= max) {
-            toast(max === 3 ? t("mpSides3Max") : t("mpSidesMax"));
+            toast(max === 3 ? t("mpSides3Max") : max === 1 ? t("mpSides1Max") : t("mpSidesMax"));
             return;
           }
           chip.classList.toggle("is-selected");
@@ -2421,6 +2432,21 @@ const DEFAULT_HOURS = {
       refreshPrice();
     });
 
+    $$('.chips[data-field="sidesCount"] .chip', body).forEach((c) =>
+      c.addEventListener("click", () => {
+        const group = $('.chips[data-field="mpSides"]', body);
+        const n = selected("sidesCount") === "1" ? 1 : 3;
+        if (group) {
+          group.dataset.max = String(n);
+          for (const ch of $$(".chip.is-selected", group).reverse()) {
+            while (qtyTotal(group) > n && (parseInt(ch.dataset.qty, 10) || 0) > 0) {
+              setChipQty(ch, (parseInt(ch.dataset.qty, 10) || 0) - 1);
+            }
+          }
+        }
+        refreshPrice();
+      })
+    );
     $("#thirdSideToggle")?.addEventListener("click", (e) => {
       const btn = e.currentTarget;
       const group = $('.chips[data-field="mpSides"]', body);
@@ -2490,6 +2516,7 @@ const DEFAULT_HOURS = {
             })
             .join(", ")}`
         );
+      if (isSidesOnly(item) && selected("sidesCount") === "1") extra -= 60;
       if (f.includes("sides2") && $("#thirdSideToggle")?.classList.contains("is-selected")) {
         extra += 60;
         parts.push(t("mpThirdSideShort"));
@@ -2733,8 +2760,9 @@ const DEFAULT_HOURS = {
       }
     }
     if (flags.includes("sides3")) {
-      if (selectedAll("mpSides").length !== 3) {
-        toast(t("mpSides3Need"));
+      const need = isSidesOnly(item) && selected("sidesCount") === "1" ? 1 : 3;
+      if (selectedAll("mpSides").length !== need) {
+        toast(need === 1 ? t("mpSides1Need") : t("mpSides3Need"));
         return;
       }
     }

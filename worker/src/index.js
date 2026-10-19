@@ -593,6 +593,24 @@ export class KitchenStore extends DurableObject {
       this.kvSet("mealprepSidesOnlySeeded", true);
     }
   }
+  /** One-time: Meal Prep sides-only becomes "Solo complementos": choose 1 ($60) or 3 ($120); no price on the card. */
+  seedSidesOnlyChoice(menu) {
+    if (this.kvGet("sidesOnlyChoice", false)) return;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id !== "m-solo-complementos") continue;
+        it.name = "Solo complementos";
+        it.name_en = "Sides only";
+        it.name_ja = "サイドのみ";
+        it.price = 120; // base = 3 sides; the client subtracts $60 for the 1-side option
+        it.notes = "";
+        it.notesKey = "mpSidesOnlyNote";
+        it.flags = ["sides3", "sidesOnly"];
+      }
+    }
+    this.kvSet("menu", menu);
+    this.kvSet("sidesOnlyChoice", true);
+  }
   /** One-time: merge Meal Prep "Pollo 100 g" + "Pollo 200 g" into one "Pollo" dish with a portion option. */
   seedMergeChicken(menu) {
     if (this.kvGet("chickenMerged", false)) return;
@@ -995,6 +1013,7 @@ export class KitchenStore extends DurableObject {
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
           this.seedMealPrepSidesOnly(menu);
+          this.seedSidesOnlyChoice(menu);
           this.seedMergeChicken(menu);
           this.seedChickenDefault200(menu);
           return [200, { menu }];
