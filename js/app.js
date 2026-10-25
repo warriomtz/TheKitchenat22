@@ -2251,7 +2251,7 @@ const DEFAULT_HOURS = {
     if (flags.includes("side")) {
       const sideOpts = [{ v: t("sideSalad"), k: "salad" }];
       if (flags.includes("burger")) {
-        sideOpts.push({ v: t("sideFrench"), k: "french", disabled: isOut("side-french") }, { v: t("sideWedges"), k: "wedges" });
+        sideOpts.push({ v: t("sideFrench"), k: "french", disabled: isOut("side-french") }, { v: t("sideWedges"), k: "wedges", disabled: isOut("side-wedges") });
       } else {
         sideOpts.push({ v: t("sideFries"), k: "fries" });
         if (chipsUpgradeItem(item)) sideOpts.push({ v: t("sideFrenchPlus"), k: "french", disabled: isOut("side-french") });

@@ -30,6 +30,7 @@
     "f-guac": "Guacamole",
     "f-empanadas": "Empanadas (papas a la francesa)",
     "f-papas-t": "Papas trufadas",
+    "f-papas-g": "Papas gajo picantes",
     "f-papas-queso": "Papas con queso suave",
     "f-grilled": "Grilled cheese",
     "f-bagel-pizza": "Bagel pizza",
