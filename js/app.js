@@ -2226,6 +2226,12 @@ const DEFAULT_HOURS = {
         { v: t("dirty"), k: "dirty" },
       ]);
     }
+    if (flags.includes("paletas")) {
+      fields += chips("paleta", t("paletaFlavor"), [
+        { v: t("paletaChoc"), k: "choc", disabled: isOut("paletas-choc") },
+        { v: t("paletaFruta"), k: "fruta", disabled: isOut("paletas-fruta") },
+      ]);
+    }
     if (flags.includes("burger")) {
       fields += chips("burger", t("burgerType"), [
         { v: t("beef"), k: "beef", disabled: isOut("f-burger-beef") },
@@ -2528,6 +2534,11 @@ const DEFAULT_HOURS = {
       if (v === "dry") parts.push(t("dry"));
       if (v === "dirty") parts.push(t("dirty"));
     }
+    if (f.includes("paletas")) {
+      const v = selected("paleta");
+      if (v === "choc") parts.push(t("paletaChoc"));
+      if (v === "fruta") parts.push(t("paletaFruta"));
+    }
     if (f.includes("burger")) {
       const v = selected("burger");
       if (v === "beef") parts.push(t("beef"));
@@ -2741,6 +2752,17 @@ const DEFAULT_HOURS = {
         return;
       }
     }
+    if (flags.includes("paletas")) {
+      const v = selected("paleta");
+      if (!v) {
+        toast(t("paletaNeed"));
+        return;
+      }
+      if (isOut(v === "choc" ? "paletas-choc" : "paletas-fruta")) {
+        toast(t("outOfStock"));
+        return;
+      }
+    }
     if (flags.includes("burger")) {
       const v = selected("burger");
       if (!v) {
@@ -2801,6 +2823,8 @@ const DEFAULT_HOURS = {
         if (cs) o.chickenSize = cs;
         const bg = selected("burger");
         if (bg) o.burger = bg;
+        const pl = selected("paleta");
+        if (pl) o.paleta = pl;
         const sd = selected("side");
         if (sd) o.side = sd;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
