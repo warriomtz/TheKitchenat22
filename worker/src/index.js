@@ -581,6 +581,33 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time: add "Papas con queso amarillo suave" ($119) right before the truffle fries. */
+  seedCheeseFries(menu) {
+    if (this.kvGet("cheeseFries", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-papas-t");
+        if (idx < 0) continue;
+        if (!items.some((i) => i.id === "f-papas-queso")) {
+          items.splice(idx, 0, {
+            id: "f-papas-queso",
+            name: "Papas con queso amarillo suave",
+            price: 119,
+            notes: "",
+            flags: [],
+            img: "",
+            name_en: "Fries with mild yellow cheese",
+            name_ja: "マイルドなイエローチーズのポテト",
+          });
+          sb.items = items;
+        }
+        this.kvSet("menu", menu);
+        this.kvSet("cheeseFries", true);
+        return;
+      }
+    }
+  }
   /** One-time: Meal Prep "Sirloin" is now called "Res" (keeps id, price, photo and stock). */
   seedRenameSirloin(menu) {
     if (this.kvGet("sirloinRenamed", false)) return;
@@ -1041,6 +1068,7 @@ export class KitchenStore extends DurableObject {
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
           this.seedSaladNoProtein(menu);
+          this.seedCheeseFries(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);
           this.seedMergeChicken(menu);

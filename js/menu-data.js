@@ -150,6 +150,7 @@ window.KITCHEN_MENU = {
       Street: {
         label: "Street food",
         items: [
+          { id: "f-papas-queso", name: "Papas con queso amarillo suave", price: 119, notes: "", flags: [], img: "" },
           { id: "f-papas-t", name: "Papas trufadas", price: 99, notes: "", flags: [], img: "assets/products/f-papas-t.jpg" },
           { id: "f-papas-g", name: "Papas gajo picantes", price: 99, notes: "", flags: [], img: "assets/products/f-papas-g.jpg" },
           { id: "f-guac", name: "Guacamole", price: 130, notes: "", flags: [], img: "assets/products/f-guac.jpg" },
