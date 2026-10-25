@@ -177,6 +177,7 @@ window.KITCHEN_MENU = {
         label: "Light",
         items: [
           { id: "f-ensalada", name: "Ensalada con pollo", price: 155, notesKey: "dressingNote", flags: ["dressing", "extraChicken"], img: "assets/products/f-ensalada.jpg" },
+          { id: "f-ensalada-sin", name: "Ensalada sin proteína", price: 100, notesKey: "dressingNote", flags: ["dressing"], img: "assets/products/f-ensalada.jpg" },
         ],
       },
       Dulces: {

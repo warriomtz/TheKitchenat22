@@ -553,6 +553,34 @@ export class KitchenStore extends DurableObject {
     }
     this.kvSet("beerNASeeded", true);
   }
+  /** One-time: add "Ensalada sin proteína" ($100) next to the chicken salad (same dressings, same photo). */
+  seedSaladNoProtein(menu) {
+    if (this.kvGet("saladNoProtein", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-ensalada");
+        if (idx < 0) continue;
+        if (!items.some((i) => i.id === "f-ensalada-sin")) {
+          items.splice(idx + 1, 0, {
+            id: "f-ensalada-sin",
+            name: "Ensalada sin proteína",
+            price: 100,
+            notes: "",
+            notesKey: "dressingNote",
+            flags: ["dressing"],
+            img: items[idx].img || "assets/products/f-ensalada.jpg",
+            name_en: "Salad, no protein",
+            name_ja: "サラダ（プロテインなし）",
+          });
+          sb.items = items;
+        }
+        this.kvSet("menu", menu);
+        this.kvSet("saladNoProtein", true);
+        return;
+      }
+    }
+  }
   /** One-time: Meal Prep "Sirloin" is now called "Res" (keeps id, price, photo and stock). */
   seedRenameSirloin(menu) {
     if (this.kvGet("sirloinRenamed", false)) return;
@@ -1012,6 +1040,7 @@ export class KitchenStore extends DurableObject {
           this.seedBeerNA(menu);
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
+          this.seedSaladNoProtein(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);
           this.seedMergeChicken(menu);
