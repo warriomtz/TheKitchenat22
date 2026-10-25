@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 30;
+const INV_VERSION = 31;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -57,6 +57,7 @@ const INV_DEFAULT = {
     boneless: { name: "Boneless", unit: "g", group: "Pollo", qty: 1900, min: 600 },
     "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
+    tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 150 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -78,7 +79,7 @@ const INV_DEFAULT = {
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
-    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
+    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
     "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
@@ -94,6 +95,7 @@ const INV_DEFAULT = {
     "f-burger": [
       { ing: "pan-hamburguesa", qty: 1 },
       { ing: "queso-suizo", qty: 1 },
+      { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" },
       { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" },
       { ing: "carne-hamburguesa", qty: 1, if: { burger: "beef" }, variant: true, outId: "f-burger-beef" },
@@ -102,7 +104,7 @@ const INV_DEFAULT = {
     "f-guac": [{ ing: "guacamole", qty: 1 }],
     "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }],
     "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }],
-    "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }],
+    "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
     "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
@@ -1147,6 +1149,7 @@ export class KitchenStore extends DurableObject {
     const sd = str(raw.side, 12).trim();
     if (sd) opts.side = sd;
     if (str(raw.extraChicken, 4).trim() === "1") opts.extraChicken = "1";
+    if (str(raw.bacon, 4).trim() === "1") opts.bacon = "1";
     if (raw.mpSides && typeof raw.mpSides === "object") {
       const sides = {};
       for (const [k, v] of Object.entries(raw.mpSides).slice(0, 12)) {

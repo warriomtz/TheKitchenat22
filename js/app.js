@@ -2233,7 +2233,7 @@ const DEFAULT_HOURS = {
       ]);
       fields += `<div class="field">
         <span>${t("burgerAddons")}</span>
-        <button type="button" class="chip chip--extra" id="burgerBaconToggle">${t("burgerBacon")}</button>
+        <button type="button" class="chip chip--extra" id="burgerBaconToggle"${isOut("burger-bacon") ? " disabled" : ""}>${t("burgerBacon")}</button>
       </div>`;
       fields += chips("burgerSauce", t("burgerSauce"), [
         { v: t("burgerSauceNone"), k: "none" },
@@ -2804,6 +2804,7 @@ const DEFAULT_HOURS = {
         const sd = selected("side");
         if (sd) o.side = sd;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
+        if ($("#burgerBaconToggle")?.classList.contains("is-selected")) o.bacon = "1";
         const picked = selectedAll("mpSides");
         if (picked.length) {
           o.mpSides = {};
