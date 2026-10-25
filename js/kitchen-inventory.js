@@ -90,7 +90,18 @@
     for (const [id, it] of Object.entries(items)) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
     const out = Object.values(items).filter((i) => i.qty != null && i.qty <= 0).length;
     const low = Object.values(items).filter((i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min).length;
-    let html = `<p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
+    const need = Object.entries(items)
+      .filter(([, i]) => i.qty != null && (i.qty <= 0 || (i.min != null && i.qty <= i.min)))
+      .sort((a, b) => (a[1].qty <= 0 ? 0 : 1) - (b[1].qty <= 0 ? 0 : 1));
+    const restock = need.length
+      ? `<div class="kinv-restock"><strong>🛒 Por resurtir (${need.length})</strong><ul>${need
+          .map(
+            ([, i]) =>
+              `<li class="${i.qty <= 0 ? "is-out" : "is-low"}"><span>${esc(i.name)}</span><em>${i.qty <= 0 ? "Agotado" : "Quedan " + i.qty + " " + esc(i.unit || "")}</em></li>`
+          )
+          .join("")}</ul></div>`
+      : '<div class="kinv-restock kinv-restock--ok">✅ Nada por resurtir</div>';
+    let html = restock + `<p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
     for (const [g, list] of Object.entries(groups)) {
       html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => row(id, it)).join("");
     }
