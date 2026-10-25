@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 8;
+const INV_VERSION = 9;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -45,7 +45,8 @@ const INV_DEFAULT = {
     "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
     pasta: { name: "Pasta", unit: "unidades", group: "Pastas", qty: 0, min: 1 },
-    guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1 },
+    guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
+    "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -66,7 +67,8 @@ const INV_DEFAULT = {
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
-    "f-club": [{ ing: "pollo-club", qty: 1 }],
+    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }],
+    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
       { ing: "pan-hamburguesa", qty: 1 },
@@ -521,12 +523,13 @@ export class KitchenStore extends DurableObject {
     if ((inv.v || 1) < INV_VERSION) {
       // v2-v4: separate 100 g chicken, club chicken, burger patty/bun/breaded chicken, pasta/salad chicken, bagels. Keeps quantities already edited.
       for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
-      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac", "f-grilled"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
       // v5: alert thresholds requested by Mario (burger buns at 4, bagels at 1)
       if ((inv.v || 1) < 5) {
         if (inv.items["pan-hamburguesa"]) inv.items["pan-hamburguesa"].min = 4;
         if (inv.items.bagel) inv.items.bagel.min = 1;
       }
+      if ((inv.v || 1) < 9 && inv.items.guacamole && inv.items.guacamole.target == null) inv.items.guacamole.target = 2;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
@@ -572,7 +575,7 @@ export class KitchenStore extends DurableObject {
       it.qty = after;
       applied[ing] = Math.round((before - after) * 100) / 100;
       if (after <= 0 && before > 0) alerts.push(`🚫 AGOTADO: ${it.name}. Se bloquean en el menú los platillos que lo usan.`);
-      else if (it.min != null && after <= it.min && before > it.min) alerts.push(`⚠️ Inventario bajo: ${it.name} · quedan ${after} ${it.unit || ""}`.trim());
+      else if (it.min != null && after <= it.min && before > it.min) alerts.push(`⚠️ Inventario bajo: ${it.name} · quedan ${after} ${it.unit || ""}${it.target ? ` · resurtir a ${it.target}` : ""}`.trim());
     }
     if (Object.keys(applied).length) {
       this.kvSet("kitchenInv", inv);
