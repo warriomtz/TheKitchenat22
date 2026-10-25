@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 28;
+const INV_VERSION = 29;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -55,7 +55,7 @@ const INV_DEFAULT = {
     waffle: { name: "Waffle", unit: "unidades", group: "Panadería", qty: 1, min: null },
     "verduras-salteadas": { name: "Verduras salteadas", unit: "g", group: "Complementos", qty: 510, min: 600 },
     boneless: { name: "Boneless", unit: "g", group: "Pollo", qty: 1900, min: 600 },
-    "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: null },
+    "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -564,6 +564,7 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 26 && inv.items.pasta) {
         Object.assign(inv.items.pasta, INV_DEFAULT.items.pasta);
       }
+      if ((inv.v || 1) < 29 && inv.items["bolsa-papa"]) inv.items["bolsa-papa"].min = 5;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
