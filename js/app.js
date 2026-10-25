@@ -2259,10 +2259,10 @@ const DEFAULT_HOURS = {
     }
     if (flags.includes("dressing")) {
       fields += chips("dressing", t("dressing"), [
+        { v: "César", k: "César" },
         { v: "Aceite de oliva", k: "Aceite de oliva" },
         { v: "Aderezo ranch", k: "Aderezo ranch" },
         { v: "Limon y soya", k: "Limon y soya" },
-        { v: "Mostaza y soya", k: "Mostaza y soya" },
       ]);
     }
     if (flags.includes("extraChicken")) {
