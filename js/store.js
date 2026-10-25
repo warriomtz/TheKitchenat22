@@ -410,6 +410,7 @@
       dineInOnly: !!raw.dineInOnly,
       sectionId: String(raw.sectionId || raw.section || "").slice(0, 40),
       subKey: String(raw.subKey || "").slice(0, 40),
+      ...(raw.opts && typeof raw.opts === "object" ? { opts: raw.opts } : {}),
     };
   }
 
@@ -452,6 +453,27 @@
       }
       mode = "none";
       return mode;
+    },
+
+    /** Admin: kitchen inventory (ingredients deducted from orders). */
+    async kitchenInventory(code) {
+      try {
+        const res = await fetch(apiUrl("/api/kitchen-inventory"), { headers: adminHeaders(code), cache: "no-store" });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+    async kitchenInventoryAction(payload, code) {
+      const res = await fetch(apiUrl("/api/kitchen-inventory"), {
+        method: "POST",
+        headers: adminHeaders(code, { "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "inventory_" + res.status);
+      return data;
     },
 
     /** Admin: send a Telegram test message and report what Telegram answered. */

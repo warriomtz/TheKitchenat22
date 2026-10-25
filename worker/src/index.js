@@ -32,6 +32,37 @@ const DEFAULT_HOURS = {
 };
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
+/** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
+const INV_DEFAULT = {
+  items: {
+    "pollo-200": { name: "Pollo 200 g", unit: "unidades", group: "Proteínas", qty: 7, min: 1 },
+    atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
+    "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
+    res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
+    salmon: { name: "Salmón", unit: "unidades", group: "Proteínas", qty: 3, min: 1 },
+    arroz: { name: "Arroz", unit: "unidades", group: "Complementos", qty: 12, min: 3 },
+    frijol: { name: "Frijol", unit: "unidades", group: "Complementos", qty: 3, min: 1 },
+    quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
+    "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
+    "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
+  },
+  recipes: {
+    "m-pollo-100": [
+      { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true },
+      { ing: "pollo-200", qty: 0.5, if: { chickenSize: "100" } },
+    ],
+    "m-atun": [{ ing: "atun", qty: 1 }],
+    "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
+    "m-sirloin": [{ ing: "res", qty: 1 }],
+    "m-salmon": [{ ing: "salmon", qty: 1 }],
+    "side:arroz": [{ ing: "arroz", qty: 1 }],
+    "side:frijol": [{ ing: "frijol", qty: 1 }],
+    "side:quinoa": [{ ing: "quinoa", qty: 1 }],
+    "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }],
+    "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }],
+  },
+};
+
 // ---------------------------------------------------------------- helpers
 
 const enc = new TextEncoder();
@@ -181,13 +212,45 @@ async function notifyTelegram(env, order) {
   }
 }
 
+/** Generic alert (inventory etc.) to ntfy + Telegram. Never throws. */
+async function notifyText(env, title, lines) {
+  const text = (Array.isArray(lines) ? lines : [String(lines)]).join("\n").slice(0, 1200);
+  if (!text) return;
+  const topic = envVar(env, "NTFY_TOPIC");
+  if (topic) {
+    try {
+      const r = await fetch(
+        `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent(title)}&priority=4&tags=${encodeURIComponent("warning,package")}`,
+        { method: "POST", headers: ntfyHeaders(env), body: text }
+      );
+      if (!r.ok) console.log("ntfy_failed", r.status);
+    } catch (e) {
+      console.log("ntfy_error", String(e && e.message));
+    }
+  }
+  const token = envVar(env, "TELEGRAM_BOT_TOKEN");
+  const chat = envVar(env, "TELEGRAM_CHAT_ID");
+  if (token && chat) {
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chat, text: `${title}\n${text}`.slice(0, 3500) }),
+      });
+    } catch (e) {
+      console.error("telegram_error", String(e));
+    }
+  }
+}
+
 // ----------------------------------------------------------------- Worker
 
 const PUBLIC_GET = new Set(["/api/stock", "/api/hours", "/api/menu", "/api/announcement"]);
-const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory"]);
+const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory"]);
 const POST_ROUTES = new Set([
   "/api/stock",
   "/api/bar-inventory",
+  "/api/kitchen-inventory",
   "/api/hours",
   "/api/menu/item",
   "/api/menu/image",
@@ -256,6 +319,10 @@ export default {
         ctx.waitUntil(notifyKitchen(env, body.order));
         ctx.waitUntil(notifyTelegram(env, body.order));
       }
+      if (body && body.inventoryAlerts) {
+        if (body.inventoryAlerts.length) ctx.waitUntil(notifyText(env, "The Kitchen · Inventario", body.inventoryAlerts));
+        delete body.inventoryAlerts;
+      }
       return reply(request, env, status, body);
     }
     // Public: analytics tracking
@@ -316,6 +383,10 @@ export default {
     delete data.code;
 
     const [status, body] = await stub.op(path, "POST", data, ip);
+    if (body && body.inventoryAlerts) {
+      if (body.inventoryAlerts.length) ctx.waitUntil(notifyText(env, "The Kitchen · Inventario", body.inventoryAlerts));
+      delete body.inventoryAlerts;
+    }
     return reply(request, env, status, body);
   },
 };
@@ -413,15 +484,154 @@ export class KitchenStore extends DurableObject {
     return true;
   }
 
+  // ---- kitchen inventory (ingredients deducted from orders)
+  invRead() {
+    let inv = this.kvGet("kitchenInv", null);
+    if (!inv || !inv.items) {
+      inv = JSON.parse(JSON.stringify(INV_DEFAULT));
+      this.kvSet("kitchenInv", inv);
+    }
+    inv.recipes = inv.recipes || {};
+    return inv;
+  }
+  /** Which ingredients does this order use? -> { ingredientId: amount } */
+  invConsumption(items, inv) {
+    const used = {};
+    const add = (ing, q) => {
+      used[ing] = Math.round(((used[ing] || 0) + q) * 100) / 100;
+    };
+    const rulesFor = (rules, opts) => {
+      const list = Array.isArray(rules) ? rules : [];
+      const match = (r) => r.if && Object.entries(r.if).every(([k, v]) => String((opts || {})[k] || "") === String(v));
+      const hit = list.filter(match);
+      if (hit.length) return hit;
+      return list.filter((r) => !r.if || r.default);
+    };
+    for (const it of items || []) {
+      const mult = Math.max(1, parseInt(it.qty, 10) || 1);
+      for (const r of rulesFor(inv.recipes[it.id], it.opts)) add(r.ing, r.qty * mult);
+      for (const [k, n] of Object.entries((it.opts && it.opts.mpSides) || {})) {
+        for (const r of inv.recipes["side:" + k] || []) add(r.ing, r.qty * n * mult);
+      }
+    }
+    return used;
+  }
+  /** Deduct this order's ingredients (tracked ones only). Returns alert lines. */
+  invApply(order) {
+    const inv = this.invRead();
+    const used = this.invConsumption(order.items, inv);
+    const applied = {};
+    const alerts = [];
+    for (const [ing, q] of Object.entries(used)) {
+      const it = inv.items[ing];
+      if (!it || it.qty == null) continue;
+      const before = it.qty;
+      const after = Math.max(0, Math.round((before - q) * 100) / 100);
+      it.qty = after;
+      applied[ing] = Math.round((before - after) * 100) / 100;
+      if (after <= 0 && before > 0) alerts.push(`🚫 AGOTADO: ${it.name}. Se bloquean en el menú los platillos que lo usan.`);
+      else if (it.min != null && after <= it.min && before > it.min) alerts.push(`⚠️ Inventario bajo: ${it.name} · quedan ${after} ${it.unit || ""}`.trim());
+    }
+    if (Object.keys(applied).length) {
+      this.kvSet("kitchenInv", inv);
+      order.inv = applied;
+    }
+    return alerts;
+  }
+  /** Give back what this order deducted (discarded / deleted / edited). */
+  invRelease(order) {
+    if (!order || !order.inv) return;
+    const inv = this.invRead();
+    for (const [ing, q] of Object.entries(order.inv)) {
+      const it = inv.items[ing];
+      if (it && it.qty != null) it.qty = Math.round((it.qty + q) * 100) / 100;
+    }
+    this.kvSet("kitchenInv", inv);
+    delete order.inv;
+  }
+  /** Menu ids that can't be served because a tracked ingredient ran out. */
+  invAutoOut() {
+    const inv = this.kvGet("kitchenInv", null);
+    if (!inv || !inv.items) return [];
+    const out = new Set();
+    for (const [key, rules] of Object.entries(inv.recipes || {})) {
+      const list = Array.isArray(rules) ? rules : [];
+      const byIng = {};
+      for (const r of list) byIng[r.ing] = Math.min(byIng[r.ing] == null ? Infinity : byIng[r.ing], r.qty);
+      const blocked = Object.entries(byIng).some(([ing, need]) => {
+        const it = inv.items[ing];
+        return it && it.qty != null && it.qty < need;
+      });
+      if (blocked) out.add(key.startsWith("side:") ? "mp-side-" + key.slice(5) : key);
+    }
+    return [...out];
+  }
+  invAdmin(data) {
+    const act = String(data.action || "").toLowerCase();
+    const inv = this.invRead();
+    const num = (v) => {
+      if (v === null || v === "" || v === undefined) return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : undefined;
+    };
+    const id = str(data.id, 60).trim();
+    if (act === "set") {
+      const it = inv.items[id];
+      if (!it) return [404, { error: "not_found" }];
+      if ("qty" in data) {
+        const n = num(data.qty);
+        if (n === undefined) return [400, { error: "bad_qty" }];
+        it.qty = n;
+      }
+      if ("min" in data) {
+        const n = num(data.min);
+        if (n === undefined) return [400, { error: "bad_min" }];
+        it.min = n;
+      }
+      if (data.name) it.name = str(data.name, 80);
+      if (data.unit != null) it.unit = str(data.unit, 20);
+    } else if (act === "add") {
+      const it = inv.items[id];
+      if (!it) return [404, { error: "not_found" }];
+      const n = Number(data.delta);
+      if (!Number.isFinite(n)) return [400, { error: "bad_delta" }];
+      it.qty = Math.max(0, Math.round(((it.qty == null ? 0 : it.qty) + n) * 100) / 100);
+    } else if (act === "create") {
+      const name = str(data.name, 80).trim();
+      if (!name) return [400, { error: "name_required" }];
+      const nid = id || name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+      if (!nid || inv.items[nid]) return [400, { error: "id_taken" }];
+      const q = num(data.qty);
+      inv.items[nid] = { name, unit: str(data.unit, 20) || "unidades", group: str(data.group, 30), qty: q === undefined ? null : q, min: num(data.min) ?? null };
+    } else if (act === "delete") {
+      delete inv.items[id];
+      for (const k of Object.keys(inv.recipes)) inv.recipes[k] = (inv.recipes[k] || []).filter((r) => r.ing !== id);
+    } else if (act === "recipe") {
+      const key = str(data.itemId, 80).trim();
+      if (!key) return [400, { error: "item_required" }];
+      const rules = (Array.isArray(data.rules) ? data.rules : []).slice(0, 20).map((r) => ({ ing: str(r.ing, 60), qty: Number(r.qty), ...(r.if && typeof r.if === "object" ? { if: r.if } : {}), ...(r.default ? { default: true } : {}) })).filter((r) => inv.items[r.ing] && Number.isFinite(r.qty) && r.qty > 0);
+      if (rules.length) inv.recipes[key] = rules;
+      else delete inv.recipes[key];
+    } else {
+      return [400, { error: "bad_action" }];
+    }
+    this.kvSet("kitchenInv", inv);
+    return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut() }];
+  }
+
   // ---- stock / hours / announcement / bar
   readStock() {
     const s = this.kvGet("stock", {});
     const ids = Array.isArray(s.outOfStock) ? s.outOfStock : [];
-    return { outOfStock: ids.map(String) };
+    const auto = this.invAutoOut();
+    return { outOfStock: [...new Set([...ids.map(String), ...auto])].sort(), auto };
   }
   writeStock(ids) {
-    const clean = [...new Set(ids.filter(Boolean).map(String))].sort();
-    return this.kvSet("stock", { outOfStock: clean });
+    // ingredient-driven "agotado" is derived, never saved into the manual list
+    const auto = new Set(this.invAutoOut());
+    const clean = [...new Set(ids.filter(Boolean).map(String))].filter((x) => !auto.has(x)).sort();
+    this.kvSet("stock", { outOfStock: clean });
+    return this.readStock();
   }
   normalizeHours(raw) {
     const base = { ...DEFAULT_HOURS };
@@ -823,7 +1033,24 @@ export class KitchenStore extends DurableObject {
       dineInOnly: !!raw.dineInOnly,
       sectionId: str(raw.sectionId || raw.section, 40),
       subKey: str(raw.subKey, 40),
+      ...this.sanitizeOpts(raw.opts),
     };
+  }
+  /** Machine-readable choices used by the kitchen inventory (chicken size, Meal Prep sides). */
+  sanitizeOpts(raw) {
+    if (!raw || typeof raw !== "object") return {};
+    const opts = {};
+    const cs = str(raw.chickenSize, 10).trim();
+    if (cs) opts.chickenSize = cs;
+    if (raw.mpSides && typeof raw.mpSides === "object") {
+      const sides = {};
+      for (const [k, v] of Object.entries(raw.mpSides).slice(0, 12)) {
+        const n = parseInt(v, 10);
+        if (Number.isFinite(n) && n > 0) sides[str(k, 30)] = Math.min(9, n);
+      }
+      if (Object.keys(sides).length) opts.mpSides = sides;
+    }
+    return Object.keys(opts).length ? { opts } : {};
   }
   listOrders() {
     return this.sql
@@ -893,14 +1120,20 @@ export class KitchenStore extends DurableObject {
       ...(mealPrep ? { mealPrep: true, scheduledFor } : {}),
       source: "whatsapp",
     };
+    let inventoryAlerts = [];
     this.ctx.storage.transactionSync(() => {
+      try {
+        inventoryAlerts = this.invApply(order);
+      } catch (e) {
+        console.error("inventory_apply_failed", String(e));
+      }
       this.sql.exec("INSERT INTO orders (id, json) VALUES (?, ?)", order.id, JSON.stringify(order));
       this.sql.exec(
         "DELETE FROM orders WHERE seq NOT IN (SELECT seq FROM orders ORDER BY seq DESC LIMIT ?)",
         MAX_ORDERS
       );
     });
-    return [200, { ok: true, order }];
+    return [200, { ok: true, order, inventoryAlerts }];
   }
   orderAdmin(data) {
     const act = String(data.action || "update").toLowerCase();
@@ -918,6 +1151,8 @@ export class KitchenStore extends DurableObject {
     if (act === "delete") {
       const id = String(data.orderId || data.id || "").trim();
       if (!id) return [400, { error: "order_id_required" }];
+      const gone = this.getOrder(id);
+      if (gone && String(gone.status || "open") === "open") this.invRelease(gone);
       const res = this.sql.exec("DELETE FROM orders WHERE id = ?", id);
       if (!res.rowsWritten) return [404, { error: "not_found" }];
       return [200, { ok: true, deleted: 1, orderId: id, orders: this.listOrders() }];
@@ -930,11 +1165,13 @@ export class KitchenStore extends DurableObject {
       const o = this.getOrder(id);
       if (!o) return [404, { error: "not_found" }];
       const now = nowIso();
+      this.invRelease(o);
       o.items = items;
       o.updatedAt = now;
       o.editedAt = now;
+      const inventoryAlerts = String(o.status || "open") === "dismissed" ? [] : this.invApply(o);
       this.saveOrder(o);
-      return [200, { ok: true, order: o }];
+      return [200, { ok: true, order: o, inventoryAlerts }];
     }
     // status update
     const id = String(data.orderId || data.id || "").trim();
@@ -942,10 +1179,14 @@ export class KitchenStore extends DurableObject {
     if (!["open", "completed", "dismissed"].includes(status)) return [400, { error: "bad_status" }];
     const o = this.getOrder(id);
     if (!o) return [404, { error: "not_found" }];
+    const prev = String(o.status || "open");
+    let inventoryAlerts = [];
+    if (status === "dismissed" && prev !== "dismissed") this.invRelease(o);
+    else if (prev === "dismissed" && status !== "dismissed" && !o.inv) inventoryAlerts = this.invApply(o);
     o.status = status;
     o.updatedAt = nowIso();
     this.saveOrder(o);
-    return [200, { ok: true, order: o }];
+    return [200, { ok: true, order: o, inventoryAlerts }];
   }
 
   // ---- analytics
@@ -1083,6 +1324,8 @@ export class KitchenStore extends DurableObject {
           return [200, { events: this.listAnalytics() }];
         case "/api/bar-inventory":
           return [200, { inventory: this.kvGet("barInventory", {}) }];
+        case "/api/kitchen-inventory":
+          return [200, { inventory: this.invRead(), autoOut: this.invAutoOut() }];
       }
       return [404, { error: "not_found" }];
     }
@@ -1106,6 +1349,8 @@ export class KitchenStore extends DurableObject {
         this.kvSet("barInventory", inv);
         return [200, { ok: true, inventory: inv }];
       }
+      case "/api/kitchen-inventory":
+        return this.invAdmin(data);
       case "/api/announcement": {
         const a = this.normalizeAnnouncement(data);
         a.updatedAt = nowIso();

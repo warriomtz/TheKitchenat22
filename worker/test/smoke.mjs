@@ -64,7 +64,7 @@ const oid = j.order.id;
 [s] = await call("POST", "/api/orders", { action: "delete", orderId: "nope" }, CODE); ok(s === 404, "delete missing 404");
 
 // admin writes
-[s, j] = await call("POST", "/api/stock", { outOfStock: ["b", "a", "a"] }, CODE); ok(JSON.stringify(j.outOfStock) === '["a","b"]', "stock dedup/sort");
+[s, j] = await call("POST", "/api/stock", { outOfStock: ["b", "a", "a"] }, CODE); ok(JSON.stringify(j.outOfStock.filter((x) => !x.startsWith("mp-side-"))) === '["a","b"]', "stock dedup/sort");
 [s, j] = await call("POST", "/api/hours", { open: "99:00", closedDays: [2, 9, "3"], forceOpen: true, forceClosed: true }, CODE);
 ok(j.open === "14:00" && JSON.stringify(j.closedDays) === "[2,3]" && j.forceOpen === false, "hours validation");
 [s, j] = await call("POST", "/api/announcement", { enabled: true, messageEs: "Hola", messageEn: "Hi" }, CODE); ok(j.enabled && j.updatedAt, "announcement");

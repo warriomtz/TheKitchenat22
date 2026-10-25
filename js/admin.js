@@ -2540,6 +2540,7 @@
       if (!quoteState.current) quoteState.current = quoteQ()?.emptyQuote();
       fillQuoteForm();
     }
+    if (tab === "inventory" && window.KitchenInventory) KitchenInventory.render(ADMIN_CODE);
     if (tab === "bar") {
       loadOrders(true).then(() => {
         if (window.BarInventory) BarInventory.render(state.orders);
@@ -2593,6 +2594,11 @@
     $("#reportAptSelect")?.addEventListener("change", () => renderApartmentDetail());
     $("#announceTranslate")?.addEventListener("click", translateEsToEn);
     $("#hoursSave")?.addEventListener("click", saveHours);
+    $("#kInvRefresh")?.addEventListener("click", () => window.KitchenInventory?.render(ADMIN_CODE));
+    $("#kInvAdd")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      window.KitchenInventory?.addFromForm(ADMIN_CODE);
+    });
     $("#telegramTestBtn")?.addEventListener("click", async () => {
       const st = $("#telegramTestStatus");
       if (st) st.textContent = "Enviando…";

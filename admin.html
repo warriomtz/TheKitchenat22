@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
-  <link rel="stylesheet" href="css/styles.css?v=admin-20261016b" />
-  <link rel="stylesheet" href="css/admin.css?v=admin-20261016b" />
+  <link rel="stylesheet" href="css/styles.css?v=admin-20261025a" />
+  <link rel="stylesheet" href="css/admin.css?v=admin-20261025a" />
 </head>
 <body class="admin-page">
   <div class="noise" aria-hidden="true"></div>
@@ -53,6 +53,7 @@
       <button type="button" class="admin-nav__btn" data-tab="announce" role="tab">📢 Aviso</button>
       <button type="button" class="admin-nav__btn" data-tab="hours" role="tab">🕐 Horarios</button>
       <button type="button" class="admin-nav__btn" data-tab="stock" role="tab">📦 Stock</button>
+      <button type="button" class="admin-nav__btn" data-tab="inventory" role="tab">🧾 Inventario</button>
       <button type="button" class="admin-nav__btn" data-tab="bar" role="tab">🍺 Bar</button>
       <button type="button" class="admin-nav__btn" data-tab="catalog" role="tab">📸 Menú</button>
       <button type="button" class="admin-nav__btn" data-tab="quote" role="tab">🖋 Cotización</button>
@@ -173,6 +174,28 @@
           <input type="search" class="adm-search" id="stockFilter" placeholder="Buscar…" />
         </div>
         <div class="stock-list" id="stockList"></div>
+      </section>
+
+      <!-- Kitchen inventory -->
+      <section class="admin-panel" id="tab-inventory" role="tabpanel" hidden>
+        <div class="admin-panel__head">
+          <div>
+            <h2>Inventario de cocina</h2>
+            <p class="admin-panel__desc">Cada pedido descuenta sus ingredientes al entrar. Si lo descartas o lo borras, se devuelve. Deja la cantidad vacía para no controlar un ingrediente. Al llegar al mínimo te avisa por Telegram/ntfy y al llegar a 0 los platillos que lo usan se marcan Agotado.</p>
+          </div>
+          <div class="admin-panel__tools">
+            <button type="button" class="btn btn--ghost btn--sm" id="kInvRefresh">Actualizar</button>
+          </div>
+        </div>
+        <div id="kInvRoot" class="kinv"></div>
+        <form id="kInvAdd" class="kinv-add" autocomplete="off">
+          <strong>Agregar ingrediente</strong>
+          <input type="text" id="kInvName" placeholder="Nombre (ej. Pan de hamburguesa)" required />
+          <input type="text" id="kInvUnit" placeholder="Unidad (ej. piezas)" value="unidades" />
+          <input type="number" id="kInvQty" placeholder="Cantidad" min="0" step="any" />
+          <input type="number" id="kInvMin" placeholder="Mínimo (aviso)" min="0" step="any" />
+          <button type="submit" class="btn btn--primary btn--sm">Agregar</button>
+        </form>
       </section>
 
       <!-- Bar inventory -->
@@ -458,13 +481,14 @@
 
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="js/config.js?v=admin-20261016b"></script>
-  <script src="js/store.js?v=admin-20261016b"></script>
-  <script src="js/menu-data.js?v=admin-20261016b"></script>
-  <script src="js/i18n.js?v=admin-20261016b"></script>
-  <script src="js/item-i18n.js?v=admin-20261016b"></script>
-  <script src="js/quote.js?v=admin-20261016b"></script>
-  <script src="js/bar-inventory.js?v=admin-20261016b"></script>
-  <script src="js/admin.js?v=admin-20261016b"></script>
+  <script src="js/config.js?v=admin-20261025a"></script>
+  <script src="js/store.js?v=admin-20261025a"></script>
+  <script src="js/menu-data.js?v=admin-20261025a"></script>
+  <script src="js/i18n.js?v=admin-20261025a"></script>
+  <script src="js/item-i18n.js?v=admin-20261025a"></script>
+  <script src="js/quote.js?v=admin-20261025a"></script>
+  <script src="js/kitchen-inventory.js?v=admin-20261025a"></script>
+  <script src="js/bar-inventory.js?v=admin-20261025a"></script>
+  <script src="js/admin.js?v=admin-20261025a"></script>
 </body>
 </html>

@@ -1948,6 +1948,7 @@ const DEFAULT_HOURS = {
         qty: line.qty,
         customizations: line.customizationsEs != null ? line.customizationsEs : line.customizations || "",
         notes: line.notes || "",
+        opts: line.opts || undefined,
         dineInOnly: !!(line.dineInOnly || isDineInOnly(it)),
         sectionId,
         subKey,
@@ -2793,6 +2794,18 @@ const DEFAULT_HOURS = {
       // Kitchen copy is always Spanish, whatever language the resident ordered in
       nameEs: withLang("es", () => nameFor(item)),
       customizationsEs: withLang("es", () => computeExtras().parts.join(" · ")),
+      // Machine-readable choices (kitchen inventory deducts from these)
+      opts: (() => {
+        const o = {};
+        const cs = selected("chickenSize");
+        if (cs) o.chickenSize = cs;
+        const picked = selectedAll("mpSides");
+        if (picked.length) {
+          o.mpSides = {};
+          picked.forEach((k) => (o.mpSides[k] = (o.mpSides[k] || 0) + 1));
+        }
+        return Object.keys(o).length ? o : undefined;
+      })(),
       notes,
       dineInOnly,
     });
