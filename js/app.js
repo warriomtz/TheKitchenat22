@@ -2801,6 +2801,7 @@ const DEFAULT_HOURS = {
         if (cs) o.chickenSize = cs;
         const bg = selected("burger");
         if (bg) o.burger = bg;
+        if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
         const picked = selectedAll("mpSides");
         if (picked.length) {
           o.mpSides = {};

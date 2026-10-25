@@ -26,6 +26,9 @@
     "m-salmon": "Meal Prep Salmón",
     "f-club": "Club sandwich",
     "f-burger": "Hamburguesa de res",
+    "f-alfredo": "Pasta Alfredo con pollo",
+    "f-pesto": "Pasta Pesto con pollo",
+    "f-ensalada": "Ensalada con pollo",
   };
 
   let data = null;

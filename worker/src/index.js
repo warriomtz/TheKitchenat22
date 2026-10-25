@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 2;
+const INV_VERSION = 3;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -64,6 +64,10 @@ const INV_DEFAULT = {
     "f-club": [{ ing: "pollo-club", qty: 1 }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [{ ing: "carne-hamburguesa", qty: 1, if: { burger: "beef" }, variant: true, outId: "f-burger-beef" }],
+    // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
+    "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
+    "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
+    "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
@@ -502,9 +506,9 @@ export class KitchenStore extends DurableObject {
     }
     inv.recipes = inv.recipes || {};
     if ((inv.v || 1) < INV_VERSION) {
-      // v2: separate 100 g chicken, club chicken, burger patty. Keeps quantities already edited.
+      // v2/v3: separate 100 g chicken, club chicken, burger patty, pasta/salad chicken. Keeps quantities already edited.
       for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
-      for (const k of ["m-pollo-100", "f-club", "f-burger"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
@@ -519,9 +523,13 @@ export class KitchenStore extends DurableObject {
     const rulesFor = (rules, opts) => {
       const list = Array.isArray(rules) ? rules : [];
       const match = (r) => r.if && Object.entries(r.if).every(([k, v]) => String((opts || {})[k] || "") === String(v));
+      const always = list.filter((r) => !r.if);
       const hit = list.filter(match);
-      if (hit.length) return hit;
-      return list.filter((r) => !r.if || r.default);
+      // alternatives (e.g. chicken size) fall back to their default when no option was recorded
+      const hasAlt = list.some((r) => r.if && !r.optional);
+      const altHit = hit.filter((r) => !r.optional);
+      const fallback = hasAlt && !altHit.length ? list.filter((r) => r.default) : [];
+      return [...always, ...hit, ...fallback.filter((r) => !hit.includes(r))];
     };
     for (const it of items || []) {
       const mult = Math.max(1, parseInt(it.qty, 10) || 1);
@@ -576,11 +584,11 @@ export class KitchenStore extends DurableObject {
     };
     for (const [key, rules] of Object.entries(inv.recipes || {})) {
       const list = Array.isArray(rules) ? rules : [];
-      const must = list.filter((r) => !r.if && !r.variant);
-      const alts = list.filter((r) => r.if && !r.variant);
+      const must = list.filter((r) => !r.if && !r.variant && !r.optional);
+      const alts = list.filter((r) => r.if && !r.variant && !r.optional);
       const whole = must.some(blocked) || (alts.length > 0 && alts.every(blocked));
       if (whole) out.add(key.startsWith("side:") ? "mp-side-" + key.slice(5) : key);
-      for (const r of list) if (r.outId && blocked(r)) out.add(r.outId);
+      for (const r of list) if (r.outId && !r.optional && blocked(r)) out.add(r.outId);
     }
     return [...out];
   }
@@ -1062,6 +1070,7 @@ export class KitchenStore extends DurableObject {
     if (cs) opts.chickenSize = cs;
     const bg = str(raw.burger, 20).trim();
     if (bg) opts.burger = bg;
+    if (str(raw.extraChicken, 4).trim() === "1") opts.extraChicken = "1";
     if (raw.mpSides && typeof raw.mpSides === "object") {
       const sides = {};
       for (const [k, v] of Object.entries(raw.mpSides).slice(0, 12)) {

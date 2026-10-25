@@ -52,5 +52,16 @@ ok(j.autoOut.includes("f-burger-beef") && !j.autoOut.includes("f-burger"), "beef
 ok(j.autoOut.includes("mp-chicken-100") && !j.autoOut.includes("m-pollo-100"), "100 g option blocked only");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-200", qty: 0 }, CODE);
 ok(j.autoOut.includes("m-pollo-100"), "both sizes out -> dish out");
+// pollo 100 g also used by pasta/ensalada (+1 with extra chicken)
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 10 }, CODE);
+[s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
+  { id: "f-alfredo", name: "Alfredo", qty: 1 },
+  { id: "f-pesto", name: "Pesto", qty: 1, opts: { extraChicken: "1" } },
+  { id: "f-ensalada", name: "Ensalada", qty: 2 },
+  { id: "m-pollo-100", name: "Pollo", qty: 1, opts: { chickenSize: "100" } } ] });
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["pollo-100"].qty === 10 - 1 - 2 - 2 - 1, "pollo 100 g shared by pasta, ensalada, meal prep (+extra)");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 0 }, CODE);
+ok(j.autoOut.includes("f-alfredo") && j.autoOut.includes("f-pesto") && j.autoOut.includes("f-ensalada"), "pollo 100 g out blocks pasta and ensalada");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);
