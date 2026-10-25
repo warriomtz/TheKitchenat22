@@ -34,6 +34,7 @@
     "f-waffle-m": "Chicken and Waffle",
     "f-waffle-d": "Waffle dulce",
     "f-boneless": "Boneless",
+    "f-bolsa": "Bolsa de papa",
     "f-papas-g": "Papas gajo picantes",
     "f-papas-queso": "Papas con queso suave",
     "f-grilled": "Grilled cheese",
