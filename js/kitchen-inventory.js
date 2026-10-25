@@ -27,6 +27,7 @@
     "f-club": "Club sandwich",
     "f-burger": "Hamburguesa",
     "f-pechuga-pomodoro": "Pechuga Pomodoro",
+    "f-guac": "Guacamole",
     "f-bagel-pizza": "Bagel pizza",
     "f-bagel-h": "Bagel de huevo con tocino",
     "f-alfredo": "Pasta Alfredo con pollo",
