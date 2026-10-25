@@ -37,6 +37,7 @@
     "f-bolsa": "Bolsa de papa",
     "f-galletas": "Galletas",
     "f-paletas": "Paletas",
+    "f-ensalada-sin": "Ensalada sin proteína",
     "f-papas-g": "Papas gajo picantes",
     "f-papas-queso": "Papas con queso suave",
     "f-grilled": "Grilled cheese",

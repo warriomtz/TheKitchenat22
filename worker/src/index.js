@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 34;
+const INV_VERSION = 35;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -61,6 +61,7 @@ const INV_DEFAULT = {
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
     "paleta-choc": { name: "Paletas de chocolate", unit: "piezas", group: "Dulces", qty: 4, min: 1 },
     "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
+    ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -82,7 +83,7 @@ const INV_DEFAULT = {
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
-    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
+    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
     "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
@@ -95,6 +96,8 @@ const INV_DEFAULT = {
       { ing: "paleta-choc", qty: 1, if: { paleta: "choc" }, outId: "paletas-choc" },
       { ing: "paleta-fruta", qty: 1, if: { paleta: "fruta" }, outId: "paletas-fruta" },
     ],
+    "f-ensalada-sin": [{ ing: "ensalada", qty: 80 }],
+    "side:ensalada": [{ ing: "ensalada", qty: 40 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
@@ -106,6 +109,7 @@ const INV_DEFAULT = {
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" },
       { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" },
+      { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" },
       { ing: "carne-hamburguesa", qty: 1, if: { burger: "beef" }, variant: true, outId: "f-burger-beef" },
       { ing: "pollo-empanizado", qty: 1, if: { burger: "chicken" }, variant: true, outId: "f-burger-chicken" },
     ],
@@ -116,7 +120,7 @@ const INV_DEFAULT = {
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
     "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
-    "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
+    "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "ensalada", qty: 80 }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
@@ -557,7 +561,7 @@ export class KitchenStore extends DurableObject {
     if ((inv.v || 1) < INV_VERSION) {
       // v2-v4: separate 100 g chicken, club chicken, burger patty/bun/breaded chicken, pasta/salad chicken, bagels. Keeps quantities already edited.
       for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
-      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac", "f-grilled", "side:sopaTomate", "f-empanadas", "f-papas-t", "f-papas-queso", "f-papas-g", "f-salmon-plate", "f-waffle-m", "f-waffle-d", "side:vegetales", "f-boneless", "f-bolsa", "f-galletas", "f-paletas"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac", "f-grilled", "side:sopaTomate", "f-empanadas", "f-papas-t", "f-papas-queso", "f-papas-g", "f-salmon-plate", "f-waffle-m", "f-waffle-d", "side:vegetales", "f-boneless", "f-bolsa", "f-galletas", "f-paletas", "f-ensalada-sin", "side:ensalada"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
       // v5: alert thresholds requested by Mario (burger buns at 4, bagels at 1)
       if ((inv.v || 1) < 5) {
         if (inv.items["pan-hamburguesa"]) inv.items["pan-hamburguesa"].min = 4;

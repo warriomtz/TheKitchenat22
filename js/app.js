@@ -2255,7 +2255,7 @@ const DEFAULT_HOURS = {
       });
     }
     if (flags.includes("side")) {
-      const sideOpts = [{ v: t("sideSalad"), k: "salad" }];
+      const sideOpts = [{ v: t("sideSalad"), k: "salad", disabled: isOut("side-salad") }];
       if (flags.includes("burger")) {
         sideOpts.push({ v: t("sideFrench"), k: "french", disabled: isOut("side-french") }, { v: t("sideWedges"), k: "wedges", disabled: isOut("side-wedges") });
       } else {
