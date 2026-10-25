@@ -84,7 +84,8 @@
         <input type="number" min="0" step="any" data-f="min" value="${it.min == null ? "" : it.min}" placeholder="—" /></label>
       <div class="kinv-f kinv-f--add">Surtir
         <span><input type="number" min="0" step="any" data-f="delta" placeholder="+ cantidad" />
-        <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span></div>
+        <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span>
+        ${it.cookFrom ? '<button type="button" class="btn btn--sm" data-act="cook">🍝 Ya cociné pasta</button>' : ""}</div>
       <button type="button" class="btn btn--ghost btn--sm kinv-del" data-act="del" title="Quitar ingrediente">✕</button>
     </div>`;
   }
@@ -152,6 +153,15 @@
         const v = Number($("input[data-f=delta]", rowEl).value);
         if (!Number.isFinite(v) || v === 0) return;
         act(window.__kinvCode || code, { action: "add", id, delta: v });
+      } else if (btn.dataset.act === "cook") {
+        const it = data.inventory.items[id];
+        const raw = data.inventory.items[it.cookFrom];
+        const def = Math.max(1, (it.target || 6) - (it.qty || 0));
+        const ans = prompt(`¿Cuántas porciones cocinaste? (hay ${raw ? raw.qty : "?"} sin hacer)`, String(def));
+        if (ans === null) return;
+        const n = Number(ans);
+        if (!Number.isFinite(n) || n <= 0) return;
+        act(window.__kinvCode || code, { action: "cook", id, n });
       } else if (btn.dataset.act === "del") {
         const nm = data.inventory.items[id] && data.inventory.items[id].name;
         if (confirm(`¿Quitar "${nm}" del inventario? Sus recetas dejarán de descontarlo.`)) {

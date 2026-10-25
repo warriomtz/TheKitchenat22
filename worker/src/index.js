@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 25;
+const INV_VERSION = 26;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -44,7 +44,8 @@ const INV_DEFAULT = {
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
     "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
-    pasta: { name: "Pasta", unit: "unidades", group: "Pastas", qty: 0, min: 1 },
+    pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookFrom: "pasta-cruda", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
+    "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "porciones", group: "Pastas", qty: 6, min: null, target: 6 },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
     "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
     "queso-suizo": { name: "Queso suizo", unit: "rebanadas", group: "Lácteos", qty: 37, min: 10 },
@@ -558,6 +559,9 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 18 && inv.items["papas-francesa"]) inv.items["papas-francesa"].min = 1300;
       if ((inv.v || 1) < 20 && inv.items["papas-gajo"]) inv.items["papas-gajo"].min = 500;
       if ((inv.v || 1) < 24 && inv.items["verduras-salteadas"]) inv.items["verduras-salteadas"].min = 600;
+      if ((inv.v || 1) < 26 && inv.items.pasta) {
+        Object.assign(inv.items.pasta, INV_DEFAULT.items.pasta);
+      }
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
@@ -603,6 +607,7 @@ export class KitchenStore extends DurableObject {
       it.qty = after;
       applied[ing] = Math.round((before - after) * 100) / 100;
       if (after <= 0 && before > 0) alerts.push(`🚫 AGOTADO: ${it.name}. Se bloquean en el menú los platillos que lo usan.`);
+      else if (it.min != null && after <= it.min && before > it.min && it.lowMsg) alerts.push(String(it.lowMsg).replace("{n}", after).replace("{t}", it.target || ""));
       else if (it.min != null && after <= it.min && before > it.min) alerts.push(`⚠️ Inventario bajo: ${it.name} · quedan ${after} ${it.unit || ""}${it.target ? ` · resurtir a ${it.target}` : ""}`.trim());
     }
     if (Object.keys(applied).length) {
@@ -678,6 +683,22 @@ export class KitchenStore extends DurableObject {
       if (!nid || inv.items[nid]) return [400, { error: "id_taken" }];
       const q = num(data.qty);
       inv.items[nid] = { name, unit: str(data.unit, 20) || "unidades", group: str(data.group, 30), qty: q === undefined ? null : q, min: num(data.min) ?? null };
+    } else if (act === "cook") {
+      const it = inv.items[id];
+      const raw = it && it.cookFrom && inv.items[it.cookFrom];
+      if (!it || !raw) return [400, { error: "not_cookable" }];
+      const have = it.qty == null ? 0 : it.qty;
+      let n = data.n == null || data.n === "" ? (it.target || 6) - have : Number(data.n);
+      if (!Number.isFinite(n) || n <= 0) return [400, { error: "bad_n" }];
+      n = Math.min(n, raw.qty == null ? n : raw.qty);
+      if (n <= 0) return [400, { error: "no_raw_stock" }];
+      it.qty = Math.round((have + n) * 100) / 100;
+      if (raw.qty != null) raw.qty = Math.round((raw.qty - n) * 100) / 100;
+      const rawTarget = raw.target || it.target || 6;
+      const alerts = [];
+      if (raw.qty == null || raw.qty < rawTarget) alerts.push(`🛒 COMPRAR otro paquete de pasta: quedan ${raw.qty ?? 0} sin hacer (meta ${rawTarget}).`);
+      this.kvSet("kitchenInv", inv);
+      return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), inventoryAlerts: alerts }];
     } else if (act === "delete") {
       delete inv.items[id];
       for (const k of Object.keys(inv.recipes)) inv.recipes[k] = (inv.recipes[k] || []).filter((r) => r.ing !== id);
