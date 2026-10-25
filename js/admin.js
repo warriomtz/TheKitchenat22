@@ -415,7 +415,7 @@
   }
 
   /* —— Kitchen —— */
-  const SNACK_IDS = new Set(["f-galletas", "f-paletas", "f-bolsa", "f-waffle-d"]);
+  const SNACK_IDS = new Set(["f-galletas", "f-paletas", "f-paletas-choc", "f-paletas-fruta", "f-bolsa", "f-waffle-d"]);
 
   /**
    * Beverages + snacks/sweets: still shown, but de-emphasized.

@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 32;
+const INV_VERSION = 33;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -58,6 +58,9 @@ const INV_DEFAULT = {
     "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
+    galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
+    "paleta-choc": { name: "Paletas de chocolate", unit: "piezas", group: "Dulces", qty: 4, min: 1 },
+    "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -87,6 +90,9 @@ const INV_DEFAULT = {
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
     "f-boneless": [{ ing: "boneless", qty: 210 }],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
+    "f-galletas": [{ ing: "galletas", qty: 1 }],
+    "f-paletas-choc": [{ ing: "paleta-choc", qty: 1 }],
+    "f-paletas-fruta": [{ ing: "paleta-fruta", qty: 1 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
@@ -549,7 +555,7 @@ export class KitchenStore extends DurableObject {
     if ((inv.v || 1) < INV_VERSION) {
       // v2-v4: separate 100 g chicken, club chicken, burger patty/bun/breaded chicken, pasta/salad chicken, bagels. Keeps quantities already edited.
       for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
-      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac", "f-grilled", "side:sopaTomate", "f-empanadas", "f-papas-t", "f-papas-queso", "f-papas-g", "f-salmon-plate", "f-waffle-m", "f-waffle-d", "side:vegetales", "f-boneless", "f-bolsa"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h", "f-guac", "f-grilled", "side:sopaTomate", "f-empanadas", "f-papas-t", "f-papas-queso", "f-papas-g", "f-salmon-plate", "f-waffle-m", "f-waffle-d", "side:vegetales", "f-boneless", "f-bolsa", "f-galletas", "f-paletas-choc", "f-paletas-fruta"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
       // v5: alert thresholds requested by Mario (burger buns at 4, bagels at 1)
       if ((inv.v || 1) < 5) {
         if (inv.items["pan-hamburguesa"]) inv.items["pan-hamburguesa"].min = 4;
@@ -895,6 +901,29 @@ export class KitchenStore extends DurableObject {
     }
   }
   /** One-time: add "Papas con queso amarillo suave" ($119) right before the truffle fries. */
+  /** One-time: split "Paletas" into chocolate and fruit popsicles (separate orders and stock). */
+  seedSplitPaletas(menu) {
+    if (this.kvGet("paletasSplit", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-paletas");
+        if (idx < 0) continue;
+        const base = items[idx];
+        const mk = (id, name, en, ja) => ({ ...base, id, name, name_en: en, name_ja: ja });
+        items.splice(
+          idx,
+          1,
+          mk("f-paletas-choc", "Paletas de chocolate", "Chocolate popsicles", "チョコレートのアイスキャンディー"),
+          mk("f-paletas-fruta", "Paletas de frutas", "Fruit popsicles", "フルーツのアイスキャンディー")
+        );
+        sb.items = items;
+        this.kvSet("menu", menu);
+        this.kvSet("paletasSplit", true);
+        return;
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -1419,6 +1448,7 @@ export class KitchenStore extends DurableObject {
           this.seedRenameSirloin(menu);
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
+          this.seedSplitPaletas(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);
           this.seedMergeChicken(menu);

@@ -96,7 +96,8 @@ window.KITCHEN_ITEM_NAMES = {
     "d-xipi-kombucha": "XI-PI Kombucha",
     "f-waffle-d": "Waffle dulce",
     "f-galletas": "Galletas",
-    "f-paletas": "Paletas",
+    "f-paletas-choc": "Paletas de chocolate",
+    "f-paletas-fruta": "Paletas de frutas",
     "f-bolsa": "Bolsa de papa",
   },
   en: {
@@ -192,7 +193,8 @@ window.KITCHEN_ITEM_NAMES = {
     "d-xipi-kombucha": "XI-PI Kombucha",
     "f-waffle-d": "Sweet waffle",
     "f-galletas": "Cookies",
-    "f-paletas": "Popsicles",
+    "f-paletas-choc": "Chocolate popsicles",
+    "f-paletas-fruta": "Fruit popsicles",
     "f-bolsa": "Bag of chips",
   },
   ja: {
@@ -288,7 +290,8 @@ window.KITCHEN_ITEM_NAMES = {
     "d-xipi-kombucha": "XI-PI コンブチャ",
     "f-waffle-d": "スイートワッフル",
     "f-galletas": "クッキー",
-    "f-paletas": "アイスキャンディー",
+    "f-paletas-choc": "チョコレートのアイスキャンディー",
+    "f-paletas-fruta": "フルーツのアイスキャンディー",
     "f-bolsa": "ポテトチップス",
   },
 };
