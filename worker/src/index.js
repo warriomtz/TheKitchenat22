@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 6;
+const INV_VERSION = 7;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -72,7 +72,7 @@ const INV_DEFAULT = {
       { ing: "carne-hamburguesa", qty: 1, if: { burger: "beef" }, variant: true, outId: "f-burger-beef" },
       { ing: "pollo-empanizado", qty: 1, if: { burger: "chicken" }, variant: true, outId: "f-burger-chicken" },
     ],
-    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }],
+    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }],
     "f-bagel-pizza": [{ ing: "bagel", qty: 1 }],
     "f-bagel-h": [{ ing: "bagel", qty: 1 }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
