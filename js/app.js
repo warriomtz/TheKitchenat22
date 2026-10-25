@@ -2251,10 +2251,10 @@ const DEFAULT_HOURS = {
     if (flags.includes("side")) {
       const sideOpts = [{ v: t("sideSalad"), k: "salad" }];
       if (flags.includes("burger")) {
-        sideOpts.push({ v: t("sideFrench"), k: "french" }, { v: t("sideWedges"), k: "wedges" });
+        sideOpts.push({ v: t("sideFrench"), k: "french", disabled: isOut("side-french") }, { v: t("sideWedges"), k: "wedges" });
       } else {
         sideOpts.push({ v: t("sideFries"), k: "fries" });
-        if (chipsUpgradeItem(item)) sideOpts.push({ v: t("sideFrenchPlus"), k: "french" });
+        if (chipsUpgradeItem(item)) sideOpts.push({ v: t("sideFrenchPlus"), k: "french", disabled: isOut("side-french") });
       }
       fields += chips("side", t("side"), sideOpts);
     }
@@ -2801,6 +2801,8 @@ const DEFAULT_HOURS = {
         if (cs) o.chickenSize = cs;
         const bg = selected("burger");
         if (bg) o.burger = bg;
+        const sd = selected("side");
+        if (sd) o.side = sd;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
         const picked = selectedAll("mpSides");
         if (picked.length) {
