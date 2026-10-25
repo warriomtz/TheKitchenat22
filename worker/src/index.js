@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 9;
+const INV_VERSION = 10;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -46,6 +46,7 @@ const INV_DEFAULT = {
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
     pasta: { name: "Pasta", unit: "unidades", group: "Pastas", qty: 0, min: 1 },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
+    "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -68,7 +69,7 @@ const INV_DEFAULT = {
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }],
-    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }],
+    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
       { ing: "pan-hamburguesa", qty: 1 },
@@ -77,7 +78,7 @@ const INV_DEFAULT = {
     ],
     "f-guac": [{ ing: "guacamole", qty: 1 }],
     "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }],
-    "f-bagel-pizza": [{ ing: "bagel", qty: 1 }],
+    "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }],
     "f-bagel-h": [{ ing: "bagel", qty: 1 }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }],
