@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 19;
+const INV_VERSION = 20;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -50,7 +50,7 @@ const INV_DEFAULT = {
     "queso-suizo": { name: "Queso suizo", unit: "rebanadas", group: "Lácteos", qty: 37, min: 10 },
     salami: { name: "Salami", unit: "g", group: "Carnes frías", qty: 220, min: 36 },
     "papas-francesa": { name: "Papas a la francesa", unit: "g", group: "Papas", qty: 9900, min: 1300 },
-    "papas-gajo": { name: "Papas gajo", unit: "g", group: "Papas", qty: 1900, min: null },
+    "papas-gajo": { name: "Papas gajo", unit: "g", group: "Papas", qty: 1900, min: 500 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -548,6 +548,7 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 15 && inv.items.salami) inv.items.salami.min = 32;
       if ((inv.v || 1) < 16 && inv.items.salami) inv.items.salami.min = 36; // 2 pizza bagels
       if ((inv.v || 1) < 18 && inv.items["papas-francesa"]) inv.items["papas-francesa"].min = 1300;
+      if ((inv.v || 1) < 20 && inv.items["papas-gajo"]) inv.items["papas-gajo"].min = 500;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
