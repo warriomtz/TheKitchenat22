@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 11;
+const INV_VERSION = 12;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -46,7 +46,7 @@ const INV_DEFAULT = {
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
     pasta: { name: "Pasta", unit: "unidades", group: "Pastas", qty: 0, min: 1 },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
-    "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: null },
+    "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -531,6 +531,8 @@ export class KitchenStore extends DurableObject {
         if (inv.items.bagel) inv.items.bagel.min = 1;
       }
       if ((inv.v || 1) < 9 && inv.items.guacamole && inv.items.guacamole.target == null) inv.items.guacamole.target = 2;
+      // v12: queso rayado alert at 200 g (Mario)
+      if ((inv.v || 1) < 12 && inv.items["queso-rayado"]) inv.items["queso-rayado"].min = 200;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
