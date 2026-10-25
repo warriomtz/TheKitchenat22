@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 21;
+const INV_VERSION = 22;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -74,7 +74,7 @@ const INV_DEFAULT = {
     "m-salmon": [{ ing: "salmon", qty: 1 }],
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }],
-    "f-salmon-plate": [{ ing: "papas-gajo", qty: 250 }],
+    "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
