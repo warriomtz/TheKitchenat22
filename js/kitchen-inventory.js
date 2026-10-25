@@ -36,6 +36,7 @@
 
   let data = null;
   let busy = false;
+  let filter = "all";
 
   function usedBy(ingId) {
     const rec = (data && data.inventory && data.inventory.recipes) || {};
@@ -87,21 +88,15 @@
     }
     const items = data.inventory.items || {};
     const groups = {};
-    for (const [id, it] of Object.entries(items)) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
-    const out = Object.values(items).filter((i) => i.qty != null && i.qty <= 0).length;
-    const low = Object.values(items).filter((i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min).length;
-    const need = Object.entries(items)
-      .filter(([, i]) => i.qty != null && (i.qty <= 0 || (i.min != null && i.qty <= i.min)))
-      .sort((a, b) => (a[1].qty <= 0 ? 0 : 1) - (b[1].qty <= 0 ? 0 : 1));
-    const restock = need.length
-      ? `<div class="kinv-restock"><strong>🛒 Por resurtir (${need.length})</strong><ul>${need
-          .map(
-            ([, i]) =>
-              `<li class="${i.qty <= 0 ? "is-out" : "is-low"}"><span>${esc(i.name)}</span><em>${i.qty <= 0 ? "Agotado" : "Quedan " + i.qty + " " + esc(i.unit || "")}</em></li>`
-          )
-          .join("")}</ul></div>`
-      : '<div class="kinv-restock kinv-restock--ok">✅ Nada por resurtir</div>';
-    let html = restock + `<p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
+    for (const [id, it] of Object.entries(items)) if (pass(it)) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
+    const isOut = (i) => i.qty != null && i.qty <= 0;
+    const isLow = (i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min;
+    const out = Object.values(items).filter(isOut).length;
+    const low = Object.values(items).filter(isLow).length;
+    const pass = (i) => filter === "all" || (filter === "low" && isLow(i)) || (filter === "out" && isOut(i)) || (filter === "need" && (isLow(i) || isOut(i)));
+    const btn = (k, label) => `<button type="button" class="kinv-filter${filter === k ? " is-active" : ""}" data-filter="${k}">${label}</button>`;
+    let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}</div><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
+    if (!Object.keys(groups).length) html += '<p class="adm-muted">No hay ingredientes en esta vista. ✅</p>';
     for (const [g, list] of Object.entries(groups)) {
       html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => row(id, it)).join("");
     }
@@ -133,6 +128,12 @@
       act(window.__kinvCode || code, { action: "set", id, [input.dataset.f]: input.value === "" ? null : Number(input.value) });
     });
     root.addEventListener("click", (e) => {
+      const fb = e.target.closest("button[data-filter]");
+      if (fb) {
+        filter = fb.dataset.filter;
+        paint();
+        return;
+      }
       const btn = e.target.closest("button[data-act]");
       if (!btn) return;
       const rowEl = btn.closest(".kinv-row");
