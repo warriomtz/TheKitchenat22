@@ -46,6 +46,7 @@ ok(j.outOfStock.includes("f-x") && j.outOfStock.includes("mp-side-sopaTomate") &
   { id: "f-burger", name: "Hamburguesa", qty: 1, opts: { burger: "beef" } } ] });
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 ok(j.inventory.items["pollo-club"].qty === 3 && j.inventory.items["carne-hamburguesa"].qty === 8, "club + beef burger deduct; chicken burger doesn't");
+await call("POST", "/api/kitchen-inventory", { action: "set", id: "pan-hamburguesa", qty: 5 }, CODE);
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "carne-hamburguesa", qty: 0 }, CODE);
 ok(j.autoOut.includes("f-burger-beef") && !j.autoOut.includes("f-burger"), "beef option blocked, burger still available");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 0 }, CODE);
@@ -63,5 +64,16 @@ ok(j.autoOut.includes("m-pollo-100"), "both sizes out -> dish out");
 ok(j.inventory.items["pollo-100"].qty === 10 - 1 - 2 - 2 - 1, "pollo 100 g shared by pasta, ensalada, meal prep (+extra)");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 0 }, CODE);
 ok(j.autoOut.includes("f-alfredo") && j.autoOut.includes("f-pesto") && j.autoOut.includes("f-ensalada"), "pollo 100 g out blocks pasta and ensalada");
+// breaded chicken, buns, bagels
+[s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
+  { id: "f-burger", name: "Hamburguesa", qty: 1, opts: { burger: "chicken" } },
+  { id: "f-pechuga-pomodoro", name: "Pomodoro", qty: 2 },
+  { id: "f-bagel-pizza", name: "Bagel pizza", qty: 1 },
+  { id: "f-bagel-h", name: "Bagel huevo", qty: 2 } ] });
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+const q = j.inventory.items;
+ok(q["pollo-empanizado"].qty === 12 - 1 - 1 - 2 && q.bagel.qty === 9 - 3 && q["pan-hamburguesa"].qty === 4, "breaded chicken / bagels / bun deduct");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pan-hamburguesa", qty: 0 }, CODE);
+ok(j.autoOut.includes("f-burger"), "burger blocked when buns reach 0");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);
