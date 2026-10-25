@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 4;
+const INV_VERSION = 5;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -42,8 +42,8 @@ const INV_DEFAULT = {
     "pollo-club": { name: "Pollo para Club sandwich", unit: "unidades", group: "Proteínas", qty: 5, min: 1 },
     "carne-hamburguesa": { name: "Carne de hamburguesa", unit: "unidades", group: "Proteínas", qty: 9, min: 2 },
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
-    "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 1 },
-    bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 2 },
+    "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
+    bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -519,6 +519,11 @@ export class KitchenStore extends DurableObject {
       // v2-v4: separate 100 g chicken, club chicken, burger patty/bun/breaded chicken, pasta/salad chicken, bagels. Keeps quantities already edited.
       for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
       for (const k of ["m-pollo-100", "f-club", "f-burger", "f-alfredo", "f-pesto", "f-ensalada", "f-pechuga-pomodoro", "f-bagel-pizza", "f-bagel-h"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      // v5: alert thresholds requested by Mario (burger buns at 4, bagels at 1)
+      if ((inv.v || 1) < 5) {
+        if (inv.items["pan-hamburguesa"]) inv.items["pan-hamburguesa"].min = 4;
+        if (inv.items.bagel) inv.items.bagel.min = 1;
+      }
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
