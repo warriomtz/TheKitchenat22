@@ -33,6 +33,7 @@
     "f-salmon-plate": "Salmón con ensalada y papas gajo",
     "f-waffle-m": "Chicken and Waffle",
     "f-waffle-d": "Waffle dulce",
+    "f-boneless": "Boneless",
     "f-papas-g": "Papas gajo picantes",
     "f-papas-queso": "Papas con queso suave",
     "f-grilled": "Grilled cheese",
