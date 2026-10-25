@@ -24,6 +24,8 @@
     "m-carne-molida": "Meal Prep Carne molida",
     "m-sirloin": "Meal Prep Res",
     "m-salmon": "Meal Prep Salmón",
+    "f-club": "Club sandwich",
+    "f-burger": "Hamburguesa de res",
   };
 
   let data = null;

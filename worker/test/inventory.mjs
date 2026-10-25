@@ -23,7 +23,7 @@ ok(s === 200 && j.order.inv && j.order.inv.salmon === 2, "order deducts salmon x
 const oid = j.order.id;
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 const it = j.inventory.items;
-ok(it.salmon.qty === 1 && it["pollo-200"].qty === 6.5 && it.arroz.qty === 12 - 2 * 2 - 1 && it.quinoa.qty === 0 && it.frijol.qty === 2, "quantities after order");
+ok(it.salmon.qty === 1 && it["pollo-100"].qty === 1 && it["pollo-200"].qty === 7 && it.arroz.qty === 12 - 2 * 2 - 1 && it.quinoa.qty === 0 && it.frijol.qty === 2, "quantities after order");
 ok(j.autoOut.includes("m-sirloin") === false && j.autoOut.includes("mp-side-quinoa"), "quinoa now agotada");
 [s, j] = await call("POST", "/api/orders", { action: "update", orderId: oid, status: "dismissed" }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
@@ -39,5 +39,18 @@ ok(j.inventory.items.salmon.qty === 8, "delete open order gives back");
 [s, j] = await call("POST", "/api/stock", { outOfStock: ["f-x", "mp-side-sopaTomate"] }, CODE);
 [s, j] = await call("GET", "/api/stock");
 ok(j.outOfStock.includes("f-x") && j.outOfStock.includes("mp-side-sopaTomate") && j.auto.includes("mp-side-sopaTomate"), "stock = manual + auto");
+// club chicken + burger patty
+[s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
+  { id: "f-club", name: "Club", qty: 2 },
+  { id: "f-burger", name: "Hamburguesa", qty: 1, opts: { burger: "chicken" } },
+  { id: "f-burger", name: "Hamburguesa", qty: 1, opts: { burger: "beef" } } ] });
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["pollo-club"].qty === 3 && j.inventory.items["carne-hamburguesa"].qty === 8, "club + beef burger deduct; chicken burger doesn't");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "carne-hamburguesa", qty: 0 }, CODE);
+ok(j.autoOut.includes("f-burger-beef") && !j.autoOut.includes("f-burger"), "beef option blocked, burger still available");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 0 }, CODE);
+ok(j.autoOut.includes("mp-chicken-100") && !j.autoOut.includes("m-pollo-100"), "100 g option blocked only");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-200", qty: 0 }, CODE);
+ok(j.autoOut.includes("m-pollo-100"), "both sizes out -> dish out");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);

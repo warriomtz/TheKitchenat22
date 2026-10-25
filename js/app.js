@@ -2178,8 +2178,8 @@ const DEFAULT_HOURS = {
 
     if (flags.includes("chickenSize")) {
       fields += chips("chickenSize", t("mpChickenSize"), [
-        { v: `${t("mpChicken200")} · $${Math.round(item.price)}`, k: "200" },
-        { v: `${t("mpChicken100")} · $${Math.round(item.price - 60)}`, k: "100" },
+        { v: `${t("mpChicken200")} · $${Math.round(item.price)}`, k: "200", disabled: isOut("mp-chicken-200") },
+        { v: `${t("mpChicken100")} · $${Math.round(item.price - 60)}`, k: "100", disabled: isOut("mp-chicken-100") },
       ]);
     }
     if (flags.includes("sides2")) {
@@ -2799,6 +2799,8 @@ const DEFAULT_HOURS = {
         const o = {};
         const cs = selected("chickenSize");
         if (cs) o.chickenSize = cs;
+        const bg = selected("burger");
+        if (bg) o.burger = bg;
         const picked = selectedAll("mpSides");
         if (picked.length) {
           o.mpSides = {};

@@ -33,9 +33,14 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
+const INV_VERSION = 2;
 const INV_DEFAULT = {
+  v: INV_VERSION,
   items: {
     "pollo-200": { name: "Pollo 200 g", unit: "unidades", group: "Proteínas", qty: 7, min: 1 },
+    "pollo-100": { name: "Pollo 100 g", unit: "unidades", group: "Proteínas", qty: 2, min: 1 },
+    "pollo-club": { name: "Pollo para Club sandwich", unit: "unidades", group: "Proteínas", qty: 5, min: 1 },
+    "carne-hamburguesa": { name: "Carne de hamburguesa", unit: "unidades", group: "Proteínas", qty: 9, min: 2 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -47,14 +52,18 @@ const INV_DEFAULT = {
     "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
   },
   recipes: {
+    // Meal Prep chicken: each size has its own portions. outId = per-option "agotado" id used by the menu.
     "m-pollo-100": [
-      { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true },
-      { ing: "pollo-200", qty: 0.5, if: { chickenSize: "100" } },
+      { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true, outId: "mp-chicken-200" },
+      { ing: "pollo-100", qty: 1, if: { chickenSize: "100" }, outId: "mp-chicken-100" },
     ],
     "m-atun": [{ ing: "atun", qty: 1 }],
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
+    "f-club": [{ ing: "pollo-club", qty: 1 }],
+    // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
+    "f-burger": [{ ing: "carne-hamburguesa", qty: 1, if: { burger: "beef" }, variant: true, outId: "f-burger-beef" }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
@@ -492,6 +501,13 @@ export class KitchenStore extends DurableObject {
       this.kvSet("kitchenInv", inv);
     }
     inv.recipes = inv.recipes || {};
+    if ((inv.v || 1) < INV_VERSION) {
+      // v2: separate 100 g chicken, club chicken, burger patty. Keeps quantities already edited.
+      for (const [id, it] of Object.entries(INV_DEFAULT.items)) if (!inv.items[id]) inv.items[id] = { ...it };
+      for (const k of ["m-pollo-100", "f-club", "f-burger"]) inv.recipes[k] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes[k]));
+      inv.v = INV_VERSION;
+      this.kvSet("kitchenInv", inv);
+    }
     return inv;
   }
   /** Which ingredients does this order use? -> { ingredientId: amount } */
@@ -554,15 +570,17 @@ export class KitchenStore extends DurableObject {
     const inv = this.kvGet("kitchenInv", null);
     if (!inv || !inv.items) return [];
     const out = new Set();
+    const blocked = (r) => {
+      const it = inv.items[r.ing];
+      return !!(it && it.qty != null && it.qty < r.qty);
+    };
     for (const [key, rules] of Object.entries(inv.recipes || {})) {
       const list = Array.isArray(rules) ? rules : [];
-      const byIng = {};
-      for (const r of list) byIng[r.ing] = Math.min(byIng[r.ing] == null ? Infinity : byIng[r.ing], r.qty);
-      const blocked = Object.entries(byIng).some(([ing, need]) => {
-        const it = inv.items[ing];
-        return it && it.qty != null && it.qty < need;
-      });
-      if (blocked) out.add(key.startsWith("side:") ? "mp-side-" + key.slice(5) : key);
+      const must = list.filter((r) => !r.if && !r.variant);
+      const alts = list.filter((r) => r.if && !r.variant);
+      const whole = must.some(blocked) || (alts.length > 0 && alts.every(blocked));
+      if (whole) out.add(key.startsWith("side:") ? "mp-side-" + key.slice(5) : key);
+      for (const r of list) if (r.outId && blocked(r)) out.add(r.outId);
     }
     return [...out];
   }
@@ -1042,6 +1060,8 @@ export class KitchenStore extends DurableObject {
     const opts = {};
     const cs = str(raw.chickenSize, 10).trim();
     if (cs) opts.chickenSize = cs;
+    const bg = str(raw.burger, 20).trim();
+    if (bg) opts.burger = bg;
     if (raw.mpSides && typeof raw.mpSides === "object") {
       const sides = {};
       for (const [k, v] of Object.entries(raw.mpSides).slice(0, 12)) {
