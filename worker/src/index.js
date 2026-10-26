@@ -256,7 +256,7 @@ const INV_DEFAULT = {
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
-    "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "queso-rayado", qty: 10 }, { ing: "parmesano", qty: 50 }],
+    "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "parmesano", qty: 50 }],
     "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }, { ing: "parmesano", qty: 50 }],
   },
 };
@@ -791,6 +791,13 @@ export class KitchenStore extends DurableObject {
       const q = inv.items["queso-rayado"];
       if (q && q.qty != null) q.qty = Math.max(0, Math.round((q.qty - 60) * 100) / 100);
       inv.sopaQueso = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // The 10 g queso rayado per soup portion is part of the 60 g used in the batch: stop deducting it per order (Mario 2026-10-26).
+    if (!inv.sopaQuesoOnce) {
+      const r = inv.recipes["side:sopaTomate"];
+      if (Array.isArray(r)) inv.recipes["side:sopaTomate"] = r.filter((x) => x.ing !== "queso-rayado");
+      inv.sopaQuesoOnce = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
