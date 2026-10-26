@@ -722,11 +722,13 @@ export class KitchenStore extends DurableObject {
   /** Daily shopping list: everything that is out, low, or needs cooking. */
   shoppingList() {
     const inv = this.invRead();
-    const out = [];
-    const low = [];
+    const bySup = new Map();
     const cook = [];
     const fmt = (n) => String(Math.round(n * 100) / 100);
-    const where = (it) => (it.supplier || it.brand || it.presentation ? ` [${[it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ")}]` : "");
+    const add = (sup, rank, text) => {
+      if (!bySup.has(sup)) bySup.set(sup, []);
+      bySup.get(sup).push({ rank, text });
+    };
     for (const it of Object.values(inv.items || {})) {
       if (it.qty == null) continue;
       const unit = it.unit ? " " + it.unit : "";
@@ -734,16 +736,26 @@ export class KitchenStore extends DurableObject {
         if (it.min != null && it.qty <= it.min) cook.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}`);
         continue;
       }
-      if (it.qty <= 0) out.push(`• ${it.name}${where(it)}`);
-      else if (it.min != null && it.qty <= it.min) low.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}${where(it)}`);
-      else if (it.min == null && it.target && it.qty < it.target) low.push(`• ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)`);
+      // chicken portions share the purchase data of their raw source
+      const src = it.costFrom && inv.items[it.costFrom] ? inv.items[it.costFrom] : it;
+      const sup = (src.supplier || it.supplier || "").trim() || "Sin proveedor";
+      const det = [src.brand, src.presentation, src.packText, src.itemNo ? "#" + src.itemNo : ""].filter(Boolean).join(" · ");
+      const tail = det ? ` [${det}]` : "";
+      if (it.qty <= 0) add(sup, 0, `🚫 ${it.name}${tail}`);
+      else if (it.min != null && it.qty <= it.min) add(sup, 1, `⚠️ ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}${tail}`);
+      else if (it.min == null && it.target && it.qty < it.target) add(sup, 1, `⚠️ ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)${tail}`);
     }
+    const names = [...bySup.keys()].sort((x, y) => (x === "Sin proveedor") - (y === "Sin proveedor") || x.localeCompare(y, "es"));
     const lines = [];
-    if (out.length) lines.push("🚫 AGOTADO", ...out);
-    if (low.length) lines.push(...(lines.length ? [""] : []), "⚠️ POR TERMINARSE", ...low);
+    let count = 0;
+    for (const n of names) {
+      const list = bySup.get(n).sort((x, y) => x.rank - y.rank);
+      count += list.length;
+      lines.push(...(lines.length ? [""] : []), `🛒 ${n.toUpperCase()} (${list.length})`, ...list.map((x) => x.text));
+    }
     if (cook.length) lines.push(...(lines.length ? [""] : []), "🍳 HAY QUE COCINAR", ...cook);
     if (!lines.length) lines.push("✅ Nada por comprar hoy.");
-    return { lines, count: out.length + low.length + cook.length };
+    return { lines, count: count + cook.length };
   }
   /** "8 pza", "1 kg", "2 x 500 g", "1.5 l" -> quantity in the ingredient's own unit (null if it can't be read). */
   parsePack(text, unit) {
