@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 55;
+const INV_VERSION = 56;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -71,6 +71,7 @@ const INV_DEFAULT = {
     "salsa-pesto": { name: "Salsa Pesto", unit: "porciones", group: "Salsas", qty: 7, min: 3 },
     "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: 150 },
     ranch: { name: "Aderezo ranch", unit: "g", group: "Salsas", qty: 640, min: 150 },
+    cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -105,7 +106,7 @@ const INV_DEFAULT = {
       { ing: "paleta-choc", qty: 1, if: { paleta: "choc" }, outId: "paletas-choc" },
       { ing: "paleta-fruta", qty: 1, if: { paleta: "fruta" }, outId: "paletas-fruta" },
     ],
-    "f-ensalada-sin": [{ ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }],
+    "f-ensalada-sin": [{ ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }, { ing: "ranch", qty: 35, if: { dressing: "ranch" }, variant: true, outId: "dressing-ranch" }, { ing: "cesar", qty: 35, if: { dressing: "cesar" }, variant: true, outId: "dressing-cesar" }],
     "side:ensalada": [{ ing: "ensalada", qty: 40 }, { ing: "tomate-cherry", qty: 25 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
@@ -129,7 +130,7 @@ const INV_DEFAULT = {
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 13 }, { ing: "salsa-alfredo", qty: 1 }],
     "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 60 }, { ing: "salsa-pesto", qty: 1 }],
-    "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }],
+    "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }, { ing: "ranch", qty: 35, if: { dressing: "ranch" }, variant: true, outId: "dressing-ranch" }, { ing: "cesar", qty: 35, if: { dressing: "cesar" }, variant: true, outId: "dressing-cesar" }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
@@ -1199,6 +1200,8 @@ export class KitchenStore extends DurableObject {
     if (bg) opts.burger = bg;
     const sd = str(raw.side, 12).trim();
     if (sd) opts.side = sd;
+    const dr = str(raw.dressing, 12).trim();
+    if (dr) opts.dressing = dr;
     const pl = str(raw.paleta, 10).trim();
     if (pl) opts.paleta = pl;
     if (str(raw.extraChicken, 4).trim() === "1") opts.extraChicken = "1";

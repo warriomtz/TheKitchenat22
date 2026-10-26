@@ -2266,9 +2266,9 @@ const DEFAULT_HOURS = {
     }
     if (flags.includes("dressing")) {
       fields += chips("dressing", t("dressing"), [
-        { v: "César", k: "César" },
+        { v: "César", k: "César", disabled: isOut("dressing-cesar") },
         { v: "Aceite de oliva", k: "Aceite de oliva" },
-        { v: "Aderezo ranch", k: "Aderezo ranch" },
+        { v: "Aderezo ranch", k: "Aderezo ranch", disabled: isOut("dressing-ranch") },
         { v: "Limon y soya", k: "Limon y soya" },
       ]);
     }
@@ -2825,6 +2825,8 @@ const DEFAULT_HOURS = {
         if (bg) o.burger = bg;
         const pl = selected("paleta");
         if (pl) o.paleta = pl;
+        const dr = selected("dressing");
+        if (dr) o.dressing = { "César": "cesar", "Aderezo ranch": "ranch" }[dr] || "otro";
         const sd = selected("side");
         if (sd) o.side = sd;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
