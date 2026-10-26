@@ -110,7 +110,6 @@ const BAR_GROUPS = [
     id: "other", label: "Otras botellas", unit: "pzas",
     skus: [
       { id: "d-agua", name: "Agua mineral", aliases: [] },
-      { id: "d-rusa", name: "Rusa mineral", aliases: [] },
       { id: "d-jugo", name: "Jugo verde", aliases: [] },
       { id: "d-xipi-kombucha", name: "XI-PI Kombucha", aliases: ["kombucha", "xi-pi"] },
     ],
@@ -122,6 +121,13 @@ const BAR_RECIPES = {
 };
 const BAR_PRODUCT_TO_GROUP = { "b-cerveza": "beer", "d-refresco": "soda", "d-boing": "boing", "b-spirits": "spirits", "b-fine-spirits": "fine" };
 // Mixology / bottle-based groups are still counted but never switch a drink to "agotado" (their count is approximate for now).
+/** Heads-up level per SKU: when the count drops to this number or below, Mario gets a Telegram/ntfy message. */
+const BAR_ALERT_AT = {
+  "b-tinto-v": 2, "b-blanco": 2, "b-rosado": 2,
+  "b-beer-corona": 6, "b-cerveza-na": 2, "b-beer-modelo": 3, "b-beer-victoria": 4, "b-beer-pacifico": 4, "b-beer-stella": 2,
+  "d-soda-coke": 2, "d-soda-coke-light": 2, "d-soda-coke-zero": 2, "d-soda-sprite": 2, "d-soda-sprite-zero": 2, "d-soda-ginger-ale": 2,
+  "d-agua": 4,
+};
 const BAR_NO_AUTO_OUT = new Set(["spritz", "spirits", "fine"]);
 const BAR_SKUS = BAR_GROUPS.flatMap((g) => g.skus.map((s) => ({ ...s, group: g.id, unit: g.unit })));
 const BAR_BY_ID = Object.fromEntries(BAR_SKUS.map((s) => [s.id, s]));
@@ -518,6 +524,8 @@ export default {
         ctx.waitUntil(notifyTelegram(env, body.order));
       }
       // Inventory alerts are no longer sent one by one: a daily shopping list goes out at 10 pm (see scheduled()).
+      if (body && body.barAlerts && body.barAlerts.length) ctx.waitUntil(notifyText(env, "The Kitchen · Barra por agotarse", body.barAlerts));
+      if (body) delete body.barAlerts;
       if (body && body.inventoryAlerts) delete body.inventoryAlerts;
       return reply(request, env, status, body);
     }
@@ -893,6 +901,12 @@ export class KitchenStore extends DurableObject {
       b.seed65 = true;
       dirty = true;
     }
+    if (!b.seed66) {
+      // Brands Mario does not stock for now: 0 hides them from the menu; entering a count later brings them back.
+      for (const id of ["b-beer-negra-modelo", "b-beer-amstel", "b-beer-heineken"]) b.items[id] = { qty: 0, sold: 0 };
+      b.seed66 = true;
+      dirty = true;
+    }
     if (b.day !== day) {
       b.day = day;
       for (const it of Object.values(b.items)) it.sold = 0;
@@ -939,6 +953,8 @@ export class KitchenStore extends DurableObject {
       if (!it) continue;
       if (it.qty != null) {
         const after = Math.max(0, r2(it.qty - q));
+        const lim = BAR_ALERT_AT[id];
+        if (lim != null && it.qty > lim && after <= lim) (this._barAlerts ||= []).push(`${BAR_BY_ID[id].name}: quedan ${after}${after <= 0 ? " (agotado)" : ""} (aviso a ${lim})`);
         applied[id] = r2(it.qty - after);
         it.qty = after;
       }
@@ -1821,7 +1837,9 @@ export class KitchenStore extends DurableObject {
         MAX_ORDERS
       );
     });
-    return [200, { ok: true, order, inventoryAlerts }];
+    const barAlerts = this._barAlerts || [];
+    this._barAlerts = [];
+    return [200, { ok: true, order, inventoryAlerts, barAlerts }];
   }
   orderAdmin(data) {
     const act = String(data.action || "update").toLowerCase();
