@@ -2054,9 +2054,9 @@ const DEFAULT_HOURS = {
       { v: t("flavorNatural"), k: "natural" },
       { v: t("flavorBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
       { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
-      { v: t("flavorCfaOriginal"), k: "cfa_original" },
-      { v: t("flavorCfaBbq"), k: "cfa_bbq" },
-      { v: t("flavorCfaHoneyMustard"), k: "cfa_honey_mustard" },
+      { v: t("flavorCfaOriginal"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
+      { v: t("flavorCfaBbq"), k: "cfa_bbq", disabled: isOut("boneless-cfa-bbq") },
+      { v: t("flavorCfaHoneyMustard"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
     ];
   }
 
@@ -2065,9 +2065,9 @@ const DEFAULT_HOURS = {
     return [
       { v: t("flavorBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
       { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
-      { v: t("flavorCfaOriginalPlain"), k: "cfa_original" },
-      { v: t("flavorCfaBbqPlain"), k: "cfa_bbq" },
-      { v: t("flavorCfaHoneyMustardPlain"), k: "cfa_honey_mustard" },
+      { v: t("flavorCfaOriginalPlain"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
+      { v: t("flavorCfaBbqPlain"), k: "cfa_bbq", disabled: isOut("boneless-cfa-bbq") },
+      { v: t("flavorCfaHoneyMustardPlain"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
     ];
   }
 
@@ -2244,8 +2244,8 @@ const DEFAULT_HOURS = {
       fields += chips("burgerSauce", t("burgerSauce"), [
         { v: t("burgerSauceNone"), k: "none" },
         { v: t("burgerSauceBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
-        { v: t("burgerSauceCfa"), k: "cfa_original" },
-        { v: t("burgerSauceCfaHoney"), k: "cfa_honey_mustard" },
+        { v: t("burgerSauceCfa"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
+        { v: t("burgerSauceCfaHoney"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
       ]);
     }
     if (flags.includes("boneless")) {
@@ -2832,6 +2832,9 @@ const DEFAULT_HOURS = {
         const xs = selectedAll("extraSauce");
         if (xs.includes("buffalo")) o.xsBuffalo = "1";
         if (xs.includes("bbq")) o.xsBbq = "1";
+        if (xs.includes("cfa_original")) o.xsCfaOriginal = "1";
+        if (xs.includes("cfa_bbq")) o.xsCfaBbq = "1";
+        if (xs.includes("cfa_honey_mustard")) o.xsCfaHoney = "1";
         const dr = selected("dressing");
         if (dr) o.dressing = { "César": "cesar", "Aderezo ranch": "ranch" }[dr] || "otro";
         const sd = selected("side");

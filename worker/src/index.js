@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 60;
+const INV_VERSION = 61;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -74,6 +74,9 @@ const INV_DEFAULT = {
     cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
     "salsa-buffalo": { name: "Salsa Buffalo (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 480, min: 480 },
     "salsa-bbq": { name: "Salsa BBQ (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 620, min: 620 },
+    "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: null, min: null },
+    "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: null, min: null },
+    "salsa-cfa-honey": { name: "Salsa CFA honey mustard", unit: "g", group: "Salsas", qty: null, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -102,7 +105,7 @@ const INV_DEFAULT = {
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
-    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }],
+    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }, { ing: "salsa-cfa-original", qty: 45, if: { flavor: "cfa_original" }, variant: true, outId: "boneless-cfa-original" }, { ing: "salsa-cfa-bbq", qty: 45, if: { flavor: "cfa_bbq" }, variant: true, outId: "boneless-cfa-bbq" }, { ing: "salsa-cfa-honey", qty: 45, if: { flavor: "cfa_honey_mustard" }, variant: true, outId: "boneless-cfa-honey" }, { ing: "salsa-cfa-original", qty: 45, if: { xsCfaOriginal: "1" }, optional: true }, { ing: "salsa-cfa-bbq", qty: 45, if: { xsCfaBbq: "1" }, optional: true }, { ing: "salsa-cfa-honey", qty: 45, if: { xsCfaHoney: "1" }, optional: true }],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
     "f-paletas": [
@@ -121,6 +124,8 @@ const INV_DEFAULT = {
       { ing: "queso-suizo", qty: 1 },
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "salsa-buffalo", qty: 45, if: { burgerSauce: "buffalo" }, variant: true, outId: "boneless-buffalo" },
+      { ing: "salsa-cfa-original", qty: 45, if: { burgerSauce: "cfa_original" }, variant: true, outId: "boneless-cfa-original" },
+      { ing: "salsa-cfa-honey", qty: 45, if: { burgerSauce: "cfa_honey_mustard" }, variant: true, outId: "boneless-cfa-honey" },
       { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" },
       { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" },
       { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" },
@@ -1222,6 +1227,7 @@ export class KitchenStore extends DurableObject {
     if (fl) opts.flavor = fl;
     if (str(raw.xsBuffalo, 4).trim() === "1") opts.xsBuffalo = "1";
     if (str(raw.xsBbq, 4).trim() === "1") opts.xsBbq = "1";
+    for (const k of ["xsCfaOriginal", "xsCfaBbq", "xsCfaHoney"]) if (str(raw[k], 4).trim() === "1") opts[k] = "1";
     const dr = str(raw.dressing, 12).trim();
     if (dr) opts.dressing = dr;
     const pl = str(raw.paleta, 10).trim();
