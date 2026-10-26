@@ -54,6 +54,16 @@
       const base = unitCost(items[it.costFrom], null);
       return base != null && it.costGrams > 0 ? base * it.costGrams : null;
     }
+    if (Array.isArray(it.cookRecipe) && it.cookBatch > 0 && items) {
+      // cooked in batches (e.g. soup): the batch cost is split among the portions it yields
+      let total = 0;
+      for (const r of it.cookRecipe) {
+        const uc = unitCost(items[r.ing], items);
+        if (uc == null) return null;
+        total += r.qty * uc;
+      }
+      return total / it.cookBatch;
+    }
     return it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
   }
 
