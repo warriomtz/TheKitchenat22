@@ -47,8 +47,14 @@
       .join(" + ");
   }
 
-  function unitCost(it) {
-    return it && it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
+  /** Cost per unit of an ingredient: its own purchase data, or (portions) the bulk ingredient it is cut from. */
+  function unitCost(it, items) {
+    if (!it) return null;
+    if (it.costFrom && items && items[it.costFrom]) {
+      const base = unitCost(items[it.costFrom], null);
+      return base != null && it.costGrams > 0 ? base * it.costGrams : null;
+    }
+    return it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
   }
 
   function itemName(key) {
@@ -80,7 +86,7 @@
     const it = items[r.ing];
     const name = it ? it.name : r.ing;
     const unit = it && it.unit ? " " + it.unit : "";
-    const uc = unitCost(it);
+    const uc = unitCost(it, items);
     const line = uc != null ? r.qty * uc : null;
     const tags = [];
     if (r.if) tags.push(ifText(r.if));
@@ -98,7 +104,7 @@
     const missing = new Set();
     const cost = (list) =>
       list.reduce((sum, r) => {
-        const uc = unitCost(items[r.ing]);
+        const uc = unitCost(items[r.ing], items);
         if (uc == null) {
           missing.add((items[r.ing] && items[r.ing].name) || r.ing);
           return sum;
@@ -174,7 +180,7 @@
       return;
     }
     const items = inv.items || {};
-    const noCost = Object.values(items).filter((it) => it.qty !== undefined && unitCost(it) == null);
+    const noCost = Object.values(items).filter((it) => it.qty !== undefined && unitCost(it, items) == null);
     let html = `<p class="kinv-sum"><strong>${Object.keys(items).length - noCost.length}</strong> ingredientes con costo · <span class="${noCost.length ? "is-low" : ""}">${noCost.length} pendientes</span>. El costo por unidad sale de <em>Costo de la presentación ÷ Cantidad por presentación</em>, que capturas en Inventario → 🛒 Compra.</p>`;
     html += `<div class="krec-table-wrap"><table class="krec-table"><thead><tr><th>Platillo</th><th>Precio</th><th>Costo</th><th>Utilidad</th><th>Costo %</th></tr></thead><tbody>`;
     let detail = "";

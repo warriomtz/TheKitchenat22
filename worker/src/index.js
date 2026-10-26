@@ -33,13 +33,14 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 62;
+const INV_VERSION = 63;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
-    "pollo-200": { name: "Pollo 200 g", unit: "unidades", group: "Proteínas", qty: 7, min: 1 },
-    "pollo-100": { name: "Pollo 100 g", unit: "unidades", group: "Proteínas", qty: 2, min: 1 },
-    "pollo-club": { name: "Pollo para Club sandwich", unit: "unidades", group: "Proteínas", qty: 5, min: 1 },
+    "pollo-crudo": { name: "Pollo crudo (compra a granel)", unit: "g", group: "Proteínas", qty: null, min: null },
+    "pollo-200": { name: "Pollo 200 g", unit: "unidades", group: "Proteínas", qty: 7, min: 1, costFrom: "pollo-crudo" },
+    "pollo-100": { name: "Pollo 100 g", unit: "unidades", group: "Proteínas", qty: 2, min: 1, costFrom: "pollo-crudo" },
+    "pollo-club": { name: "Pollo para Club sandwich", unit: "unidades", group: "Proteínas", qty: 5, min: 1, costFrom: "pollo-crudo" },
     "carne-hamburguesa": { name: "Carne de hamburguesa", unit: "unidades", group: "Proteínas", qty: 9, min: 2 },
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
     "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
@@ -631,6 +632,7 @@ export class KitchenStore extends DurableObject {
         if (it["salsa-cfa-bbq"] && it["salsa-cfa-bbq"].qty == null) it["salsa-cfa-bbq"].qty = 420;
         if (it["salsa-cfa-honey"] && it["salsa-cfa-honey"].qty == null) it["salsa-cfa-honey"].qty = 250;
       }
+      for (const id of ["pollo-200", "pollo-100", "pollo-club"]) if (inv.items[id] && inv.items[id].costFrom == null) inv.items[id].costFrom = "pollo-crudo";
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
@@ -807,6 +809,16 @@ export class KitchenStore extends DurableObject {
       if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
       if ("brand" in data) it.brand = str(data.brand, 60).trim();
       if ("presentation" in data) it.presentation = str(data.presentation, 80).trim();
+      if ("costFrom" in data) {
+        const src = str(data.costFrom, 60).trim();
+        if (src && (src === id || !inv.items[src])) return [400, { error: "bad_costFrom" }];
+        it.costFrom = src || null;
+      }
+      if ("costGrams" in data) {
+        const n = num(data.costGrams);
+        if (n === undefined) return [400, { error: "bad_costGrams" }];
+        it.costGrams = n;
+      }
       if ("packText" in data) {
         it.packText = str(data.packText, 40).trim();
         it.packQty = this.parsePack(it.packText, it.unit);

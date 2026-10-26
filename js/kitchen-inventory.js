@@ -79,7 +79,15 @@
   const money = (n) => "$" + (Math.round(n * 100) / 100).toLocaleString("es-MX");
 
   function buyBlock(id, it) {
-    const unitCost = it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
+    const items = (data && data.inventory && data.inventory.items) || {};
+    const src = it.costFrom && items[it.costFrom];
+    const srcCost = src && src.packQty > 0 && src.packCost > 0 ? src.packCost / src.packQty : null;
+    const unitCost = src ? (srcCost != null && it.costGrams > 0 ? srcCost * it.costGrams : null) : it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
+    const sources = Object.entries(items).filter(([k, x]) => k !== id && (x.unit === "g" || x.unit === "ml") && !x.costFrom);
+    const costFromBlock = `<label class="kinv-f">Se porciona de (opcional)
+          <select data-m="costFrom"><option value="">— compra directa —</option>${sources.map(([k, x]) => `<option value="${esc(k)}"${it.costFrom === k ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select>
+          <small class="adm-muted">Ej. el pollo de 200 g sale del pollo crudo que compras a granel.</small></label>
+        ${it.costFrom ? `<label class="kinv-f">Gramos crudos por porción<input type="number" min="0" step="any" data-m="costGrams" placeholder="Ej. 240" value="${it.costGrams == null ? "" : it.costGrams}" /><small class="adm-muted">${unitCost != null ? "Costo por porción: " + money(unitCost) : "Falta el costo de compra del ingrediente base"}</small></label>` : ""}`;
     const sum = [it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ");
     const costTxt = unitCost != null ? ` · ${money(unitCost)} por ${it.unit || "unidad"}` : "";
     const packTxt = it.packText != null ? it.packText : it.packQty != null ? `${it.packQty} ${it.unit || ""}`.trim() : "";
@@ -88,6 +96,7 @@
     return `<details class="kinv-buy" data-id="${esc(id)}"${openBuy.has(id) ? " open" : ""}>
       <summary>🛒 Compra${sum ? ": " + esc(sum) : ""}${esc(costTxt)}${it.photo ? " 📷" : ""}</summary>
       <div class="kinv-buy__grid">
+        ${costFromBlock}
         <label class="kinv-f">Proveedor<input type="text" data-m="supplier" maxlength="60" placeholder="Ej. Costco" value="${esc(it.supplier || "")}" /></label>
         <label class="kinv-f">Marca<input type="text" data-m="brand" maxlength="60" placeholder="Ej. Kirkland" value="${esc(it.brand || "")}" /></label>
         <label class="kinv-f">Tipo de presentación (bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. bolsa" value="${esc(it.presentation || "")}" /></label>
@@ -220,7 +229,7 @@
       true
     );
     root.addEventListener("change", async (e) => {
-      const meta = e.target.closest("input[data-m]");
+      const meta = e.target.closest("input[data-m], select[data-m]");
       if (meta) {
         const id = meta.closest(".kinv-buy").dataset.id;
         const f = meta.dataset.m;
