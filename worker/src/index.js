@@ -1072,9 +1072,9 @@ export class KitchenStore extends DurableObject {
   /** Daily shopping list: everything that is out, low, or needs cooking. */
   shoppingList() {
     const inv = this.invRead();
-    const bySup = new Map();
+    const areas = { cocina: new Map(), barra: new Map() };
+    let bySup = areas.cocina;
     const cook = [];
-    const items = [];
     const fmt = (n) => String(Math.round(n * 100) / 100);
     const add = (sup, rank, text) => {
       if (!bySup.has(sup)) bySup.set(sup, []);
@@ -1097,25 +1097,39 @@ export class KitchenStore extends DurableObject {
       else if (it.min == null && it.target && it.qty < it.target) add(sup, 1, `⚠️ ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)${tail}`);
     }
     const bar = this.kvGet("barInv", null);
+    bySup = areas.barra;
     if (bar && bar.items) {
       for (const [id, lim] of Object.entries(BAR_ALERT_AT)) {
         const b = bar.items[id];
         const sku = BAR_BY_ID[id];
         if (!b || !sku || b.qty == null || b.qty > lim) continue;
-        add(BAR_SUPPLIER[id] || "Sin proveedor", b.qty <= 0 ? 0 : 1, b.qty <= 0 ? `🚫 ${sku.name} (barra)` : `⚠️ ${sku.name} (barra): quedan ${fmt(b.qty)} (resurtir)`);
+        add(BAR_SUPPLIER[id] || "Sin proveedor", b.qty <= 0 ? 0 : 1, b.qty <= 0 ? `🚫 ${sku.name}` : `⚠️ ${sku.name}: quedan ${fmt(b.qty)} (resurtir)`);
       }
     }
-    const names = [...bySup.keys()].sort((x, y) => (x === "Sin proveedor") - (y === "Sin proveedor") || x.localeCompare(y, "es"));
     const lines = [];
+    const items = [];
     let count = 0;
-    for (const n of names) {
-      const list = bySup.get(n).sort((x, y) => x.rank - y.rank);
-      count += list.length;
-      lines.push(...(lines.length ? [""] : []), `🛒 ${n.toUpperCase()} (${list.length})`, ...list.map((x) => x.text));
-      for (const x of list) items.push(`${n}: ${x.text.replace(/^[^\p{L}\p{N}]+/u, "")}`);
-    }
-    if (cook.length) lines.push(...(lines.length ? [""] : []), "🍳 HAY QUE COCINAR", ...cook);
-    for (const c of cook) items.push("Cocinar: " + c.replace(/^•\s*/, ""));
+    const emit = (areaKey, title, label) => {
+      const map = areas[areaKey];
+      const names = [...map.keys()].sort((x, y) => (x === "Sin proveedor") - (y === "Sin proveedor") || x.localeCompare(y, "es"));
+      const cookHere = areaKey === "cocina" ? cook : [];
+      if (!names.length && !cookHere.length) return;
+      lines.push(...(lines.length ? [""] : []), title);
+      let first = true;
+      for (const n of names) {
+        const list = map.get(n).sort((x, y) => x.rank - y.rank);
+        count += list.length;
+        lines.push(...(first ? [] : [""]), `🛒 ${n.toUpperCase()} (${list.length})`, ...list.map((x) => x.text));
+        first = false;
+        for (const x of list) items.push(`${label} · ${n}: ${x.text.replace(/^[^\p{L}\p{N}]+/u, "")}`);
+      }
+      if (cookHere.length) {
+        lines.push(...(first ? [] : [""]), "🍳 HAY QUE COCINAR", ...cookHere);
+        for (const c of cookHere) items.push(`${label} · Cocinar: ` + c.replace(/^•\s*/, ""));
+      }
+    };
+    emit("cocina", "━━ 🍽️ COCINA ━━", "Cocina");
+    emit("barra", "━━ 🍸 BARRA ━━", "Barra");
     if (!lines.length) lines.push("✅ Nada por comprar hoy.");
     return { lines, items, count: count + cook.length };
   }
