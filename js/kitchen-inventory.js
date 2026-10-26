@@ -80,14 +80,15 @@
 
   function buyBlock(id, it) {
     const unitCost = it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
-    const sum = [it.supplier, it.presentation].filter(Boolean).join(" · ");
+    const sum = [it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ");
     const costTxt = unitCost != null ? ` · ${money(unitCost)} por ${it.unit || "unidad"}` : "";
     const img = photos[id] ? `<img class="kinv-photo" src="${photos[id]}" alt="Foto de ${esc(it.name)}" />` : it.photo ? '<span class="adm-muted">Cargando foto…</span>' : '<span class="adm-muted">Sin foto</span>';
     return `<details class="kinv-buy" data-id="${esc(id)}"${openBuy.has(id) ? " open" : ""}>
       <summary>🛒 Compra${sum ? ": " + esc(sum) : ""}${esc(costTxt)}${it.photo ? " 📷" : ""}</summary>
       <div class="kinv-buy__grid">
         <label class="kinv-f">Proveedor<input type="text" data-m="supplier" maxlength="60" placeholder="Ej. Costco" value="${esc(it.supplier || "")}" /></label>
-        <label class="kinv-f">Presentación (marca · gramaje · bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. Kirkland · bolsa 2 kg" value="${esc(it.presentation || "")}" /></label>
+        <label class="kinv-f">Marca<input type="text" data-m="brand" maxlength="60" placeholder="Ej. Kirkland" value="${esc(it.brand || "")}" /></label>
+        <label class="kinv-f">Presentación (gramaje y tipo: bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. bolsa 2 kg" value="${esc(it.presentation || "")}" /></label>
         <label class="kinv-f">Cantidad por presentación (${esc(it.unit || "")})<input type="number" min="0" step="any" data-m="packQty" placeholder="Ej. 2000" value="${it.packQty == null ? "" : it.packQty}" /></label>
         <label class="kinv-f">Costo de la presentación ($)<input type="number" min="0" step="any" data-m="packCost" placeholder="Pendiente" value="${it.packCost == null ? "" : it.packCost}" /></label>
         <div class="kinv-f kinv-photo-box">Foto

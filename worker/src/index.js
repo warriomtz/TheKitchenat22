@@ -722,7 +722,7 @@ export class KitchenStore extends DurableObject {
     const low = [];
     const cook = [];
     const fmt = (n) => String(Math.round(n * 100) / 100);
-    const where = (it) => (it.supplier || it.presentation ? ` [${[it.supplier, it.presentation].filter(Boolean).join(" · ")}]` : "");
+    const where = (it) => (it.supplier || it.brand || it.presentation ? ` [${[it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ")}]` : "");
     for (const it of Object.values(inv.items || {})) {
       if (it.qty == null) continue;
       const unit = it.unit ? " " + it.unit : "";
@@ -782,6 +782,7 @@ export class KitchenStore extends DurableObject {
       const it = inv.items[id];
       if (!it) return [404, { error: "not_found" }];
       if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
+      if ("brand" in data) it.brand = str(data.brand, 60).trim();
       if ("presentation" in data) it.presentation = str(data.presentation, 80).trim();
       for (const f of ["packQty", "packCost"]) {
         if (f in data) {
