@@ -2595,6 +2595,14 @@
     $("#announceTranslate")?.addEventListener("click", translateEsToEn);
     $("#hoursSave")?.addEventListener("click", saveHours);
     $("#kInvRefresh")?.addEventListener("click", () => window.KitchenInventory?.render(ADMIN_CODE));
+    $("#kInvSendList")?.addEventListener("click", async () => {
+      try {
+        const r = await KitchenStore.kitchenInventoryAction({ action: "send_list" }, ADMIN_CODE);
+        toast(`Lista enviada (${r.count || 0} por resurtir)`);
+      } catch {
+        toast("No se pudo enviar la lista");
+      }
+    });
     $("#kInvAdd")?.addEventListener("submit", (e) => {
       e.preventDefault();
       window.KitchenInventory?.addFromForm(ADMIN_CODE);

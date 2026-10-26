@@ -299,7 +299,7 @@ async function notifyTelegram(env, order) {
 
 /** Generic alert (inventory etc.) to ntfy + Telegram. Never throws. */
 async function notifyText(env, title, lines) {
-  const text = (Array.isArray(lines) ? lines : [String(lines)]).join("\n").slice(0, 1200);
+  const text = (Array.isArray(lines) ? lines : [String(lines)]).join("\n").slice(0, 3500);
   if (!text) return;
   const topic = envVar(env, "NTFY_TOPIC");
   if (topic) {
@@ -404,10 +404,8 @@ export default {
         ctx.waitUntil(notifyKitchen(env, body.order));
         ctx.waitUntil(notifyTelegram(env, body.order));
       }
-      if (body && body.inventoryAlerts) {
-        if (body.inventoryAlerts.length) ctx.waitUntil(notifyText(env, "The Kitchen · Inventario", body.inventoryAlerts));
-        delete body.inventoryAlerts;
-      }
+      // Inventory alerts are no longer sent one by one: a daily shopping list goes out at 10 pm (see scheduled()).
+      if (body && body.inventoryAlerts) delete body.inventoryAlerts;
       return reply(request, env, status, body);
     }
     // Public: analytics tracking
@@ -467,12 +465,22 @@ export default {
     }
     delete data.code;
 
-    const [status, body] = await stub.op(path, "POST", data, ip);
-    if (body && body.inventoryAlerts) {
-      if (body.inventoryAlerts.length) ctx.waitUntil(notifyText(env, "The Kitchen · Inventario", body.inventoryAlerts));
-      delete body.inventoryAlerts;
+    if (path === "/api/kitchen-inventory" && String(data.action || "").toLowerCase() === "send_list") {
+      const [, list] = await stub.op("/api/kitchen-shopping-list", "GET", {}, ip);
+      await notifyText(env, "The Kitchen · Lista de compras", (list && list.lines) || []);
+      return reply(request, env, 200, { ok: true, count: (list && list.count) || 0 });
     }
+
+    const [status, body] = await stub.op(path, "POST", data, ip);
+    if (body && body.inventoryAlerts) delete body.inventoryAlerts;
     return reply(request, env, status, body);
+  },
+
+  /** Cron (wrangler.toml): daily shopping list at 10 pm Mexico City (04:00 UTC). */
+  async scheduled(event, env, ctx) {
+    const stub = env.STORE.get(env.STORE.idFromName("main"));
+    const [, body] = await stub.op("/api/kitchen-shopping-list", "GET", {}, "cron");
+    ctx.waitUntil(notifyText(env, "The Kitchen · Lista de compras", (body && body.lines) || ["No se pudo armar la lista."]));
   },
 };
 
@@ -706,6 +714,31 @@ export class KitchenStore extends DurableObject {
       for (const r of list) if (r.outId && !r.optional && blocked(r)) out.add(r.outId);
     }
     return [...out];
+  }
+  /** Daily shopping list: everything that is out, low, or needs cooking. */
+  shoppingList() {
+    const inv = this.invRead();
+    const out = [];
+    const low = [];
+    const cook = [];
+    const fmt = (n) => String(Math.round(n * 100) / 100);
+    for (const it of Object.values(inv.items || {})) {
+      if (it.qty == null) continue;
+      const unit = it.unit ? " " + it.unit : "";
+      if (it.cookFrom) {
+        if (it.min != null && it.qty <= it.min) cook.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}`);
+        continue;
+      }
+      if (it.qty <= 0) out.push(`• ${it.name}`);
+      else if (it.min != null && it.qty <= it.min) low.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}`);
+      else if (it.min == null && it.target && it.qty < it.target) low.push(`• ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)`);
+    }
+    const lines = [];
+    if (out.length) lines.push("🚫 AGOTADO", ...out);
+    if (low.length) lines.push(...(lines.length ? [""] : []), "⚠️ POR TERMINARSE", ...low);
+    if (cook.length) lines.push(...(lines.length ? [""] : []), "🍳 HAY QUE COCINAR", ...cook);
+    if (!lines.length) lines.push("✅ Nada por comprar hoy.");
+    return { lines, count: out.length + low.length + cook.length };
   }
   invAdmin(data) {
     const act = String(data.action || "").toLowerCase();
@@ -1497,6 +1530,8 @@ export class KitchenStore extends DurableObject {
       switch (path) {
         case "/api/stock":
           return [200, this.readStock()];
+        case "/api/kitchen-shopping-list":
+          return [200, this.shoppingList()];
         case "/api/hours":
           return [200, this.normalizeHours(this.kvGet("hours", null))];
         case "/api/menu": {

@@ -23,3 +23,7 @@ ADMIN_URL = "https://thekitchenat22.com/admin.html"
 #   NTFY_TOPIC   - private ntfy topic for kitchen phone alerts
 #   NTFY_TOKEN   - optional ntfy.sh access token (fixes 429 rate-limit errors)
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID - optional second alert channel (Telegram)
+
+# Daily shopping list: 22:00 Mexico City (UTC-6, no daylight saving) = 04:00 UTC.
+[triggers]
+crons = ["0 4 * * *"]
