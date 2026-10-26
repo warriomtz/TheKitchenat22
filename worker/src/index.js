@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 42;
+const INV_VERSION = 43;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -64,6 +64,7 @@ const INV_DEFAULT = {
     ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: 160 },
     chips: { name: "Papas fritas (chips)", unit: "g", group: "Papas", qty: 600, min: 200 },
     totopos: { name: "Totopos", unit: "g", group: "Entradas", qty: 820, min: 140 },
+    "zanahoria-baby": { name: "Zanahoria baby", unit: "g", group: "Verdura", qty: 1790, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -87,11 +88,11 @@ const INV_DEFAULT = {
     "m-salmon": [{ ing: "salmon", qty: 1 }],
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
-    "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }, { ing: "ensalada", qty: 50 }],
+    "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }, { ing: "ensalada", qty: 50 }, { ing: "zanahoria-baby", qty: 40 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
-    "f-boneless": [{ ing: "boneless", qty: 210 }],
+    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
     "f-paletas": [
