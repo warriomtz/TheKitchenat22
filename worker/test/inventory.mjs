@@ -84,5 +84,19 @@ ok(j.report[0].status === "ok" && j.report[0].after === 20 && j.report[1].status
 ok(j.inventory.items["pan-hamburguesa"].qty === 4, "dry run does not change stock");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "receive", text: "test-77 2 150" }, CODE);
 ok(j.applied && j.inventory.items["pan-hamburguesa"].qty === 20 && j.inventory.items["pan-hamburguesa"].packCost === 150, "receipt applied");
+// takeout containers: 82 seeded; only orders that are NOT "dine in" use one
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+const box0 = j.inventory.items["recipiente-llevar"];
+ok(box0 && box0.qty === 82 && box0.min === 10 && box0.unit === "piezas", "takeout containers seeded at 82, alert at 10");
+[s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [{ id: "f-bolsa", name: "Bolsa", qty: 1 }] });
+ok(s === 200 && !(j.order.inv && j.order.inv["recipiente-llevar"]), "dine-in order does not use containers");
+[s, j] = await call("POST", "/api/orders", { orderType: "apartment", apartment: "1204", items: [{ id: "f-bolsa", name: "Bolsa", qty: 1 }] });
+ok(s === 200 && j.order.inv && j.order.inv["recipiente-llevar"] === 1, "apartment order uses 1 container");
+const toid = j.order.id;
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["recipiente-llevar"].qty === 81, "containers 82 -> 81");
+[s, j] = await call("POST", "/api/orders", { action: "update", orderId: toid, status: "dismissed" }, CODE);
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["recipiente-llevar"].qty === 82, "dismissed takeout order gives the container back");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);

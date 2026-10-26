@@ -34,6 +34,7 @@ const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
 const INV_VERSION = 64;
+const TAKEOUT_BOXES_PER_ORDER = 1; // containers per takeout order (seed value; editable in Recetas)
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -660,10 +661,18 @@ export class KitchenStore extends DurableObject {
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
+    // Takeout containers (Mario 2026-10-26): 82 on hand; each order that is not "dine in" uses TAKEOUT_BOXES_PER_ORDER.
+    // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
+    if (!inv.takeoutBoxes) {
+      if (!inv.items["recipiente-llevar"]) inv.items["recipiente-llevar"] = { name: "Recipiente para llevar 7x7", unit: "piezas", group: "Empaques", qty: 82, min: 10, presentation: "Biodegradable plano 7x7" };
+      if (!inv.recipes["order:takeout"]) inv.recipes["order:takeout"] = [{ ing: "recipiente-llevar", qty: TAKEOUT_BOXES_PER_ORDER }];
+      inv.takeoutBoxes = true;
+      this.kvSet("kitchenInv", inv);
+    }
     return inv;
   }
   /** Which ingredients does this order use? -> { ingredientId: amount } */
-  invConsumption(items, inv) {
+  invConsumption(items, inv, order) {
     const used = {};
     const add = (ing, q) => {
       used[ing] = Math.round(((used[ing] || 0) + q) * 100) / 100;
@@ -686,12 +695,16 @@ export class KitchenStore extends DurableObject {
         for (const r of inv.recipes["side:" + k] || []) add(r.ing, r.qty * n * mult);
       }
     }
+    // orders that are NOT "dine in" (apartment / amenity) also use takeout containers
+    if (order && order.orderType && order.orderType !== "dinein") {
+      for (const r of inv.recipes["order:takeout"] || []) add(r.ing, r.qty);
+    }
     return used;
   }
   /** Deduct this order's ingredients (tracked ones only). Returns alert lines. */
   invApply(order) {
     const inv = this.invRead();
-    const used = this.invConsumption(order.items, inv);
+    const used = this.invConsumption(order.items, inv, order);
     const applied = {};
     const alerts = [];
     for (const [ing, q] of Object.entries(used)) {

@@ -19,6 +19,7 @@
     vegetales: "Vegetales",
   };
   const ITEM_LABELS = {
+    "order:takeout": "Pedido para llevar (no comer aquí)",
     "m-pollo-100": "Meal Prep Pollo",
     "m-atun": "Meal Prep Atún",
     "m-carne-molida": "Meal Prep Carne molida",
