@@ -763,6 +763,22 @@
     ids.forEach((id) => state.seenOrderIds.add(id));
     if (!fresh.length) return;
     fresh.forEach((o) => alertNewOrder(o));
+    scheduleInventoryRefresh();
+  }
+
+  /** The order has already deducted stock on the server; repaint the Inventario tab 30 s after it arrives. */
+  let invRefreshTimer = null;
+  function scheduleInventoryRefresh(delay) {
+    clearTimeout(invRefreshTimer);
+    invRefreshTimer = setTimeout(() => {
+      if (state.tab !== "inventory" || !window.KitchenInventory) return; // opening the tab always loads fresh data
+      const active = document.activeElement;
+      if (active && active.closest && active.closest("#kInvRoot") && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) {
+        scheduleInventoryRefresh(10000); // don't wipe a field being edited
+        return;
+      }
+      KitchenInventory.render(ADMIN_CODE);
+    }, typeof delay === "number" ? delay : 30000);
   }
 
   function orderAlertBody(o) {
