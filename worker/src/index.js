@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 40;
+const INV_VERSION = 41;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -61,7 +61,7 @@ const INV_DEFAULT = {
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
     "paleta-choc": { name: "Paletas de chocolate", unit: "piezas", group: "Dulces", qty: 4, min: 1 },
     "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
-    ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: null },
+    ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: 160 },
     chips: { name: "Papas fritas (chips)", unit: "g", group: "Papas", qty: 600, min: 200 },
     totopos: { name: "Totopos", unit: "g", group: "Entradas", qty: 820, min: 140 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
@@ -587,6 +587,7 @@ export class KitchenStore extends DurableObject {
       delete inv.recipes["f-paletas-fruta"];
       if ((inv.v || 1) < 38 && inv.items.chips) inv.items.chips.min = 200;
       if ((inv.v || 1) < 40 && inv.items.totopos) inv.items.totopos.min = 140;
+      if ((inv.v || 1) < 41 && inv.items.ensalada) inv.items.ensalada.min = 160;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
