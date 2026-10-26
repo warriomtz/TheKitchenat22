@@ -182,6 +182,8 @@
         <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span>
         ${it.cookFrom ? `<button type="button" class="btn btn--sm" data-act="cook">${esc(it.cookLabel || "Ya cociné")}</button>` : ""}</div>
       <button type="button" class="btn btn--ghost btn--sm kinv-del" data-act="del" title="Quitar ingrediente">✕</button>
+      ${it.qty == null ? "" : `<div class="kinv-ownbtn"><input type="number" min="0" step="any" data-f="own" value="${/^(g|ml)$/i.test(it.unit || "") ? 100 : 1}" title="Cantidad (${esc(it.unit || "")})" /> <span class="adm-muted">${esc(it.unit || "")}</span>
+        <button type="button" class="btn btn--ghost btn--sm" data-act="own">🍽️ Consumo propio</button></div>`}
       ${noBuy ? "" : buyBlock(id, it)}
     </div>`;
   }
@@ -312,6 +314,22 @@
         const n = Number(ans);
         if (!Number.isFinite(n) || n <= 0) return;
         act(window.__kinvCode || code, { action: "cook", id, n });
+      } else if (btn.dataset.act === "own") {
+        const q = Number($("input[data-f=own]", rowEl).value);
+        if (!Number.isFinite(q) || q <= 0) return;
+        const who = ($("#kInvOwnWho") && $("#kInvOwnWho").value) || "Mario";
+        btn.disabled = true;
+        KitchenStore.kitchenInventoryAction({ action: "own", kind: "consumo", who, ings: [{ id, qty: q }] }, window.__kinvCode || code)
+          .then((r) => {
+            ownLog = r.ownLog || ownLog;
+            data = { inventory: r.inventory, autoOut: r.autoOut };
+            paint();
+            ownPaint();
+          })
+          .catch(() => {
+            btn.disabled = false;
+            alert("No se pudo descontar. Revisa tu conexión.");
+          });
       } else if (btn.dataset.act === "photo-del") {
         const idp = btn.closest(".kinv-buy").dataset.id;
         delete photos[idp];

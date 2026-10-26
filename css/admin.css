@@ -1494,6 +1494,8 @@
 .kinv-pgroup__head { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; opacity: .7; margin: 2px 6px 8px; }
 .kinv-pgroup > .kinv-row { margin-bottom: 6px; }
 .kinv-pgroup > .kinv-buy { margin: 8px 6px 2px; }
+.kinv-ownbtn{grid-column:1/-1;display:flex;align-items:center;gap:.4rem;margin-top:.2rem}
+.kinv-ownbtn input{width:5rem}
 .kinv-own-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0}
 .kinv-own-row select,.kinv-own-row input{min-width:0;flex:1 1 9rem}
 .kinv-own-row input[type=number]{flex:0 0 5.5rem}
