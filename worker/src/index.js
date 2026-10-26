@@ -34,7 +34,9 @@ const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
 const INV_VERSION = 64;
-const TAKEOUT_BOXES_PER_ORDER = 1; // containers per takeout order (seed value; editable in Recetas)
+const TAKEOUT_BOXES_PER_DISH = 1; // containers per dish in a takeout order (seed value; editable in Recetas)
+// Already packaged / not served in a box: drinks (d-, b-), bag of chips, cookies, popsicles
+const TAKEOUT_NO_BOX = (id) => /^(d-|b-)/.test(String(id)) || ["f-bolsa", "f-galletas", "f-paletas"].includes(String(id));
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -661,11 +663,11 @@ export class KitchenStore extends DurableObject {
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
-    // Takeout containers (Mario 2026-10-26): 82 on hand; each order that is not "dine in" uses TAKEOUT_BOXES_PER_ORDER.
+    // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
       if (!inv.items["recipiente-llevar"]) inv.items["recipiente-llevar"] = { name: "Recipiente para llevar 7x7", unit: "piezas", group: "Empaques", qty: 82, min: 10, presentation: "Biodegradable plano 7x7" };
-      if (!inv.recipes["order:takeout"]) inv.recipes["order:takeout"] = [{ ing: "recipiente-llevar", qty: TAKEOUT_BOXES_PER_ORDER }];
+      if (!inv.recipes["order:takeout"]) inv.recipes["order:takeout"] = [{ ing: "recipiente-llevar", qty: TAKEOUT_BOXES_PER_DISH }];
       inv.takeoutBoxes = true;
       this.kvSet("kitchenInv", inv);
     }
@@ -695,9 +697,11 @@ export class KitchenStore extends DurableObject {
         for (const r of inv.recipes["side:" + k] || []) add(r.ing, r.qty * n * mult);
       }
     }
-    // orders that are NOT "dine in" (apartment / amenity) also use takeout containers
+    // orders that are NOT "dine in" (apartment / amenity): every dish goes in its own takeout container
     if (order && order.orderType && order.orderType !== "dinein") {
-      for (const r of inv.recipes["order:takeout"] || []) add(r.ing, r.qty);
+      let dishes = 0;
+      for (const it of items || []) if (!TAKEOUT_NO_BOX(it.id)) dishes += Math.max(1, parseInt(it.qty, 10) || 1);
+      if (dishes) for (const r of inv.recipes["order:takeout"] || []) add(r.ing, r.qty * dishes);
     }
     return used;
   }

@@ -58,7 +58,7 @@
   }
 
   function itemName(key) {
-    if (key === "order:takeout") return "Pedido para llevar (no comer aquí)";
+    if (key === "order:takeout") return "Platillo para llevar (por platillo, no comer aquí)";
     if (key.startsWith("side:")) return "Complemento Meal Prep: " + (SIDE_LABELS[key.slice(5)] || key.slice(5));
     const names = window.KITCHEN_ITEM_NAMES && window.KITCHEN_ITEM_NAMES.es;
     const flat = (window.KITCHEN_FLAT || []).find((x) => x.id === key);
