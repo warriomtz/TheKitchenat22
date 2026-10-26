@@ -807,6 +807,7 @@ export class KitchenStore extends DurableObject {
       const it = inv.items[id];
       if (!it) return [404, { error: "not_found" }];
       if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
+      if ("itemNo" in data) it.itemNo = str(data.itemNo, 40).trim();
       if ("brand" in data) it.brand = str(data.brand, 60).trim();
       if ("presentation" in data) it.presentation = str(data.presentation, 80).trim();
       if ("costFrom" in data) {
@@ -828,6 +829,49 @@ export class KitchenStore extends DurableObject {
         if (n === undefined) return [400, { error: "bad_packCost" }];
         it.packCost = n;
       }
+    } else if (act === "receive") {
+      // Purchase ticket: lines "<item #> <packs bought> [price per pack]" -> adds packs x quantity per pack to stock.
+      const lines = String(data.text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 200);
+      const report = [];
+      let changed = false;
+      for (const line of lines) {
+        const m = /^([A-Za-z0-9-]+)[\s,;:x×]+(\d+(?:[.,]\d+)?)(?:[\s,;:x×$]+(\d+(?:[.,]\d+)?))?$/.exec(line);
+        if (!m) {
+          report.push({ line, status: "unreadable" });
+          continue;
+        }
+        const code = m[1].toLowerCase();
+        const count = Number(m[2].replace(",", "."));
+        const price = m[3] != null ? Number(m[3].replace(",", ".")) : null;
+        const hit = Object.entries(inv.items).find(([, x]) => x.itemNo && String(x.itemNo).toLowerCase() === code);
+        if (!hit) {
+          report.push({ line, status: "no_match" });
+          continue;
+        }
+        const [hid, it] = hit;
+        if (!(it.packQty > 0)) {
+          report.push({ line, id: hid, name: it.name, status: "no_pack" });
+          continue;
+        }
+        const add = Math.round(count * it.packQty * 100) / 100;
+        if (it.qty == null) {
+          report.push({ line, id: hid, name: it.name, status: "not_tracked", count });
+          if (!data.dry && price != null && price > 0) {
+            it.packCost = price;
+            changed = true;
+          }
+          continue;
+        }
+        report.push({ line, id: hid, name: it.name, unit: it.unit, status: "ok", count, add, before: it.qty, after: Math.round((it.qty + add) * 100) / 100, price });
+        if (!data.dry) {
+          it.qty = Math.round((it.qty + add) * 100) / 100;
+          if (price != null && price > 0) it.packCost = price;
+          changed = true;
+        }
+      }
+      if (data.dry || !changed) return [200, { ok: true, report, applied: false }];
+      this.kvSet("kitchenInv", inv);
+      return [200, { ok: true, report, applied: true, inventory: inv, autoOut: this.invAutoOut() }];
     } else if (act === "photo") {
       const it = inv.items[id];
       if (!it) return [404, { error: "not_found" }];

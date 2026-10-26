@@ -2600,6 +2600,8 @@
     $("#kRecRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
     $("#kRecSearch")?.addEventListener("input", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
     $("#kCostRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderCosting(ADMIN_CODE));
+    $("#kInvRecvCheck")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, false));
+    $("#kInvRecvApply")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, true));
     $("#kInvSendList")?.addEventListener("click", async () => {
       try {
         const r = await KitchenStore.kitchenInventoryAction({ action: "send_list" }, ADMIN_CODE);

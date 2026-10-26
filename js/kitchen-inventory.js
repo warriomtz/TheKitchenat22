@@ -80,7 +80,7 @@
 
   function buyBlock(id, it, extra) {
     const unitCost = it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
-    const sum = [it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ");
+    const sum = [it.supplier, it.brand, it.presentation, it.itemNo ? "#" + it.itemNo : ""].filter(Boolean).join(" · ");
     const costTxt = unitCost != null ? ` · ${money(unitCost)} por ${it.unit || "unidad"}` : "";
     const packTxt = it.packText != null ? it.packText : it.packQty != null ? `${it.packQty} ${it.unit || ""}`.trim() : "";
     const packHint = it.packText && it.packQty == null ? `<small class="kinv-warn">⚠️ No pude leer la cantidad. Usa ${it.unit === "g" ? "g o kg (ej. 1 kg)" : it.unit === "ml" ? "ml o l (ej. 1 l)" : "un número (ej. 8 pza)"}.</small>` : it.packQty != null ? `<small class="adm-muted">= ${it.packQty} ${esc(it.unit || "")}</small>` : "";
@@ -89,6 +89,7 @@
       <summary>🛒 Compra${sum ? ": " + esc(sum) : ""}${esc(costTxt)}${it.photo ? " 📷" : ""}</summary>
       <div class="kinv-buy__grid">
         <label class="kinv-f">Proveedor<input type="text" data-m="supplier" maxlength="60" placeholder="Ej. Costco" value="${esc(it.supplier || "")}" /></label>
+        <label class="kinv-f"># de artículo del proveedor<input type="text" data-m="itemNo" maxlength="40" placeholder="Ej. 1234567 (Costco)" value="${esc(it.itemNo || "")}" /></label>
         <label class="kinv-f">Marca<input type="text" data-m="brand" maxlength="60" placeholder="Ej. Kirkland" value="${esc(it.brand || "")}" /></label>
         <label class="kinv-f">Tipo de presentación (bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. bolsa" value="${esc(it.presentation || "")}" /></label>
         <label class="kinv-f">Cantidad por presentación (ej. 8 pza, 1 kg)<input type="text" data-m="packText" maxlength="40" placeholder="Ej. 1 kg" value="${esc(packTxt)}" />${packHint}</label>
@@ -320,6 +321,37 @@
       if (root && !data) root.innerHTML = '<p class="adm-muted">Cargando…</p>';
       data = await KitchenStore.kitchenInventory(code);
       paint();
+    },
+    /** Purchase ticket: review (dry run) or apply the pasted lines. */
+    async receive(code, apply) {
+      const ta = $("#kInvRecvText");
+      const out = $("#kInvRecvOut");
+      if (!ta || !out) return;
+      const text = ta.value.trim();
+      if (!text) {
+        out.innerHTML = '<p class="adm-muted">Pega primero las líneas de la compra.</p>';
+        return;
+      }
+      out.innerHTML = '<p class="adm-muted">Revisando…</p>';
+      try {
+        const r = await KitchenStore.kitchenInventoryAction({ action: "receive", text, dry: !apply }, code);
+        const label = { ok: "✅", no_match: "❓ No encontré ese # de artículo", no_pack: "⚠️ Falta la cantidad por presentación", not_tracked: "ℹ️ No controla existencia (solo se actualizó el costo)", unreadable: "⚠️ No pude leer la línea" };
+        const rows = (r.report || [])
+          .map((x) =>
+            x.status === "ok"
+              ? `<li>✅ <strong>${esc(x.name)}</strong>: ${x.before} → <strong>${x.after}</strong> ${esc(x.unit || "")} (+${x.add}${x.price ? `, $${x.price} c/u` : ""})</li>`
+              : `<li>${label[x.status] || x.status}: <code>${esc(x.line)}</code>${x.name ? " · " + esc(x.name) : ""}</li>`
+          )
+          .join("");
+        out.innerHTML = `<ul class="kinv-recv-list">${rows}</ul>` + (apply ? '<p><strong>Compra aplicada al inventario.</strong></p>' : '<p class="adm-muted">Así quedaría. Si está bien, toca "Aplicar compra".</p>');
+        if (apply && r.inventory) {
+          data = { inventory: r.inventory, autoOut: r.autoOut };
+          paint();
+          ta.value = "";
+        }
+      } catch (e) {
+        out.innerHTML = `<p class="kinv-warn">No se pudo: ${esc(e && e.message ? e.message : e)}</p>`;
+      }
     },
     async addFromForm(code) {
       const name = $("#kInvName").value.trim();

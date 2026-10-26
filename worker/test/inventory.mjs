@@ -75,5 +75,14 @@ const q = j.inventory.items;
 ok(q["pollo-empanizado"].qty === 12 - 1 - 1 - 2 && q.bagel.qty === 9 - 3 && q["pan-hamburguesa"].qty === 4, "breaded chicken / bagels / bun deduct");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pan-hamburguesa", qty: 0 }, CODE);
 ok(j.autoOut.includes("f-burger"), "burger blocked when buns reach 0");
+// receipt: item # + packs -> stock
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pan-hamburguesa", qty: 4 }, CODE);
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "meta", id: "pan-hamburguesa", itemNo: "TEST-77", packText: "8 pza" }, CODE);
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "receive", text: "TEST-77 2 150\nNOPE 1\nbasura", dry: true }, CODE);
+ok(j.report[0].status === "ok" && j.report[0].after === 20 && j.report[1].status === "no_match" && j.report[2].status === "unreadable", "receipt dry run");
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["pan-hamburguesa"].qty === 4, "dry run does not change stock");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "receive", text: "test-77 2 150" }, CODE);
+ok(j.applied && j.inventory.items["pan-hamburguesa"].qty === 20 && j.inventory.items["pan-hamburguesa"].packCost === 150, "receipt applied");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);
