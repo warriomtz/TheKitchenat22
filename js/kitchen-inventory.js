@@ -180,7 +180,7 @@
       <div class="kinv-f kinv-f--add">Surtir
         <span><input type="number" min="0" step="any" data-f="delta" placeholder="+ cantidad" />
         <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span>
-        ${it.cookFrom ? `<button type="button" class="btn btn--sm" data-act="cook">${esc(it.cookLabel || "Ya cociné")}</button>` : ""}</div>
+        ${it.cookFrom || it.cookRecipe ? `<button type="button" class="btn btn--sm" data-act="cook">${esc(it.cookLabel || "Ya cociné")}</button>` : ""}</div>
       <button type="button" class="btn btn--ghost btn--sm kinv-del" data-act="del" title="Quitar ingrediente">✕</button>
       ${it.qty == null ? "" : `<div class="kinv-ownbtn"><input type="number" min="0" step="any" data-f="own" value="${/^(g|ml)$/i.test(it.unit || "") ? 100 : 1}" title="Cantidad (${esc(it.unit || "")})" /> <span class="adm-muted">${esc(it.unit || "")}</span>
         <button type="button" class="btn btn--ghost btn--sm" data-act="own">🍽️ Consumo propio</button></div>`}
@@ -307,6 +307,15 @@
         act(window.__kinvCode || code, { action: "add", id, delta: v });
       } else if (btn.dataset.act === "cook") {
         const it = data.inventory.items[id];
+        if (it.cookRecipe) {
+          const names = it.cookRecipe.map((r) => `${r.qty} ${(data.inventory.items[r.ing] || {}).unit || ""} ${(data.inventory.items[r.ing] || {}).name || r.ing}`).join(", ");
+          const a2 = prompt(`¿Cuántas tandas cocinaste? Cada tanda: ${names} → ${it.cookBatch || 1} porciones`, "1");
+          if (a2 === null) return;
+          const n2 = Number(a2);
+          if (!Number.isFinite(n2) || n2 <= 0) return;
+          act(window.__kinvCode || code, { action: "cook", id, n: n2 });
+          return;
+        }
         const raw = data.inventory.items[it.cookFrom];
         const def = it.cookBatch || Math.max(1, (it.target || 6) - (it.qty || 0));
         const ans = prompt(`¿Cuántas porciones cocinaste? (hay ${raw ? raw.qty : "?"} ${raw ? raw.unit || "" : ""} sin hacer)`, String(def));

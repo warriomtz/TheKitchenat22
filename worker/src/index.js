@@ -774,6 +774,16 @@ export class KitchenStore extends DurableObject {
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
+    // Sopa de tomate recipe (Mario 2026-10-26): one batch = 907 g tomate en racimo + 2 cebollas + 1 cabeza de ajo -> 8 portions.
+    if (!inv.sopaTomateRecipe) {
+      const mk = (o) => ({ qty: 0, buyWith: "sopa-tomate", ...o }); // none on hand; only bought when the soup is at its minimum
+      if (!inv.items["tomate-racimo"]) inv.items["tomate-racimo"] = mk({ name: "Tomate en racimo", unit: "g", group: "Verdura", supplier: "Costco", presentation: "paquete", packText: "907 g", packQty: 907 });
+      if (!inv.items.cebolla) inv.items.cebolla = mk({ name: "Cebolla", unit: "piezas", group: "Verdura", supplier: "Carnicería" });
+      if (!inv.items["ajo-cabeza"]) inv.items["ajo-cabeza"] = mk({ name: "Ajo (cabeza)", unit: "piezas", group: "Verdura", supplier: "Carnicería" });
+      if (inv.items["sopa-tomate"]) Object.assign(inv.items["sopa-tomate"], { cookRecipe: [{ ing: "tomate-racimo", qty: 907 }, { ing: "cebolla", qty: 2 }, { ing: "ajo-cabeza", qty: 1 }], cookBatch: 8, cookLabel: "Ya cociné una tanda (8 porciones)" });
+      inv.sopaTomateRecipe = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
@@ -1110,6 +1120,15 @@ export class KitchenStore extends DurableObject {
     for (const it of Object.values(inv.items || {})) {
       if (it.qty == null) continue;
       const unit = it.unit ? " " + it.unit : "";
+      if (it.buyWith) {
+        // bought only when the dish it feeds is at its minimum (time to cook again)
+        const par = inv.items[it.buyWith];
+        if (par && par.qty != null && par.min != null && par.qty <= par.min && it.qty <= 0) {
+          const det0 = [it.brand, it.presentation, it.packText].filter(Boolean).join(" · ");
+          add((it.supplier || "").trim() || "Sin proveedor", 1, `⚠️ ${it.name}: para ${par.name} (quedan ${fmt(par.qty)})${det0 ? ` [${det0}]` : ""}`);
+        }
+        continue;
+      }
       if (it.cookFrom) {
         if (it.min != null && it.qty <= it.min) cook.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}`);
         continue;
@@ -1303,6 +1322,18 @@ export class KitchenStore extends DurableObject {
       if (!it) return [404, { error: "not_found" }];
       this.sql.exec("DELETE FROM kv WHERE k = ?", "invPhoto:" + id);
       delete it.photo;
+    } else if (act === "cook" && inv.items[id] && inv.items[id].cookRecipe) {
+      // Multi-ingredient batch (e.g. soup): n = number of batches; adds cookBatch portions per batch, deducts the recipe.
+      const it = inv.items[id];
+      const batches = data.n == null || data.n === "" ? 1 : Number(data.n);
+      if (!Number.isFinite(batches) || batches <= 0 || batches > 20) return [400, { error: "bad_n" }];
+      for (const r of it.cookRecipe) {
+        const ing = inv.items[r.ing];
+        if (ing && ing.qty != null) ing.qty = Math.max(0, Math.round((ing.qty - r.qty * batches) * 100) / 100);
+      }
+      it.qty = Math.round(((it.qty == null ? 0 : it.qty) + (it.cookBatch || 1) * batches) * 100) / 100;
+      this.kvSet("kitchenInv", inv);
+      return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), inventoryAlerts: [] }];
     } else if (act === "cook") {
       const it = inv.items[id];
       const raw = it && it.cookFrom && inv.items[it.cookFrom];
