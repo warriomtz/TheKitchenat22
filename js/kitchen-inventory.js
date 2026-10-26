@@ -54,6 +54,7 @@
   const openBuy = new Set(); // ingredient ids whose "Compra" block is open
   const photos = {}; // id -> data URL (loaded on demand)
   let filter = "all";
+  let catFilter = ""; // "" = all categories (group name otherwise)
 
   function usedBy(ingId) {
     const rec = (data && data.inventory && data.inventory.recipes) || {};
@@ -201,13 +202,17 @@
     const groups = {};
     const isPortion = (it) => !!(it.costFrom && items[it.costFrom]);
     const isSource = (id) => portionsOf(items, id).length > 0;
+    const catCount = {};
+    for (const it of Object.values(items)) if (!isPortion(it)) catCount[it.group || "Otros"] = (catCount[it.group || "Otros"] || 0) + 1;
+    if (catFilter && !catCount[catFilter]) catFilter = ""; // category disappeared after a refresh
     for (const [id, it] of Object.entries(items)) {
       if (isPortion(it)) continue; // shown inside its source's card
+      if (catFilter && (it.group || "Otros") !== catFilter) continue;
       const visible = isSource(id) ? pass(it) || portionsOf(items, id).some(([, x]) => pass(x)) : pass(it);
       if (visible) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
     }
     const btn = (k, label) => `<button type="button" class="kinv-filter${filter === k ? " is-active" : ""}" data-filter="${k}">${label}</button>`;
-    let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}</div><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
+    let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}</div><label class="kinv-cat">Categoría <select data-cat><option value="">Todas las categorías</option>${Object.entries(catCount).map(([g, n]) => `<option value="${esc(g)}"${catFilter === g ? " selected" : ""}>${esc(g)} (${n})</option>`).join("")}</select></label><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
     if (!Object.keys(groups).length) html += '<p class="adm-muted">No hay ingredientes en esta vista. ✅</p>';
     for (const [g, list] of Object.entries(groups)) {
       html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => (isSource(id) ? groupCard(id, it, items, pass) : row(id, it))).join("");
@@ -247,6 +252,12 @@
       true
     );
     root.addEventListener("change", async (e) => {
+      const cat = e.target.closest("select[data-cat]");
+      if (cat) {
+        catFilter = cat.value;
+        paint();
+        return;
+      }
       const meta = e.target.closest("input[data-m], select[data-m]");
       if (meta) {
         const id = meta.closest(".kinv-buy").dataset.id;

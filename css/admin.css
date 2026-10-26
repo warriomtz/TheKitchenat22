@@ -1464,6 +1464,8 @@
 .kinv-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .kinv-filter { padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); color: inherit; font: inherit; font-size: .9rem; cursor: pointer; }
 .kinv-filter.is-active { background: #9b3b3b; border-color: #9b3b3b; color: #fff; font-weight: 700; }
+.kinv-cat { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: .9rem; opacity: .95; }
+.kinv-cat select { flex: 1; max-width: 320px; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: inherit; font: inherit; }
 
 /* Inventory purchase block, recipes and costing */
 .kinv-buy { grid-column: 1 / -1; border-top: 1px dashed rgba(255,255,255,.12); padding-top: 8px; }
