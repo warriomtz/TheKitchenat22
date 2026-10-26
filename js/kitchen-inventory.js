@@ -50,6 +50,8 @@
 
   let data = null;
   let busy = false;
+  const openBuy = new Set(); // ingredient ids whose "Compra" block is open
+  const photos = {}; // id -> data URL (loaded on demand)
   let filter = "all";
 
   function usedBy(ingId) {
@@ -74,6 +76,70 @@
     return ["OK", "kinv-chip--ok"];
   }
 
+  const money = (n) => "$" + (Math.round(n * 100) / 100).toLocaleString("es-MX");
+
+  function buyBlock(id, it) {
+    const unitCost = it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
+    const sum = [it.supplier, it.presentation].filter(Boolean).join(" · ");
+    const costTxt = unitCost != null ? ` · ${money(unitCost)} por ${it.unit || "unidad"}` : "";
+    const img = photos[id] ? `<img class="kinv-photo" src="${photos[id]}" alt="Foto de ${esc(it.name)}" />` : it.photo ? '<span class="adm-muted">Cargando foto…</span>' : '<span class="adm-muted">Sin foto</span>';
+    return `<details class="kinv-buy" data-id="${esc(id)}"${openBuy.has(id) ? " open" : ""}>
+      <summary>🛒 Compra${sum ? ": " + esc(sum) : ""}${esc(costTxt)}${it.photo ? " 📷" : ""}</summary>
+      <div class="kinv-buy__grid">
+        <label class="kinv-f">Proveedor<input type="text" data-m="supplier" maxlength="60" placeholder="Ej. Costco" value="${esc(it.supplier || "")}" /></label>
+        <label class="kinv-f">Presentación (marca · gramaje · bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. Kirkland · bolsa 2 kg" value="${esc(it.presentation || "")}" /></label>
+        <label class="kinv-f">Cantidad por presentación (${esc(it.unit || "")})<input type="number" min="0" step="any" data-m="packQty" placeholder="Ej. 2000" value="${it.packQty == null ? "" : it.packQty}" /></label>
+        <label class="kinv-f">Costo de la presentación ($)<input type="number" min="0" step="any" data-m="packCost" placeholder="Pendiente" value="${it.packCost == null ? "" : it.packCost}" /></label>
+        <div class="kinv-f kinv-photo-box">Foto
+          ${img}
+          <span class="kinv-photo-actions">
+            <label class="btn btn--ghost btn--sm">${it.photo ? "Cambiar" : "Subir foto"}<input type="file" accept="image/*" data-photo hidden /></label>
+            ${it.photo ? '<button type="button" class="btn btn--ghost btn--sm" data-act="photo-del">Quitar</button>' : ""}
+          </span>
+        </div>
+      </div>
+    </details>`;
+  }
+
+  function resizeImage(file, max = 640) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, max / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * k);
+        c.height = Math.round(im.height * k);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        let q = 0.72;
+        let out = c.toDataURL("image/jpeg", q);
+        while (out.length > 220000 && q > 0.35) {
+          q -= 0.1;
+          out = c.toDataURL("image/jpeg", q);
+        }
+        resolve(out);
+      };
+      im.onerror = () => reject(new Error("bad_image"));
+      im.src = url;
+    });
+  }
+
+  async function loadPhoto(id) {
+    if (photos[id] || !data.inventory.items[id] || !data.inventory.items[id].photo) return;
+    try {
+      const r = await KitchenStore.kitchenInventoryAction({ action: "photo_get", id }, window.__kinvCode);
+      if (r.image) {
+        photos[id] = r.image;
+        const box = $(`.kinv-buy[data-id="${CSS.escape(id)}"] .kinv-photo-box`);
+        if (box) {
+          const slot = box.querySelector("span.adm-muted");
+          if (slot) slot.outerHTML = `<img class="kinv-photo" src="${r.image}" alt="" />`;
+        }
+      }
+    } catch {}
+  }
+
   function row(id, it) {
     const [label, cls] = status(it);
     const used = usedBy(id);
@@ -91,6 +157,7 @@
         <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span>
         ${it.cookFrom ? `<button type="button" class="btn btn--sm" data-act="cook">${esc(it.cookLabel || "Ya cociné")}</button>` : ""}</div>
       <button type="button" class="btn btn--ghost btn--sm kinv-del" data-act="del" title="Quitar ingrediente">✕</button>
+      ${buyBlock(id, it)}
     </div>`;
   }
 
@@ -116,6 +183,7 @@
       html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => row(id, it)).join("");
     }
     root.innerHTML = html;
+    openBuy.forEach((id) => loadPhoto(id));
   }
 
   async function act(code, payload) {
@@ -136,7 +204,39 @@
     const root = $("#kInvRoot");
     if (!root || root.dataset.bound === "1") return;
     root.dataset.bound = "1";
-    root.addEventListener("change", (e) => {
+    root.addEventListener(
+      "toggle",
+      (e) => {
+        const d = e.target;
+        if (!d.classList || !d.classList.contains("kinv-buy")) return;
+        if (d.open) {
+          openBuy.add(d.dataset.id);
+          loadPhoto(d.dataset.id);
+        } else openBuy.delete(d.dataset.id);
+      },
+      true
+    );
+    root.addEventListener("change", async (e) => {
+      const meta = e.target.closest("input[data-m]");
+      if (meta) {
+        const id = meta.closest(".kinv-buy").dataset.id;
+        const f = meta.dataset.m;
+        const val = meta.type === "number" ? (meta.value === "" ? null : Number(meta.value)) : meta.value;
+        act(window.__kinvCode || code, { action: "meta", id, [f]: val });
+        return;
+      }
+      const ph = e.target.closest("input[data-photo]");
+      if (ph && ph.files && ph.files[0]) {
+        const id = ph.closest(".kinv-buy").dataset.id;
+        try {
+          const image = await resizeImage(ph.files[0]);
+          photos[id] = image;
+          await act(window.__kinvCode || code, { action: "photo", id, image });
+        } catch {
+          alert("No se pudo cargar la foto. Prueba con otra imagen.");
+        }
+        return;
+      }
       const input = e.target.closest("input[data-f]");
       if (!input || input.dataset.f === "delta") return;
       const id = input.closest(".kinv-row").dataset.id;
@@ -166,6 +266,10 @@
         const n = Number(ans);
         if (!Number.isFinite(n) || n <= 0) return;
         act(window.__kinvCode || code, { action: "cook", id, n });
+      } else if (btn.dataset.act === "photo-del") {
+        const idp = btn.closest(".kinv-buy").dataset.id;
+        delete photos[idp];
+        act(window.__kinvCode || code, { action: "photo_delete", id: idp });
       } else if (btn.dataset.act === "del") {
         const nm = data.inventory.items[id] && data.inventory.items[id].name;
         if (confirm(`¿Quitar "${nm}" del inventario? Sus recetas dejarán de descontarlo.`)) {

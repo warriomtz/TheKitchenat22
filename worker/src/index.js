@@ -722,6 +722,7 @@ export class KitchenStore extends DurableObject {
     const low = [];
     const cook = [];
     const fmt = (n) => String(Math.round(n * 100) / 100);
+    const where = (it) => (it.supplier || it.presentation ? ` [${[it.supplier, it.presentation].filter(Boolean).join(" · ")}]` : "");
     for (const it of Object.values(inv.items || {})) {
       if (it.qty == null) continue;
       const unit = it.unit ? " " + it.unit : "";
@@ -729,8 +730,8 @@ export class KitchenStore extends DurableObject {
         if (it.min != null && it.qty <= it.min) cook.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}`);
         continue;
       }
-      if (it.qty <= 0) out.push(`• ${it.name}`);
-      else if (it.min != null && it.qty <= it.min) low.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}`);
+      if (it.qty <= 0) out.push(`• ${it.name}${where(it)}`);
+      else if (it.min != null && it.qty <= it.min) low.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}${where(it)}`);
       else if (it.min == null && it.target && it.qty < it.target) low.push(`• ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)`);
     }
     const lines = [];
@@ -777,6 +778,32 @@ export class KitchenStore extends DurableObject {
       if (!nid || inv.items[nid]) return [400, { error: "id_taken" }];
       const q = num(data.qty);
       inv.items[nid] = { name, unit: str(data.unit, 20) || "unidades", group: str(data.group, 30), qty: q === undefined ? null : q, min: num(data.min) ?? null };
+    } else if (act === "meta") {
+      const it = inv.items[id];
+      if (!it) return [404, { error: "not_found" }];
+      if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
+      if ("presentation" in data) it.presentation = str(data.presentation, 80).trim();
+      for (const f of ["packQty", "packCost"]) {
+        if (f in data) {
+          const n = num(data[f]);
+          if (n === undefined) return [400, { error: "bad_" + f }];
+          it[f] = n;
+        }
+      }
+    } else if (act === "photo") {
+      const it = inv.items[id];
+      if (!it) return [404, { error: "not_found" }];
+      const img = String(data.image || "");
+      if (!/^data:image\/(jpeg|png|webp);base64,/.test(img) || img.length > 250000) return [400, { error: "bad_image" }];
+      this.kvSet("invPhoto:" + id, img);
+      it.photo = true;
+    } else if (act === "photo_get") {
+      return [200, { ok: true, image: this.kvGet("invPhoto:" + id, null) }];
+    } else if (act === "photo_delete") {
+      const it = inv.items[id];
+      if (!it) return [404, { error: "not_found" }];
+      this.sql.exec("DELETE FROM kv WHERE k = ?", "invPhoto:" + id);
+      delete it.photo;
     } else if (act === "cook") {
       const it = inv.items[id];
       const raw = it && it.cookFrom && inv.items[it.cookFrom];
@@ -801,6 +828,7 @@ export class KitchenStore extends DurableObject {
       return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), inventoryAlerts: alerts }];
     } else if (act === "delete") {
       delete inv.items[id];
+      this.sql.exec("DELETE FROM kv WHERE k = ?", "invPhoto:" + id);
       for (const k of Object.keys(inv.recipes)) inv.recipes[k] = (inv.recipes[k] || []).filter((r) => r.ing !== id);
     } else if (act === "recipe") {
       const key = str(data.itemId, 80).trim();

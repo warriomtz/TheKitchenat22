@@ -1464,3 +1464,26 @@
 .kinv-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .kinv-filter { padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); color: inherit; font: inherit; font-size: .9rem; cursor: pointer; }
 .kinv-filter.is-active { background: #9b3b3b; border-color: #9b3b3b; color: #fff; font-weight: 700; }
+
+/* Inventory purchase block, recipes and costing */
+.kinv-buy { grid-column: 1 / -1; border-top: 1px dashed rgba(255,255,255,.12); padding-top: 8px; }
+.kinv-buy > summary { cursor: pointer; font-size: .85rem; opacity: .9; }
+.kinv-buy__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; margin-top: 10px; }
+.kinv-photo { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); }
+.kinv-photo-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.kinv-photo-box { gap: 6px; }
+.krec-search { padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); color: inherit; min-width: 220px; }
+.krec-card { padding: 12px 14px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.03); }
+.krec-card h4 { margin: 0 0 6px; font-size: 1.05rem; }
+.krec-price { font-weight: 400; opacity: .7; font-size: .9rem; margin-left: 6px; }
+.krec-card ul, .krec-detail ul { margin: 4px 0 8px; padding-left: 18px; }
+.krec-sub { margin: 8px 0 2px; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.krec-tag { font-style: normal; font-size: .78rem; opacity: .75; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.08); margin-left: 6px; }
+.krec-cost { float: right; opacity: .9; }
+.krec-table-wrap { overflow-x: auto; }
+.krec-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.krec-table th, .krec-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); white-space: nowrap; }
+.krec-table td:first-child { white-space: normal; }
+.krec-group td { font-weight: 600; opacity: .8; background: rgba(255,255,255,.04); }
+.krec-detail { padding: 6px 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; }
+.krec-detail > summary { cursor: pointer; }

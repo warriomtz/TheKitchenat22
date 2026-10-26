@@ -54,6 +54,8 @@
       <button type="button" class="admin-nav__btn" data-tab="hours" role="tab">🕐 Horarios</button>
       <button type="button" class="admin-nav__btn" data-tab="stock" role="tab">📦 Stock</button>
       <button type="button" class="admin-nav__btn" data-tab="inventory" role="tab">🧾 Inventario</button>
+      <button type="button" class="admin-nav__btn" data-tab="recipes" role="tab">📖 Recetas</button>
+      <button type="button" class="admin-nav__btn" data-tab="costing" role="tab">💲 Costeo</button>
       <button type="button" class="admin-nav__btn" data-tab="bar" role="tab">🍺 Bar</button>
       <button type="button" class="admin-nav__btn" data-tab="catalog" role="tab">📸 Menú</button>
       <button type="button" class="admin-nav__btn" data-tab="quote" role="tab">🖋 Cotización</button>
@@ -181,7 +183,7 @@
         <div class="admin-panel__head">
           <div>
             <h2>Inventario de cocina</h2>
-            <p class="admin-panel__desc">Cada pedido descuenta sus ingredientes al entrar. Si lo descartas o lo borras, se devuelve. Deja la cantidad vacía para no controlar un ingrediente. Al llegar al mínimo te avisa por Telegram/ntfy y al llegar a 0 los platillos que lo usan se marcan Agotado.</p>
+            <p class="admin-panel__desc">Cada pedido descuenta sus ingredientes al entrar. Si lo descartas o lo borras, se devuelve. Deja la cantidad vacía para no controlar un ingrediente. Cada noche a las 10 pm te llega la lista de compras por Telegram/ntfy, y al llegar a 0 los platillos que lo usan se marcan Agotado. En 🛒 Compra de cada ingrediente guardas proveedor, presentación, costo y foto.</p>
           </div>
           <div class="admin-panel__tools">
             <button type="button" class="btn btn--ghost btn--sm" id="kInvSendList">Enviar lista de compras ahora</button>
@@ -197,6 +199,33 @@
           <input type="number" id="kInvMin" placeholder="Mínimo (aviso)" min="0" step="any" />
           <button type="submit" class="btn btn--primary btn--sm">Agregar</button>
         </form>
+      </section>
+
+      <section class="admin-panel" id="tab-recipes" role="tabpanel" hidden>
+        <div class="admin-panel__head">
+          <div>
+            <h2>Recetas</h2>
+            <p class="admin-panel__desc">Cada platillo del menú con los ingredientes y cantidades que lleva. Es la misma receta que descuenta el inventario con cada pedido.</p>
+          </div>
+          <div class="admin-panel__tools">
+            <input type="search" id="kRecSearch" class="krec-search" placeholder="Buscar platillo o ingrediente" />
+            <button type="button" class="btn btn--ghost btn--sm" id="kRecRefresh">Actualizar</button>
+          </div>
+        </div>
+        <div id="kRecRoot" class="kinv"></div>
+      </section>
+
+      <section class="admin-panel" id="tab-costing" role="tabpanel" hidden>
+        <div class="admin-panel__head">
+          <div>
+            <h2>Costeo de platillos</h2>
+            <p class="admin-panel__desc">Costo de cada platillo, utilidad y porcentaje de costo, calculado con el costo de compra de cada ingrediente (Inventario → 🛒 Compra). Los platillos aparecen como pendientes hasta que captures los costos.</p>
+          </div>
+          <div class="admin-panel__tools">
+            <button type="button" class="btn btn--ghost btn--sm" id="kCostRefresh">Actualizar</button>
+          </div>
+        </div>
+        <div id="kCostRoot" class="kinv"></div>
       </section>
 
       <!-- Bar inventory -->
@@ -488,8 +517,9 @@
   <script src="js/i18n.js?v=admin-20261025c"></script>
   <script src="js/item-i18n.js?v=admin-20261025o"></script>
   <script src="js/quote.js?v=admin-20261025c"></script>
-  <script src="js/kitchen-inventory.js?v=admin-20261025q"></script>
+  <script src="js/kitchen-recipes.js?v=admin-20261025s"></script>
+  <script src="js/kitchen-inventory.js?v=admin-20261025s"></script>
   <script src="js/bar-inventory.js?v=admin-20261025c"></script>
-  <script src="js/admin.js?v=admin-20261025r"></script>
+  <script src="js/admin.js?v=admin-20261025s"></script>
 </body>
 </html>

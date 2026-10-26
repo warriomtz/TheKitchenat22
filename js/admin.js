@@ -2541,6 +2541,8 @@
       fillQuoteForm();
     }
     if (tab === "inventory" && window.KitchenInventory) KitchenInventory.render(ADMIN_CODE);
+    if (tab === "recipes" && window.KitchenRecipes) KitchenRecipes.renderRecipes(ADMIN_CODE);
+    if (tab === "costing" && window.KitchenRecipes) KitchenRecipes.renderCosting(ADMIN_CODE);
     if (tab === "bar") {
       loadOrders(true).then(() => {
         if (window.BarInventory) BarInventory.render(state.orders);
@@ -2595,6 +2597,9 @@
     $("#announceTranslate")?.addEventListener("click", translateEsToEn);
     $("#hoursSave")?.addEventListener("click", saveHours);
     $("#kInvRefresh")?.addEventListener("click", () => window.KitchenInventory?.render(ADMIN_CODE));
+    $("#kRecRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
+    $("#kRecSearch")?.addEventListener("input", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
+    $("#kCostRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderCosting(ADMIN_CODE));
     $("#kInvSendList")?.addEventListener("click", async () => {
       try {
         const r = await KitchenStore.kitchenInventoryAction({ action: "send_list" }, ADMIN_CODE);
