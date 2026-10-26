@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 50;
+const INV_VERSION = 51;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -67,7 +67,7 @@ const INV_DEFAULT = {
     "zanahoria-baby": { name: "Zanahoria baby", unit: "g", group: "Verdura", qty: 1870, min: 200 },
     "tomate-cherry": { name: "Tomate cherry", unit: "g", group: "Verdura", qty: 200, min: 230 },
     parmesano: { name: "Queso parmesano", unit: "g", group: "Lácteos", qty: 650, min: 150 },
-    "salsa-alfredo": { name: "Salsa Alfredo", unit: "porciones", group: "Salsas", qty: 6, min: null },
+    "salsa-alfredo": { name: "Salsa Alfredo", unit: "porciones", group: "Salsas", qty: 6, min: 3 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -596,6 +596,7 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 44 && inv.items["zanahoria-baby"] && inv.items["zanahoria-baby"].qty != null && (inv.v || 1) >= 43) inv.items["zanahoria-baby"].qty = Math.round((inv.items["zanahoria-baby"].qty + 80) * 100) / 100;
       if ((inv.v || 1) < 45 && inv.items["zanahoria-baby"]) inv.items["zanahoria-baby"].min = 200;
       if ((inv.v || 1) < 48 && inv.items.parmesano) inv.items.parmesano.min = 150;
+      if ((inv.v || 1) < 51 && inv.items["salsa-alfredo"]) inv.items["salsa-alfredo"].min = 3;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
