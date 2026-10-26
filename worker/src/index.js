@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 59;
+const INV_VERSION = 60;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -120,6 +120,7 @@ const INV_DEFAULT = {
       { ing: "pan-hamburguesa", qty: 1 },
       { ing: "queso-suizo", qty: 1 },
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
+      { ing: "salsa-buffalo", qty: 45, if: { burgerSauce: "buffalo" }, variant: true, outId: "boneless-buffalo" },
       { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" },
       { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" },
       { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" },
@@ -1215,6 +1216,8 @@ export class KitchenStore extends DurableObject {
     if (bg) opts.burger = bg;
     const sd = str(raw.side, 12).trim();
     if (sd) opts.side = sd;
+    const bs = str(raw.burgerSauce, 24).trim();
+    if (bs) opts.burgerSauce = bs;
     const fl = str(raw.flavor, 24).trim();
     if (fl) opts.flavor = fl;
     if (str(raw.xsBuffalo, 4).trim() === "1") opts.xsBuffalo = "1";

@@ -2243,7 +2243,7 @@ const DEFAULT_HOURS = {
       </div>`;
       fields += chips("burgerSauce", t("burgerSauce"), [
         { v: t("burgerSauceNone"), k: "none" },
-        { v: t("burgerSauceBuffalo"), k: "buffalo" },
+        { v: t("burgerSauceBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
         { v: t("burgerSauceCfa"), k: "cfa_original" },
         { v: t("burgerSauceCfaHoney"), k: "cfa_honey_mustard" },
       ]);
@@ -2825,6 +2825,8 @@ const DEFAULT_HOURS = {
         if (bg) o.burger = bg;
         const pl = selected("paleta");
         if (pl) o.paleta = pl;
+        const bsx = selected("burgerSauce");
+        if (bsx) o.burgerSauce = bsx;
         const bl = selected("flavor");
         if (bl) o.flavor = bl;
         const xs = selectedAll("extraSauce");
