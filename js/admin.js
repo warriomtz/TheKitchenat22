@@ -2602,6 +2602,14 @@
     $("#kCostRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderCosting(ADMIN_CODE));
     $("#kInvRecvCheck")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, false));
     $("#kInvRecvApply")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, true));
+    $("#kInvFeedUrl")?.addEventListener("click", async () => {
+      try {
+        const r = await KitchenStore.kitchenInventoryAction({ action: "feed_url" }, ADMIN_CODE);
+        try { await navigator.clipboard.writeText(r.url); toast("Enlace copiado. Úsalo solo en tu Atajo."); } catch { window.prompt("Copia este enlace (solo para tu Atajo):", r.url); }
+      } catch {
+        toast("No se pudo generar el enlace");
+      }
+    });
     $("#kInvSendList")?.addEventListener("click", async () => {
       try {
         const r = await KitchenStore.kitchenInventoryAction({ action: "send_list" }, ADMIN_CODE);

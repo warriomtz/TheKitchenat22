@@ -363,6 +363,18 @@ export default {
     const ip = clientIp(request);
 
     // ---------------------------------------------------------- GET
+    if (request.method === "GET" && path === "/api/shopping-feed") {
+      // Plain text, one item per line, for an iPhone Shortcut that creates Reminders.
+      if (!env.ADMIN_CODE) return reply(request, env, 503, { error: "admin_not_configured" });
+      if (await stub.isLocked(ip)) return reply(request, env, 429, { error: "too_many_attempts" });
+      const t = url.searchParams.get("t") || "";
+      if (!t || !(await safeEqual(t, await feedToken(env)))) {
+        await stub.recordFailure(ip);
+        return reply(request, env, 401, { error: "unauthorized" });
+      }
+      const [, list] = await stub.op("/api/kitchen-shopping-list", "GET", {}, ip);
+      return new Response(((list && list.items) || []).join("\n"), { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    }
     if (request.method === "GET") {
       if (PUBLIC_GET.has(path)) {
         const [status, body] = await stub.op(path, "GET", {}, ip);
@@ -466,6 +478,9 @@ export default {
     }
     delete data.code;
 
+    if (path === "/api/kitchen-inventory" && String(data.action || "").toLowerCase() === "feed_url") {
+      return reply(request, env, 200, { ok: true, url: `${url.origin}/api/shopping-feed?t=${await feedToken(env)}` });
+    }
     if (path === "/api/kitchen-inventory" && String(data.action || "").toLowerCase() === "send_list") {
       const [, list] = await stub.op("/api/kitchen-shopping-list", "GET", {}, ip);
       await notifyText(env, "The Kitchen · Lista de compras", (list && list.lines) || []);
@@ -484,6 +499,13 @@ export default {
     ctx.waitUntil(notifyText(env, "The Kitchen · Lista de compras", (body && body.lines) || ["No se pudo armar la lista."]));
   },
 };
+
+/** Private read-only token for the Apple Shortcuts feed (derived from the admin secret; never reveals it). */
+async function feedToken(env) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(env.ADMIN_CODE)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("shopping-feed-v1")));
+  return [...sig].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 /** Returns null when authorized, otherwise [status, body]. Fails closed. */
 async function checkAdmin(env, stub, ip, code) {
@@ -724,6 +746,7 @@ export class KitchenStore extends DurableObject {
     const inv = this.invRead();
     const bySup = new Map();
     const cook = [];
+    const items = [];
     const fmt = (n) => String(Math.round(n * 100) / 100);
     const add = (sup, rank, text) => {
       if (!bySup.has(sup)) bySup.set(sup, []);
@@ -752,10 +775,12 @@ export class KitchenStore extends DurableObject {
       const list = bySup.get(n).sort((x, y) => x.rank - y.rank);
       count += list.length;
       lines.push(...(lines.length ? [""] : []), `🛒 ${n.toUpperCase()} (${list.length})`, ...list.map((x) => x.text));
+      for (const x of list) items.push(`${n}: ${x.text.replace(/^[^\p{L}\p{N}]+/u, "")}`);
     }
     if (cook.length) lines.push(...(lines.length ? [""] : []), "🍳 HAY QUE COCINAR", ...cook);
+    for (const c of cook) items.push("Cocinar: " + c.replace(/^•\s*/, ""));
     if (!lines.length) lines.push("✅ Nada por comprar hoy.");
-    return { lines, count: count + cook.length };
+    return { lines, items, count: count + cook.length };
   }
   /** "8 pza", "1 kg", "2 x 500 g", "1.5 l" -> quantity in the ingredient's own unit (null if it can't be read). */
   parsePack(text, unit) {
