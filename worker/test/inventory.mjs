@@ -23,7 +23,7 @@ ok(s === 200 && j.order.inv && j.order.inv.salmon === 2, "order deducts salmon x
 const oid = j.order.id;
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 const it = j.inventory.items;
-ok(it.salmon.qty === 1 && it["pollo-100"].qty === 1 && it["pollo-200"].qty === 7 && it.arroz.qty === 12 - 2 * 2 - 1 && it.quinoa.qty === 0 && it.frijol.qty === 2, "quantities after order");
+ok(it.salmon.qty === 1 && it["pollo-100"].qty === 1 && it["pollo-200"].qty === 7 && it.arroz.qty === 6 - 2 * 2 - 1 && it.quinoa.qty === 0 && it.frijol.qty === 2, "quantities after order");
 ok(j.autoOut.includes("m-sirloin") === false && j.autoOut.includes("mp-side-quinoa"), "quinoa now agotada");
 [s, j] = await call("POST", "/api/orders", { action: "update", orderId: oid, status: "dismissed" }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);

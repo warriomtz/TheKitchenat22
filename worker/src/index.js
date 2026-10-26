@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 57;
+const INV_VERSION = 58;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -44,7 +44,7 @@ const INV_DEFAULT = {
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
     "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
-    pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookFrom: "pasta-cruda", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
+    pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookFrom: "pasta-cruda", cookLabel: "🍝 Ya cociné pasta", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
     "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "porciones", group: "Pastas", qty: 6, min: null, target: 6 },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
     "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
@@ -79,7 +79,8 @@ const INV_DEFAULT = {
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     salmon: { name: "Salmón", unit: "unidades", group: "Proteínas", qty: 3, min: 1 },
-    arroz: { name: "Arroz", unit: "unidades", group: "Complementos", qty: 12, min: 3 },
+    arroz: { name: "Arroz cocido (porciones)", unit: "porciones", group: "Complementos", qty: 6, min: 3, cookFrom: "arroz-crudo", cookLabel: "🍚 Ya cociné arroz", cookRatio: 250 / 6, cookBatch: 6 },
+    "arroz-crudo": { name: "Arroz sin hacer (crudo)", unit: "g", group: "Complementos", qty: 2000, min: 250 },
     frijol: { name: "Frijol", unit: "unidades", group: "Complementos", qty: 3, min: 1 },
     quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
     "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
@@ -604,6 +605,10 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 48 && inv.items.parmesano) inv.items.parmesano.min = 150;
       if ((inv.v || 1) < 51 && inv.items["salsa-alfredo"]) inv.items["salsa-alfredo"].min = 3;
       if ((inv.v || 1) < 54 && inv.items["salsa-pomodoro"]) inv.items["salsa-pomodoro"].min = 150;
+      if ((inv.v || 1) < 58 && inv.items.arroz) {
+        Object.assign(inv.items.arroz, INV_DEFAULT.items.arroz);
+        if (inv.items["arroz-crudo"] == null) inv.items["arroz-crudo"] = { ...INV_DEFAULT.items["arroz-crudo"] };
+      }
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
@@ -730,15 +735,21 @@ export class KitchenStore extends DurableObject {
       const raw = it && it.cookFrom && inv.items[it.cookFrom];
       if (!it || !raw) return [400, { error: "not_cookable" }];
       const have = it.qty == null ? 0 : it.qty;
-      let n = data.n == null || data.n === "" ? (it.target || 6) - have : Number(data.n);
+      const ratio = it.cookRatio || 1;
+      let n = data.n == null || data.n === "" ? it.cookBatch || (it.target || 6) - have : Number(data.n);
       if (!Number.isFinite(n) || n <= 0) return [400, { error: "bad_n" }];
-      n = Math.min(n, raw.qty == null ? n : raw.qty);
+      if (raw.qty != null) n = Math.min(n, Math.floor((raw.qty / ratio) * 100) / 100);
       if (n <= 0) return [400, { error: "no_raw_stock" }];
+      const rawBefore = raw.qty;
       it.qty = Math.round((have + n) * 100) / 100;
-      if (raw.qty != null) raw.qty = Math.round((raw.qty - n) * 100) / 100;
-      const rawTarget = raw.target || it.target || 6;
+      if (raw.qty != null) raw.qty = Math.round((raw.qty - n * ratio) * 100) / 100;
       const alerts = [];
-      if (raw.qty == null || raw.qty < rawTarget) alerts.push(`🛒 COMPRAR otro paquete de pasta: quedan ${raw.qty ?? 0} sin hacer (meta ${rawTarget}).`);
+      if (it.cookFrom === "pasta-cruda") {
+        const rawTarget = raw.target || it.target || 6;
+        if (raw.qty == null || raw.qty < rawTarget) alerts.push(`🛒 COMPRAR otro paquete de pasta: quedan ${raw.qty ?? 0} sin hacer (meta ${rawTarget}).`);
+      } else if (raw.min != null && raw.qty != null && raw.qty <= raw.min && (rawBefore == null || rawBefore > raw.min)) {
+        alerts.push(`⚠️ Inventario bajo: ${raw.name} · quedan ${raw.qty} ${raw.unit || ""}`.trim());
+      }
       this.kvSet("kitchenInv", inv);
       return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), inventoryAlerts: alerts }];
     } else if (act === "delete") {
