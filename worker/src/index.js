@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 63;
+const INV_VERSION = 64;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -53,7 +53,7 @@ const INV_DEFAULT = {
     salami: { name: "Salami", unit: "g", group: "Carnes frías", qty: 220, min: 36 },
     "papas-francesa": { name: "Papas a la francesa", unit: "g", group: "Papas", qty: 9900, min: 1300 },
     "papas-gajo": { name: "Papas gajo", unit: "g", group: "Papas", qty: 1900, min: 500 },
-    waffle: { name: "Waffle", unit: "unidades", group: "Panadería", qty: 1, min: null },
+    waffle: { name: "Waffle", unit: "unidades", group: "Panes", qty: 1, min: null },
     "verduras-salteadas": { name: "Verduras salteadas", unit: "g", group: "Complementos", qty: 510, min: 600 },
     boneless: { name: "Boneless", unit: "g", group: "Pollo", qty: 1900, min: 600 },
     "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
@@ -78,7 +78,7 @@ const INV_DEFAULT = {
     "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: 60, min: 100 },
     "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: 420, min: null },
     "salsa-cfa-honey": { name: "Salsa CFA honey mustard", unit: "g", group: "Salsas", qty: 250, min: null },
-    "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
+    "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Panes", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -633,6 +633,8 @@ export class KitchenStore extends DurableObject {
         if (it["salsa-cfa-honey"] && it["salsa-cfa-honey"].qty == null) it["salsa-cfa-honey"].qty = 250;
       }
       for (const id of ["pollo-200", "pollo-100", "pollo-club"]) if (inv.items[id] && inv.items[id].costFrom == null) inv.items[id].costFrom = "pollo-crudo";
+      // v64: all breads under one group ("Panes")
+      if ((inv.v || 1) < 64) for (const id of ["pan-hamburguesa", "bagel", "pan-rebanada", "waffle"]) if (inv.items[id]) inv.items[id].group = "Panes";
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
