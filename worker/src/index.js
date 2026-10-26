@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 52;
+const INV_VERSION = 53;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -69,6 +69,7 @@ const INV_DEFAULT = {
     parmesano: { name: "Queso parmesano", unit: "g", group: "Lácteos", qty: 650, min: 150 },
     "salsa-alfredo": { name: "Salsa Alfredo", unit: "porciones", group: "Salsas", qty: 6, min: 3 },
     "salsa-pesto": { name: "Salsa Pesto", unit: "porciones", group: "Salsas", qty: 7, min: 3 },
+    "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -121,8 +122,8 @@ const INV_DEFAULT = {
       { ing: "pollo-empanizado", qty: 1, if: { burger: "chicken" }, variant: true, outId: "f-burger-chicken" },
     ],
     "f-guac": [{ ing: "guacamole", qty: 1 }, { ing: "totopos", qty: 70 }],
-    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 60 }],
-    "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 60 }, { ing: "salsa-pomodoro", qty: 30 }],
+    "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }, { ing: "salsa-pomodoro", qty: 60 }],
     "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 13 }, { ing: "salsa-alfredo", qty: 1 }],
