@@ -1487,3 +1487,4 @@
 .krec-group td { font-weight: 600; opacity: .8; background: rgba(255,255,255,.04); }
 .krec-detail { padding: 6px 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; }
 .krec-detail > summary { cursor: pointer; }
+.kinv-warn { color: #f0a3a3; font-size: .75rem; }

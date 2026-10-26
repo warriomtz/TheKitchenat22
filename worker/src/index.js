@@ -741,6 +741,29 @@ export class KitchenStore extends DurableObject {
     if (!lines.length) lines.push("✅ Nada por comprar hoy.");
     return { lines, count: out.length + low.length + cook.length };
   }
+  /** "8 pza", "1 kg", "2 x 500 g", "1.5 l" -> quantity in the ingredient's own unit (null if it can't be read). */
+  parsePack(text, unit) {
+    const t = String(text || "").toLowerCase().replace(/,/g, ".").trim();
+    if (!t) return null;
+    const m = /^(?:(\d+(?:\.\d+)?)\s*[x×]\s*)?(\d+(?:\.\d+)?)\s*([a-záéíóúñ.]*)/.exec(t);
+    if (!m) return null;
+    const mult = m[1] ? Number(m[1]) : 1;
+    let n = Number(m[2]) * mult;
+    const u = (m[3] || "").replace(/\./g, "");
+    const mass = /^(kg|kilo|kilos|kilogramo|kilogramos)$/.test(u) ? 1000 : /^(g|gr|grs|gramo|gramos)$/.test(u) ? 1 : null;
+    const vol = /^(l|lt|lts|litro|litros)$/.test(u) ? 1000 : /^(ml|mililitro|mililitros)$/.test(u) ? 1 : null;
+    const base = String(unit || "").toLowerCase();
+    if (base === "g") {
+      if (mass == null) return null;
+      n *= mass;
+    } else if (base === "ml") {
+      if (vol == null) return null;
+      n *= vol;
+    } else if (mass != null || vol != null) {
+      return null; // weight/volume given for an ingredient counted in pieces
+    }
+    return Math.round(n * 100) / 100;
+  }
   invAdmin(data) {
     const act = String(data.action || "").toLowerCase();
     const inv = this.invRead();
@@ -784,12 +807,14 @@ export class KitchenStore extends DurableObject {
       if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
       if ("brand" in data) it.brand = str(data.brand, 60).trim();
       if ("presentation" in data) it.presentation = str(data.presentation, 80).trim();
-      for (const f of ["packQty", "packCost"]) {
-        if (f in data) {
-          const n = num(data[f]);
-          if (n === undefined) return [400, { error: "bad_" + f }];
-          it[f] = n;
-        }
+      if ("packText" in data) {
+        it.packText = str(data.packText, 40).trim();
+        it.packQty = this.parsePack(it.packText, it.unit);
+      }
+      if ("packCost" in data) {
+        const n = num(data.packCost);
+        if (n === undefined) return [400, { error: "bad_packCost" }];
+        it.packCost = n;
       }
     } else if (act === "photo") {
       const it = inv.items[id];
