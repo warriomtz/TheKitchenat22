@@ -119,6 +119,8 @@ const BAR_RECIPES = {
   "b-st-germain": [{ id: "b-ing-prosecco", qty: 1 }, { id: "b-ing-cointreau", qty: 1 }, { id: "d-soda-ginger-ale", qty: 1 }],
 };
 const BAR_PRODUCT_TO_GROUP = { "b-cerveza": "beer", "d-refresco": "soda", "d-boing": "boing", "b-spirits": "spirits", "b-fine-spirits": "fine" };
+// Mixology / bottle-based groups are still counted but never switch a drink to "agotado" (their count is approximate for now).
+const BAR_NO_AUTO_OUT = new Set(["spritz", "spirits", "fine"]);
 const BAR_SKUS = BAR_GROUPS.flatMap((g) => g.skus.map((s) => ({ ...s, group: g.id, unit: g.unit })));
 const BAR_BY_ID = Object.fromEntries(BAR_SKUS.map((s) => [s.id, s]));
 const normTxt = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -1016,7 +1018,7 @@ export class KitchenStore extends DurableObject {
     const out = new Set();
     const bar = this.kvGet("barInv", null);
     if (bar && bar.items) {
-      for (const [id, it] of Object.entries(bar.items)) if (BAR_BY_ID[id] && it.qty != null && it.qty < 1) out.add(id);
+      for (const [id, it] of Object.entries(bar.items)) if (BAR_BY_ID[id] && !BAR_NO_AUTO_OUT.has(BAR_BY_ID[id].group) && it.qty != null && it.qty < 1) out.add(id);
     }
     const inv = this.kvGet("kitchenInv", null);
     if (!inv || !inv.items) return [...out];

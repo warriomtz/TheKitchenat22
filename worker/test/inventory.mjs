@@ -131,5 +131,8 @@ ok(barRows(j)["b-beer-corona"].qty === 4, "bar: reopening deducts again");
 ok(j.autoOut.includes("d-soda-ginger-ale"), "bar: count 0 -> agotado");
 [s, j] = await call("GET", "/api/stock", null);
 ok(j.outOfStock.includes("d-soda-ginger-ale"), "bar: agotado reaches the public stock list");
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-ing-aperol", bottles: 0 }, CODE);
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-spirit-mezcal", bottles: 0 }, CODE);
+ok(!j.autoOut.includes("b-ing-aperol") && !j.autoOut.includes("b-spirit-mezcal"), "bar: mixology/bottle drinks are counted but never auto-agotado");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);
