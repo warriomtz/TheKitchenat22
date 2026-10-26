@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 43;
+const INV_VERSION = 44;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -64,7 +64,7 @@ const INV_DEFAULT = {
     ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: 160 },
     chips: { name: "Papas fritas (chips)", unit: "g", group: "Papas", qty: 600, min: 200 },
     totopos: { name: "Totopos", unit: "g", group: "Entradas", qty: 820, min: 140 },
-    "zanahoria-baby": { name: "Zanahoria baby", unit: "g", group: "Verdura", qty: 1790, min: null },
+    "zanahoria-baby": { name: "Zanahoria baby", unit: "g", group: "Verdura", qty: 1870, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -589,6 +589,8 @@ export class KitchenStore extends DurableObject {
       if ((inv.v || 1) < 38 && inv.items.chips) inv.items.chips.min = 200;
       if ((inv.v || 1) < 40 && inv.items.totopos) inv.items.totopos.min = 140;
       if ((inv.v || 1) < 41 && inv.items.ensalada) inv.items.ensalada.min = 160;
+      // v44: zanahoria baby was entered as 1790 g, correct stock is 1870 g (+80 g)
+      if ((inv.v || 1) < 44 && inv.items["zanahoria-baby"] && inv.items["zanahoria-baby"].qty != null && (inv.v || 1) >= 43) inv.items["zanahoria-baby"].qty = Math.round((inv.items["zanahoria-baby"].qty + 80) * 100) / 100;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
