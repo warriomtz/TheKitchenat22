@@ -153,7 +153,7 @@ ok(!j.autoOut.includes("b-ing-aperol") && !j.autoOut.includes("b-spirit-mezcal")
   const [, g5] = await call("GET", "/api/kitchen-inventory", null, CODE);
   const sb = g5.inventory.items["sopa-tomate"].qty;
   const [s6, k6] = await call("POST", "/api/kitchen-inventory", { action: "cook", id: "sopa-tomate", n: 1 }, CODE);
-  ok(s6 === 200 && k6.inventory.items["sopa-tomate"].qty === sb + 8 && k6.inventory.items["tomate-racimo"].qty === 907 && k6.inventory.items.cebolla.qty === 2, "sopa de tomate: una tanda = +8 porciones, -907 g tomate, -2 cebollas");
+  ok(s6 === 200 && k6.inventory.items["sopa-tomate"].qty === sb + 8 && k6.inventory.items["tomate-racimo"].qty === 907 && k6.inventory.items.cebolla.qty === 2 && k6.inventory.items["sopa-tomate"].cookRecipe.some((r) => r.ing === "queso-rayado" && r.qty === 60), "sopa de tomate: una tanda = +8 porciones, -907 g tomate, -2 cebollas");
   const [, g7] = await call("GET", "/api/kitchen-inventory", null, CODE);
   ok(g7.inventory.items["ajo-cabeza"].qty === 0 && g7.inventory.items["ajo-cabeza"].buyWith === "sopa-tomate" && !g7.autoOut.includes("ajo-cabeza"), "sopa: ajo starts at 0, tied to the soup, not agotado");
   const [s3] = await call("POST", "/api/kitchen-inventory", { action: "own", dishes: [] }, CODE);

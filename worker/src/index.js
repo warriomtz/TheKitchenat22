@@ -784,6 +784,15 @@ export class KitchenStore extends DurableObject {
       inv.sopaTomateRecipe = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Sopa de tomate also uses 60 g queso rayado per batch (Mario 2026-10-26). The batch he just cooked is deducted once here.
+    if (!inv.sopaQueso) {
+      const sopa = inv.items["sopa-tomate"];
+      if (sopa && Array.isArray(sopa.cookRecipe) && !sopa.cookRecipe.some((r) => r.ing === "queso-rayado")) sopa.cookRecipe.push({ ing: "queso-rayado", qty: 60 });
+      const q = inv.items["queso-rayado"];
+      if (q && q.qty != null) q.qty = Math.max(0, Math.round((q.qty - 60) * 100) / 100);
+      inv.sopaQueso = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
