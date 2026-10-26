@@ -1017,11 +1017,38 @@ export class KitchenStore extends DurableObject {
   }
   barAdmin(data) {
     const act = String(data.action || "").toLowerCase();
-    if (act !== "set") return [400, { error: "bad_action" }];
+    if (act !== "set" && act !== "own") return [400, { error: "bad_action" }];
     const id = str(data.id, 60).trim();
     const sku = BAR_BY_ID[id];
     if (!sku) return [404, { error: "not_found" }];
     const b = this.barRead();
+    if (act === "own") {
+      // Staff drink / waste: deducts the count but is NOT a sale (sold stays as is).
+      const q = Number(data.qty);
+      if (!Number.isFinite(q) || q <= 0) return [400, { error: "bad_qty" }];
+      const it0 = b.items[id];
+      let applied = 0;
+      if (it0.qty != null) {
+        const after = Math.max(0, r2(it0.qty - q));
+        applied = r2(it0.qty - after);
+        it0.qty = after;
+      }
+      const log = this.kvGet("ownLog", []);
+      const entry = {
+        id: "o" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        ts: nowIso(),
+        kind: data.kind === "merma" ? "merma" : "consumo",
+        who: str(data.who, 30).trim() || "—",
+        note: str(data.note, 120).trim(),
+        lines: [{ t: "bar", id, name: sku.name, qty: q }],
+        applied: {},
+        barApplied: applied ? { [id]: applied } : {},
+      };
+      log.unshift(entry);
+      this.kvSet("ownLog", log.slice(0, 300));
+      this.kvSet("barInv", b);
+      return [200, { ok: true, bar: this.barView(), autoOut: this.invAutoOut(), entry }];
+    }
     const it = b.items[id];
     let qty;
     if ("qty" in data && (data.qty === null || data.qty === "")) {
@@ -1360,6 +1387,12 @@ export class KitchenStore extends DurableObject {
       for (const [ing, q] of Object.entries(log[k].applied || {})) {
         const it = inv.items[ing];
         if (it && it.qty != null) it.qty = Math.round((it.qty + q) * 100) / 100;
+      }
+      const bu = log[k].barApplied || {};
+      if (Object.keys(bu).length) {
+        const b = this.barRead();
+        for (const [bid, q] of Object.entries(bu)) if (b.items[bid] && b.items[bid].qty != null) b.items[bid].qty = r2(b.items[bid].qty + q);
+        this.kvSet("barInv", b);
       }
       log.splice(k, 1);
       this.kvSet("ownLog", log);

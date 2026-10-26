@@ -385,7 +385,7 @@
       lg.innerHTML = ownLog.length
         ? ownLog
             .map((e) => {
-              const what = (e.lines || []).map((l) => `${l.t === "dish" ? dishLabel(l.id) : (names(l.id) || {}).name || l.id} ×${l.qty}`).join(", ");
+              const what = (e.lines || []).map((l) => `${l.t === "dish" ? dishLabel(l.id) : l.t === "bar" ? "🍸 " + (l.name || l.id) : (names(l.id) || {}).name || l.id} ×${l.qty}`).join(", ");
               return `<div class="kinv-own-log"><span>${e.kind === "merma" ? "🗑️" : "🍽️"} <strong>${esc(e.who)}</strong> · ${esc(f(e.ts))}<br>${esc(what)}${e.note ? " · " + esc(e.note) : ""}</span><button type="button" class="btn btn--ghost btn--sm" data-own-undo="${esc(e.id)}">Deshacer</button></div>`;
             })
             .join("")

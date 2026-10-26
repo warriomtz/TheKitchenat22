@@ -78,6 +78,8 @@
               return `<div class="bar-inv-row ${cls}${bottle ? " is-bottle" : ""}" data-sku="${escapeHtml(r.id)}">
                 <div class="bar-inv-row__name">${escapeHtml(r.name)}${r.empty ? ` <span class="bar-inv-oos">Agotado</span>` : ""}${extra}</div>
                 ${inputs}
+                ${r.tracked ? `<div class="kinv-ownbtn"><input type="number" min="0" step="any" value="1" data-bar-ownq="${escapeHtml(r.id)}" title="Cantidad (${bottle ? "servicios" : escapeHtml(g.unit)})" /> <span class="adm-muted">${bottle ? "serv" : escapeHtml(g.unit)}</span>
+                  <button type="button" class="btn btn--ghost btn--sm" data-bar-own="${escapeHtml(r.id)}">🍽️ Consumo propio</button></div>` : ""}
                 <div class="bar-inv-row__stat">Vend. <strong>${r.sold}</strong></div>
                 <div class="bar-inv-row__stat">Quedan <strong>${escapeHtml(leftLabel)}</strong></div>
                 <div class="bar-inv-row__bar" title="${pctLabel}">
@@ -109,6 +111,26 @@
       }
       paint();
     };
+    root.querySelectorAll("[data-bar-own]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (busy) return;
+        const id = btn.dataset.barOwn;
+        const q = Number(root.querySelector(`[data-bar-ownq="${id}"]`).value);
+        if (!Number.isFinite(q) || q <= 0) return;
+        const who = (document.getElementById("kInvOwnWho") || {}).value || "Mario";
+        busy = true;
+        try {
+          const r = await KitchenStore.barInventoryAction({ action: "own", id, qty: q, who, kind: "consumo" }, adminCode);
+          if (r && r.bar) view = r.bar;
+          err = "";
+        } catch (_) {
+          err = "No se pudo descontar. Revisa tu conexión e inténtalo de nuevo.";
+        } finally {
+          busy = false;
+        }
+        paint();
+      });
+    });
     root.querySelectorAll("[data-bar-qty]").forEach((input) => {
       input.addEventListener("change", () => {
         const v = input.value.trim();

@@ -141,6 +141,13 @@ ok(!j.autoOut.includes("b-ing-aperol") && !j.autoOut.includes("b-spirit-mezcal")
   ok(s1 === 200 && o1.inventory.items.salmon.qty === before - 1 && o1.ownLog.length >= 1, "own: staff meal deducts by recipe");
   const [s2, o2] = await call("POST", "/api/kitchen-inventory", { action: "own_undo", id: o1.entry.id }, CODE);
   ok(s2 === 200 && o2.inventory.items.salmon.qty === before, "own: undo gives it back");
+  await call("POST", "/api/bar-inventory", { action: "set", id: "b-beer-corona", qty: 10 }, CODE);
+  const [s4, b1] = await call("POST", "/api/bar-inventory", { action: "own", id: "b-beer-corona", qty: 2, who: "Diego" }, CODE);
+  const row = (v) => v.bar.groups.flatMap((g) => g.rows).find((r) => r.id === "b-beer-corona");
+  ok(s4 === 200 && row(b1).qty === 8 && row(b1).sold === 0, "bar own: deducts count, not a sale");
+  const [, u2] = await call("POST", "/api/kitchen-inventory", { action: "own_undo", id: b1.entry.id }, CODE);
+  const [, g2] = await call("GET", "/api/bar-inventory", null, CODE);
+  ok(row(g2).qty === 10, "bar own: undo restores");
   const [s3] = await call("POST", "/api/kitchen-inventory", { action: "own", dishes: [] }, CODE);
   ok(s3 === 400, "own: empty rejected");
 }
