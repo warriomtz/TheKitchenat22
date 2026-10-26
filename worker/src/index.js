@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 61;
+const INV_VERSION = 62;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -74,9 +74,9 @@ const INV_DEFAULT = {
     cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
     "salsa-buffalo": { name: "Salsa Buffalo (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 480, min: 480 },
     "salsa-bbq": { name: "Salsa BBQ (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 620, min: 620 },
-    "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: null, min: null },
-    "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: null, min: null },
-    "salsa-cfa-honey": { name: "Salsa CFA honey mustard", unit: "g", group: "Salsas", qty: null, min: null },
+    "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: 60, min: 100 },
+    "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: 420, min: null },
+    "salsa-cfa-honey": { name: "Salsa CFA honey mustard", unit: "g", group: "Salsas", qty: 250, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -617,6 +617,12 @@ export class KitchenStore extends DurableObject {
       }
       // v59: Mario has 12 cooked rice portions, not 6 (v58 set 6 by mistake: add the 6 back, keeping any orders since)
       if ((inv.v || 1) === 58 && inv.items.arroz && inv.items.arroz.qty != null) inv.items.arroz.qty = Math.round((inv.items.arroz.qty + 6) * 100) / 100;
+      if ((inv.v || 1) < 62) {
+        const it = inv.items;
+        if (it["salsa-cfa-original"] && it["salsa-cfa-original"].qty == null) Object.assign(it["salsa-cfa-original"], { qty: 60, min: 100 });
+        if (it["salsa-cfa-bbq"] && it["salsa-cfa-bbq"].qty == null) it["salsa-cfa-bbq"].qty = 420;
+        if (it["salsa-cfa-honey"] && it["salsa-cfa-honey"].qty == null) it["salsa-cfa-honey"].qty = 250;
+      }
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
