@@ -56,6 +56,8 @@ const BAR_GROUPS = [
       { id: "b-beer-victoria", name: "Victoria", aliases: ["victoria"] },
       { id: "b-beer-amstel", name: "Amstel Ultra", aliases: ["amstel"] },
       { id: "b-beer-heineken", name: "Heineken", aliases: ["heineken"] },
+      { id: "b-beer-stella", name: "Stella Gold", aliases: ["stella gold", "stella"] },
+      { id: "b-cerveza-na", name: "Modelo 0% (sin alcohol)", aliases: [] },
     ],
   },
   {
@@ -879,6 +881,17 @@ export class KitchenStore extends DurableObject {
         b.items[sku.id] = { qty: null, sold: 0 };
         dirty = true;
       }
+    }
+    if (!b.seed65) {
+      // One-time count given by Mario on 2026-10-26.
+      const seed = {
+        "b-beer-stella": 11, "b-beer-pacifico": 31, "b-beer-victoria": 13, "b-cerveza-na": 6, "b-beer-modelo": 10, "b-beer-corona": 19,
+        "d-soda-sprite": 5, "d-soda-sprite-zero": 1, "d-soda-coke": 9, "d-soda-coke-light": 14, "d-soda-coke-zero": 5,
+        "d-agua": 5, "b-tinto-v": 1, "b-blanco": 2, "b-rosado": 0,
+      };
+      for (const [id, q] of Object.entries(seed)) b.items[id] = { qty: q, sold: 0 };
+      b.seed65 = true;
+      dirty = true;
     }
     if (b.day !== day) {
       b.day = day;

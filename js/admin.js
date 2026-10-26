@@ -102,6 +102,7 @@
       { k: "victoria", stockId: "b-beer-victoria", label: "Victoria" },
       { k: "amstel", stockId: "b-beer-amstel", label: "Amstel" },
       { k: "heineken", stockId: "b-beer-heineken", label: "Heineken" },
+      { k: "stella", stockId: "b-beer-stella", label: "Stella Gold" },
     ];
   }
   function sodaOptionDefs() {

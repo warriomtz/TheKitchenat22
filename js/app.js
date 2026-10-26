@@ -265,6 +265,7 @@ const DEFAULT_HOURS = {
       { k: "victoria", stockId: "b-beer-victoria", labelKey: "b-beer-victoria" },
       { k: "amstel", stockId: "b-beer-amstel", labelKey: "b-beer-amstel" },
       { k: "heineken", stockId: "b-beer-heineken", labelKey: "b-beer-heineken" },
+      { k: "stella", stockId: "b-beer-stella", labelKey: "b-beer-stella" },
     ];
   }
 
