@@ -2052,8 +2052,8 @@ const DEFAULT_HOURS = {
   function bonelessStyleOptions() {
     return [
       { v: t("flavorNatural"), k: "natural" },
-      { v: t("flavorBuffalo"), k: "buffalo" },
-      { v: t("flavorBbq"), k: "bbq" },
+      { v: t("flavorBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
+      { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
       { v: t("flavorCfaOriginal"), k: "cfa_original" },
       { v: t("flavorCfaBbq"), k: "cfa_bbq" },
       { v: t("flavorCfaHoneyMustard"), k: "cfa_honey_mustard" },
@@ -2063,8 +2063,8 @@ const DEFAULT_HOURS = {
   /** Extra sauces only (no Natural — that means no sauce). Labels without +$price. */
   function bonelessExtraSauceOptions() {
     return [
-      { v: t("flavorBuffalo"), k: "buffalo" },
-      { v: t("flavorBbq"), k: "bbq" },
+      { v: t("flavorBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
+      { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
       { v: t("flavorCfaOriginalPlain"), k: "cfa_original" },
       { v: t("flavorCfaBbqPlain"), k: "cfa_bbq" },
       { v: t("flavorCfaHoneyMustardPlain"), k: "cfa_honey_mustard" },
@@ -2825,6 +2825,11 @@ const DEFAULT_HOURS = {
         if (bg) o.burger = bg;
         const pl = selected("paleta");
         if (pl) o.paleta = pl;
+        const bl = selected("flavor");
+        if (bl) o.flavor = bl;
+        const xs = selectedAll("extraSauce");
+        if (xs.includes("buffalo")) o.xsBuffalo = "1";
+        if (xs.includes("bbq")) o.xsBbq = "1";
         const dr = selected("dressing");
         if (dr) o.dressing = { "César": "cesar", "Aderezo ranch": "ranch" }[dr] || "otro";
         const sd = selected("side");

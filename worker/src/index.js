@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 56;
+const INV_VERSION = 57;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -72,6 +72,8 @@ const INV_DEFAULT = {
     "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: 150 },
     ranch: { name: "Aderezo ranch", unit: "g", group: "Salsas", qty: 640, min: 150 },
     cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
+    "salsa-buffalo": { name: "Salsa Buffalo (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 480, min: 480 },
+    "salsa-bbq": { name: "Salsa BBQ (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 620, min: 620 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -99,7 +101,7 @@ const INV_DEFAULT = {
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
-    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }],
+    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
     "f-paletas": [
@@ -1200,6 +1202,10 @@ export class KitchenStore extends DurableObject {
     if (bg) opts.burger = bg;
     const sd = str(raw.side, 12).trim();
     if (sd) opts.side = sd;
+    const fl = str(raw.flavor, 24).trim();
+    if (fl) opts.flavor = fl;
+    if (str(raw.xsBuffalo, 4).trim() === "1") opts.xsBuffalo = "1";
+    if (str(raw.xsBbq, 4).trim() === "1") opts.xsBbq = "1";
     const dr = str(raw.dressing, 12).trim();
     if (dr) opts.dressing = dr;
     const pl = str(raw.paleta, 10).trim();
