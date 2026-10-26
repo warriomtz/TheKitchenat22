@@ -1488,3 +1488,7 @@
 .krec-detail { padding: 6px 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; }
 .krec-detail > summary { cursor: pointer; }
 .kinv-warn { color: #f0a3a3; font-size: .75rem; }
+.kinv-pgroup { margin-bottom: 14px; padding: 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(255,255,255,.02); }
+.kinv-pgroup__head { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; opacity: .7; margin: 2px 6px 8px; }
+.kinv-pgroup > .kinv-row { margin-bottom: 6px; }
+.kinv-pgroup > .kinv-buy { margin: 8px 6px 2px; }

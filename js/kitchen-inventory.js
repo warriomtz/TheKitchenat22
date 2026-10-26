@@ -78,16 +78,8 @@
 
   const money = (n) => "$" + (Math.round(n * 100) / 100).toLocaleString("es-MX");
 
-  function buyBlock(id, it) {
-    const items = (data && data.inventory && data.inventory.items) || {};
-    const src = it.costFrom && items[it.costFrom];
-    const srcCost = src && src.packQty > 0 && src.packCost > 0 ? src.packCost / src.packQty : null;
-    const unitCost = src ? (srcCost != null && it.costGrams > 0 ? srcCost * it.costGrams : null) : it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
-    const sources = Object.entries(items).filter(([k, x]) => k !== id && (x.unit === "g" || x.unit === "ml") && !x.costFrom);
-    const costFromBlock = `<label class="kinv-f">Se porciona de (opcional)
-          <select data-m="costFrom"><option value="">— compra directa —</option>${sources.map(([k, x]) => `<option value="${esc(k)}"${it.costFrom === k ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select>
-          <small class="adm-muted">Ej. el pollo de 200 g sale del pollo crudo que compras a granel.</small></label>
-        ${it.costFrom ? `<label class="kinv-f">Gramos crudos por porción<input type="number" min="0" step="any" data-m="costGrams" placeholder="Ej. 240" value="${it.costGrams == null ? "" : it.costGrams}" /><small class="adm-muted">${unitCost != null ? "Costo por porción: " + money(unitCost) : "Falta el costo de compra del ingrediente base"}</small></label>` : ""}`;
+  function buyBlock(id, it, extra) {
+    const unitCost = it.packQty > 0 && it.packCost > 0 ? it.packCost / it.packQty : null;
     const sum = [it.supplier, it.brand, it.presentation].filter(Boolean).join(" · ");
     const costTxt = unitCost != null ? ` · ${money(unitCost)} por ${it.unit || "unidad"}` : "";
     const packTxt = it.packText != null ? it.packText : it.packQty != null ? `${it.packQty} ${it.unit || ""}`.trim() : "";
@@ -96,12 +88,12 @@
     return `<details class="kinv-buy" data-id="${esc(id)}"${openBuy.has(id) ? " open" : ""}>
       <summary>🛒 Compra${sum ? ": " + esc(sum) : ""}${esc(costTxt)}${it.photo ? " 📷" : ""}</summary>
       <div class="kinv-buy__grid">
-        ${costFromBlock}
         <label class="kinv-f">Proveedor<input type="text" data-m="supplier" maxlength="60" placeholder="Ej. Costco" value="${esc(it.supplier || "")}" /></label>
         <label class="kinv-f">Marca<input type="text" data-m="brand" maxlength="60" placeholder="Ej. Kirkland" value="${esc(it.brand || "")}" /></label>
         <label class="kinv-f">Tipo de presentación (bolsa, pieza, caja…)<input type="text" data-m="presentation" maxlength="80" placeholder="Ej. bolsa" value="${esc(it.presentation || "")}" /></label>
         <label class="kinv-f">Cantidad por presentación (ej. 8 pza, 1 kg)<input type="text" data-m="packText" maxlength="40" placeholder="Ej. 1 kg" value="${esc(packTxt)}" />${packHint}</label>
         <label class="kinv-f">Costo de la presentación ($)<input type="number" min="0" step="any" data-m="packCost" placeholder="Pendiente" value="${it.packCost == null ? "" : it.packCost}" /></label>
+        ${extra || ""}
         <div class="kinv-f kinv-photo-box">Foto
           ${img}
           <span class="kinv-photo-actions">
@@ -152,7 +144,25 @@
     } catch {}
   }
 
-  function row(id, it) {
+  /** Items cut from one bulk purchase (e.g. the three chicken portions) share a single 🛒 Compra block. */
+  function portionsOf(items, srcId) {
+    return Object.entries(items).filter(([k, x]) => x.costFrom === srcId);
+  }
+
+  function groupCard(srcId, src, items, passFn) {
+    const deps = portionsOf(items, srcId);
+    const shown = deps.filter(([, x]) => passFn(x));
+    const srcCost = src.packQty > 0 && src.packCost > 0 ? src.packCost / src.packQty : null;
+    const grams = deps
+      .map(([k, x]) => {
+        const c = srcCost != null && x.costGrams > 0 ? srcCost * x.costGrams : null;
+        return `<label class="kinv-f">Gramos crudos por porción · ${esc(x.name)}<input type="number" min="0" step="any" data-cg="${esc(k)}" placeholder="Ej. 240" value="${x.costGrams == null ? "" : x.costGrams}" /><small class="adm-muted">${c != null ? "Costo por porción: " + money(c) : srcCost == null ? "Falta el costo de la compra" : "Falta capturar los gramos"}</small></label>`;
+      })
+      .join("");
+    return `<div class="kinv-pgroup"><div class="kinv-pgroup__head">${esc(src.name.replace(/\s*\(.*\)/, ""))}: ${deps.map(([, x]) => esc(x.name)).join(" · ")}</div>${shown.map(([k, x]) => row(k, x, true)).join("")}${buyBlock(srcId, src, grams)}</div>`;
+  }
+
+  function row(id, it, noBuy) {
     const [label, cls] = status(it);
     const used = usedBy(id);
     return `<div class="kinv-row" data-id="${esc(id)}">
@@ -169,7 +179,7 @@
         <button type="button" class="btn btn--ghost btn--sm" data-act="add">Sumar</button></span>
         ${it.cookFrom ? `<button type="button" class="btn btn--sm" data-act="cook">${esc(it.cookLabel || "Ya cociné")}</button>` : ""}</div>
       <button type="button" class="btn btn--ghost btn--sm kinv-del" data-act="del" title="Quitar ingrediente">✕</button>
-      ${buyBlock(id, it)}
+      ${noBuy ? "" : buyBlock(id, it)}
     </div>`;
   }
 
@@ -187,12 +197,18 @@
     const low = Object.values(items).filter(isLow).length;
     const pass = (i) => filter === "all" || (filter === "low" && isLow(i)) || (filter === "out" && isOut(i)) || (filter === "need" && (isLow(i) || isOut(i)));
     const groups = {};
-    for (const [id, it] of Object.entries(items)) if (pass(it)) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
+    const isPortion = (it) => !!(it.costFrom && items[it.costFrom]);
+    const isSource = (id) => portionsOf(items, id).length > 0;
+    for (const [id, it] of Object.entries(items)) {
+      if (isPortion(it)) continue; // shown inside its source's card
+      const visible = isSource(id) ? pass(it) || portionsOf(items, id).some(([, x]) => pass(x)) : pass(it);
+      if (visible) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
+    }
     const btn = (k, label) => `<button type="button" class="kinv-filter${filter === k ? " is-active" : ""}" data-filter="${k}">${label}</button>`;
     let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}</div><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
     if (!Object.keys(groups).length) html += '<p class="adm-muted">No hay ingredientes en esta vista. ✅</p>';
     for (const [g, list] of Object.entries(groups)) {
-      html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => row(id, it)).join("");
+      html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => (isSource(id) ? groupCard(id, it, items, pass) : row(id, it))).join("");
     }
     root.innerHTML = html;
     openBuy.forEach((id) => loadPhoto(id));
@@ -235,6 +251,11 @@
         const f = meta.dataset.m;
         const val = meta.type === "number" ? (meta.value === "" ? null : Number(meta.value)) : meta.value;
         act(window.__kinvCode || code, { action: "meta", id, [f]: val });
+        return;
+      }
+      const cg = e.target.closest("input[data-cg]");
+      if (cg) {
+        act(window.__kinvCode || code, { action: "meta", id: cg.dataset.cg, costGrams: cg.value === "" ? null : Number(cg.value) });
         return;
       }
       const ph = e.target.closest("input[data-photo]");
