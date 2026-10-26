@@ -121,12 +121,18 @@ const BAR_RECIPES = {
 };
 const BAR_PRODUCT_TO_GROUP = { "b-cerveza": "beer", "d-refresco": "soda", "d-boing": "boing", "b-spirits": "spirits", "b-fine-spirits": "fine" };
 // Mixology / bottle-based groups are still counted but never switch a drink to "agotado" (their count is approximate for now).
-/** Heads-up level per SKU: when the count drops to this number or below, Mario gets a Telegram/ntfy message. */
+/** Reorder level per SKU: at or below this count the item shows up in the 10 pm shopping list. */
 const BAR_ALERT_AT = {
   "b-tinto-v": 2, "b-blanco": 2, "b-rosado": 2,
   "b-beer-corona": 6, "b-cerveza-na": 2, "b-beer-modelo": 3, "b-beer-victoria": 4, "b-beer-pacifico": 4, "b-beer-stella": 2,
   "d-soda-coke": 2, "d-soda-coke-light": 2, "d-soda-coke-zero": 2, "d-soda-sprite": 2, "d-soda-sprite-zero": 2, "d-soda-ginger-ale": 2,
   "d-agua": 4,
+};
+const BAR_SUPPLIER = {
+  "b-beer-stella": "City Market", "d-soda-sprite": "City Market", "d-soda-sprite-zero": "City Market",
+  "b-beer-pacifico": "Modelorama", "b-beer-victoria": "Modelorama", "b-cerveza-na": "Modelorama", "b-beer-modelo": "Modelorama", "b-beer-corona": "Modelorama",
+  "d-soda-coke": "Costco", "d-soda-coke-light": "Costco", "d-soda-coke-zero": "Costco", "d-agua": "Costco",
+  "b-tinto-v": "La Europea", "b-blanco": "La Europea", "b-rosado": "La Europea",
 };
 const BAR_NO_AUTO_OUT = new Set(["spritz", "spirits", "fine"]);
 const BAR_SKUS = BAR_GROUPS.flatMap((g) => g.skus.map((s) => ({ ...s, group: g.id, unit: g.unit })));
@@ -953,8 +959,6 @@ export class KitchenStore extends DurableObject {
       if (!it) continue;
       if (it.qty != null) {
         const after = Math.max(0, r2(it.qty - q));
-        const lim = BAR_ALERT_AT[id];
-        if (lim != null && it.qty > lim && after <= lim) (this._barAlerts ||= []).push(`${BAR_BY_ID[id].name}: quedan ${after}${after <= 0 ? " (agotado)" : ""} (aviso a ${lim})`);
         applied[id] = r2(it.qty - after);
         it.qty = after;
       }
@@ -1091,6 +1095,15 @@ export class KitchenStore extends DurableObject {
       if (it.qty <= 0) add(sup, 0, `🚫 ${it.name}${tail}`);
       else if (it.min != null && it.qty <= it.min) add(sup, 1, `⚠️ ${it.name}: quedan ${fmt(it.qty)}${unit}${it.target ? ` (resurtir a ${it.target})` : ""}${tail}`);
       else if (it.min == null && it.target && it.qty < it.target) add(sup, 1, `⚠️ ${it.name}: ${fmt(it.qty)} de ${it.target}${unit} (comprar paquete)${tail}`);
+    }
+    const bar = this.kvGet("barInv", null);
+    if (bar && bar.items) {
+      for (const [id, lim] of Object.entries(BAR_ALERT_AT)) {
+        const b = bar.items[id];
+        const sku = BAR_BY_ID[id];
+        if (!b || !sku || b.qty == null || b.qty > lim) continue;
+        add(BAR_SUPPLIER[id] || "Sin proveedor", b.qty <= 0 ? 0 : 1, b.qty <= 0 ? `🚫 ${sku.name} (barra)` : `⚠️ ${sku.name} (barra): quedan ${fmt(b.qty)} (resurtir)`);
+      }
     }
     const names = [...bySup.keys()].sort((x, y) => (x === "Sin proveedor") - (y === "Sin proveedor") || x.localeCompare(y, "es"));
     const lines = [];
