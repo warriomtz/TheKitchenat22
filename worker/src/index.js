@@ -32,6 +32,99 @@ const DEFAULT_HOURS = {
 };
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
+// ---- Bar inventory (bottled drinks), kept on the server like the kitchen one: every order deducts on arrival.
+const ML_PER_OZ = 29.5735;
+const servPerBot = (oz) => 750 / (oz * ML_PER_OZ);
+const r2 = (n) => Math.round(n * 100) / 100;
+const BAR_GROUPS = [
+  {
+    id: "spritz", label: "Spritz · botellas 750 ml", unit: "serv",
+    note: "Aperol Spritz: 2 oz prosecco + 1 oz Aperol. St Germain Spritz: 2 oz prosecco + 1 oz Cointreau + Ginger Ale 350 ml.",
+    skus: [
+      { id: "b-ing-prosecco", name: "Prosecco", aliases: ["prosecco"], pourOz: 2, perBot: servPerBot(2) },
+      { id: "b-ing-aperol", name: "Aperol", aliases: ["aperol"], pourOz: 1, perBot: servPerBot(1) },
+      { id: "b-ing-cointreau", name: "Cointreau", aliases: ["cointreau", "controy"], pourOz: 1, perBot: servPerBot(1) },
+    ],
+  },
+  {
+    id: "beer", label: "Cerveza", unit: "pzas",
+    skus: [
+      { id: "b-beer-corona", name: "Corona", aliases: ["corona"] },
+      { id: "b-beer-pacifico", name: "Pacífico", aliases: ["pacifico", "pacífico"] },
+      { id: "b-beer-negra-modelo", name: "Negra Modelo", aliases: ["negra modelo", "negra_modelo"] },
+      { id: "b-beer-modelo", name: "Modelo", aliases: ["modelo especial", "modelo"] },
+      { id: "b-beer-victoria", name: "Victoria", aliases: ["victoria"] },
+      { id: "b-beer-amstel", name: "Amstel Ultra", aliases: ["amstel"] },
+      { id: "b-beer-heineken", name: "Heineken", aliases: ["heineken"] },
+    ],
+  },
+  {
+    id: "soda", label: "Refresco", unit: "pzas",
+    skus: [
+      { id: "d-soda-coke", name: "Coke Regular", aliases: ["coke regular", "coca", "coke"] },
+      { id: "d-soda-coke-zero", name: "Coke Zero", aliases: ["coke zero", "coca zero"] },
+      { id: "d-soda-coke-light", name: "Coke Light", aliases: ["coke light", "coca light"] },
+      { id: "d-soda-sprite", name: "Sprite", aliases: ["sprite regular", "sprite"] },
+      { id: "d-soda-sprite-zero", name: "Sprite Zero", aliases: ["sprite zero"] },
+      { id: "d-soda-ginger-ale", name: "Ginger Ale (350 ml)", aliases: ["ginger ale", "ginger"] },
+    ],
+  },
+  {
+    id: "boing", label: "Boing", unit: "pzas",
+    skus: [
+      { id: "d-boing-grape", name: "Boing Uva", aliases: ["uva", "grape"] },
+      { id: "d-boing-mango", name: "Boing Mango", aliases: ["mango"] },
+      { id: "d-boing-strawberry", name: "Boing Fresa", aliases: ["fresa", "strawberry"] },
+      { id: "d-boing-guava", name: "Boing Guayaba", aliases: ["guayaba", "guava"] },
+    ],
+  },
+  {
+    id: "wine", label: "Vino (copas)", unit: "copas",
+    skus: [
+      { id: "b-tinto-v", name: "Tinto", aliases: [] },
+      { id: "b-blanco", name: "Blanco", aliases: [] },
+      { id: "b-rosado", name: "Rosado", aliases: ["rosé", "rose"] },
+    ],
+  },
+  {
+    id: "spirits", label: "Spirits (botellas 750 ml)", unit: "serv",
+    skus: [
+      { id: "b-spirit-cognac", name: "Cognac (Martell)", aliases: ["cognac", "martell"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-spirit-gin-bombay", name: "Gin (Bombay)", aliases: ["bombay", "gin (bombay)"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-spirit-mezcal", name: "Mezcal (400 Conejos)", aliases: ["mezcal", "conejos"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-spirit-rum", name: "Ron (Matusalem)", aliases: ["matusalem", "ron"], pourOz: 1.5, perBot: servPerBot(1.5) },
+    ],
+  },
+  {
+    id: "fine", label: "Fine spirits (botellas 750 ml)", unit: "serv",
+    skus: [
+      { id: "b-fine-tequila", name: "Tequila (Don Julio 70)", aliases: ["don julio", "tequila"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-fine-vodka", name: "Vodka (Haku)", aliases: ["haku", "vodka"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-fine-whiskey", name: "Whiskey (Woodford)", aliases: ["woodford", "whiskey"], pourOz: 1.5, perBot: servPerBot(1.5) },
+      { id: "b-fine-gin-monkey", name: "Gin (Monkey 47)", aliases: ["monkey 47", "monkey"], pourOz: 1.5, perBot: servPerBot(1.5) },
+    ],
+  },
+  {
+    id: "other", label: "Otras botellas", unit: "pzas",
+    skus: [
+      { id: "d-agua", name: "Agua mineral", aliases: [] },
+      { id: "d-rusa", name: "Rusa mineral", aliases: [] },
+      { id: "d-jugo", name: "Jugo verde", aliases: [] },
+      { id: "d-xipi-kombucha", name: "XI-PI Kombucha", aliases: ["kombucha", "xi-pi"] },
+    ],
+  },
+];
+const BAR_RECIPES = {
+  "b-aperol": [{ id: "b-ing-prosecco", qty: 1 }, { id: "b-ing-aperol", qty: 1 }],
+  "b-st-germain": [{ id: "b-ing-prosecco", qty: 1 }, { id: "b-ing-cointreau", qty: 1 }, { id: "d-soda-ginger-ale", qty: 1 }],
+};
+const BAR_PRODUCT_TO_GROUP = { "b-cerveza": "beer", "d-refresco": "soda", "d-boing": "boing", "b-spirits": "spirits", "b-fine-spirits": "fine" };
+const BAR_SKUS = BAR_GROUPS.flatMap((g) => g.skus.map((s) => ({ ...s, group: g.id, unit: g.unit })));
+const BAR_BY_ID = Object.fromEntries(BAR_SKUS.map((s) => [s.id, s]));
+const normTxt = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+/** Bar day in Mexico City time (UTC-6, no DST). */
+const barDay = () => new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
 const INV_VERSION = 64;
 const TAKEOUT_BOXES_PER_DISH = 1; // containers per dish in a takeout order (seed value; editable in Recetas)
@@ -726,11 +819,22 @@ export class KitchenStore extends DurableObject {
       this.kvSet("kitchenInv", inv);
       order.inv = applied;
     }
+    try {
+      this.barApply(order);
+    } catch (e) {
+      console.error("bar_apply_failed", String(e));
+    }
     return alerts;
   }
   /** Give back what this order deducted (discarded / deleted / edited). */
   invRelease(order) {
-    if (!order || !order.inv) return;
+    if (!order) return;
+    try {
+      this.barRelease(order);
+    } catch (e) {
+      console.error("bar_release_failed", String(e));
+    }
+    if (!order.inv) return;
     const inv = this.invRead();
     for (const [ing, q] of Object.entries(order.inv)) {
       const it = inv.items[ing];
@@ -739,11 +843,183 @@ export class KitchenStore extends DurableObject {
     this.kvSet("kitchenInv", inv);
     delete order.inv;
   }
+  // ---- bar inventory (server-side)
+  barRead() {
+    let b = this.kvGet("barInv", null);
+    const day = barDay();
+    let dirty = false;
+    if (!b || !b.items) {
+      // First run: carry over the count the browser-based bar inventory had.
+      b = { v: 1, day, items: {} };
+      const legacy = this.kvGet("barInventory", {}) || {};
+      const onHand = legacy.onHand || {};
+      const starts = legacy.starts || {};
+      const openPct = legacy.openPct || {};
+      for (const sku of BAR_SKUS) {
+        // qty null = not counted / not controlled (same meaning as the kitchen inventory)
+        let qty = null;
+        const counted = Number(starts[sku.id]) > 0;
+        if (onHand[sku.id] != null && (counted || Number(onHand[sku.id]) > 0)) qty = (Number(onHand[sku.id]) || 0) * (sku.perBot || 1);
+        else if (counted) {
+          const st = Number(starts[sku.id]);
+          const op = Number.isFinite(Number(openPct[sku.id])) ? Number(openPct[sku.id]) : 100;
+          qty = sku.perBot ? (st - 1 + op / 100) * sku.perBot : st;
+        }
+        b.items[sku.id] = { qty: qty == null ? null : r2(Math.max(0, qty)), sold: 0 };
+      }
+      // "agotado" for drinks used to be pushed into the manual list by the browser; it is derived here now.
+      const st = this.kvGet("stock", {});
+      if (st && Array.isArray(st.outOfStock)) this.kvSet("stock", { outOfStock: st.outOfStock.filter((x) => !BAR_BY_ID[String(x)]) });
+      dirty = true;
+    }
+    for (const sku of BAR_SKUS) {
+      if (!b.items[sku.id]) {
+        b.items[sku.id] = { qty: null, sold: 0 };
+        dirty = true;
+      }
+    }
+    if (b.day !== day) {
+      b.day = day;
+      for (const it of Object.values(b.items)) it.sold = 0;
+      dirty = true;
+    }
+    if (dirty) this.kvSet("barInv", b);
+    return b;
+  }
+  /** Drinks (in servings or pieces) an order's lines use. */
+  barConsumption(items) {
+    const used = {};
+    for (const line of items || []) {
+      const qty = Math.max(1, parseInt(line.qty, 10) || 1);
+      const lid = String(line.id || "");
+      const rec = BAR_RECIPES[lid];
+      if (rec) {
+        for (const ing of rec) used[ing.id] = (used[ing.id] || 0) + qty * (ing.qty || 1);
+        continue;
+      }
+      let sku = BAR_BY_ID[lid] ? lid : null;
+      if (!sku && BAR_PRODUCT_TO_GROUP[lid]) {
+        const hay = normTxt(`${line.customizations || ""} ${line.name || ""} ${line.notes || ""}`);
+        let bestLen = 0;
+        for (const s of BAR_SKUS.filter((x) => x.group === BAR_PRODUCT_TO_GROUP[lid])) {
+          for (const n of [s.name, ...(s.aliases || [])].map(normTxt).filter(Boolean)) {
+            if (hay.includes(n) && n.length > bestLen) {
+              sku = s.id;
+              bestLen = n.length;
+            }
+          }
+        }
+      }
+      if (sku) used[sku] = (used[sku] || 0) + qty;
+    }
+    return used;
+  }
+  barApply(order) {
+    const used = this.barConsumption(order.items);
+    if (!Object.keys(used).length) return;
+    const b = this.barRead();
+    const applied = {};
+    for (const [id, q] of Object.entries(used)) {
+      const it = b.items[id];
+      if (!it) continue;
+      if (it.qty != null) {
+        const after = Math.max(0, r2(it.qty - q));
+        applied[id] = r2(it.qty - after);
+        it.qty = after;
+      }
+      it.sold = r2((it.sold || 0) + q);
+    }
+    this.kvSet("barInv", b);
+    order.bar = applied;
+    order.barSold = used;
+    order.barDay = b.day;
+  }
+  barRelease(order) {
+    if (!order || !order.bar) return;
+    const b = this.barRead();
+    for (const [id, q] of Object.entries(order.bar)) {
+      if (b.items[id] && b.items[id].qty != null) b.items[id].qty = r2(b.items[id].qty + q);
+    }
+    if (order.barDay === b.day) {
+      for (const [id, q] of Object.entries(order.barSold || {})) {
+        if (b.items[id]) b.items[id].sold = Math.max(0, r2((b.items[id].sold || 0) - q));
+      }
+    }
+    this.kvSet("barInv", b);
+    delete order.bar;
+    delete order.barSold;
+    delete order.barDay;
+  }
+  barView() {
+    const b = this.barRead();
+    const TH = 0.2;
+    const groups = BAR_GROUPS.map((g) => ({
+      id: g.id,
+      label: g.label,
+      note: g.note || "",
+      unit: g.unit,
+      rows: g.skus.map((sku) => {
+        const it = b.items[sku.id];
+        const tracked = it.qty != null;
+        const qty = tracked ? it.qty : 0;
+        const sold = it.sold || 0;
+        const base = qty + sold;
+        const pct = tracked && base > 0 ? qty / base : null;
+        const row = { id: sku.id, name: sku.name, unit: g.unit, qty: tracked ? r2(qty) : null, sold: r2(sold), pct, tracked, low: tracked && pct != null && pct <= TH, empty: tracked && qty < 1, perBot: sku.perBot || null, pourOz: sku.pourOz || null };
+        if (sku.perBot) {
+          const eq = Math.round((qty / sku.perBot) * 1000) / 1000;
+          const full = Math.floor(eq + 1e-6);
+          const frac = Math.max(0, eq - full);
+          if (eq <= 0) Object.assign(row, { bottles: 0, openPct: 0 });
+          else if (frac < 0.02) Object.assign(row, { bottles: full, openPct: full ? 100 : 0 });
+          else Object.assign(row, { bottles: full + 1, openPct: Math.round(frac * 100) });
+          Object.assign(row, { leftFull: full, leftOpenPct: Math.round(frac * 100) });
+        }
+        return row;
+      }),
+    }));
+    return { day: b.day, groups };
+  }
+  barAdmin(data) {
+    const act = String(data.action || "").toLowerCase();
+    if (act !== "set") return [400, { error: "bad_action" }];
+    const id = str(data.id, 60).trim();
+    const sku = BAR_BY_ID[id];
+    if (!sku) return [404, { error: "not_found" }];
+    const b = this.barRead();
+    const it = b.items[id];
+    let qty;
+    if ("qty" in data && (data.qty === null || data.qty === "")) {
+      it.qty = null; // back to "not controlled"
+      it.sold = 0;
+      this.kvSet("barInv", b);
+      return [200, { ok: true, bar: this.barView(), autoOut: this.invAutoOut() }];
+    }
+    if (sku.perBot && ("bottles" in data || "openPct" in data)) {
+      const cur = this.barView().groups.flatMap((g) => g.rows).find((r) => r.id === id);
+      const bottles = "bottles" in data ? Number(data.bottles) : cur.bottles;
+      let op = "openPct" in data ? Number(data.openPct) : cur.tracked ? cur.openPct : 100;
+      if (!Number.isFinite(bottles) || bottles < 0 || !Number.isFinite(op)) return [400, { error: "bad_qty" }];
+      op = Math.max(0, Math.min(100, op));
+      qty = bottles <= 0 ? 0 : (bottles - 1 + op / 100) * sku.perBot;
+    } else {
+      qty = Number(data.qty);
+      if (!Number.isFinite(qty) || qty < 0) return [400, { error: "bad_qty" }];
+    }
+    it.qty = r2(qty);
+    it.sold = 0; // the count you enter is the new 100%
+    this.kvSet("barInv", b);
+    return [200, { ok: true, bar: this.barView(), autoOut: this.invAutoOut() }];
+  }
   /** Menu ids that can't be served because a tracked ingredient ran out. */
   invAutoOut() {
-    const inv = this.kvGet("kitchenInv", null);
-    if (!inv || !inv.items) return [];
     const out = new Set();
+    const bar = this.kvGet("barInv", null);
+    if (bar && bar.items) {
+      for (const [id, it] of Object.entries(bar.items)) if (BAR_BY_ID[id] && it.qty != null && it.qty < 1) out.add(id);
+    }
+    const inv = this.kvGet("kitchenInv", null);
+    if (!inv || !inv.items) return [...out];
     const blocked = (r) => {
       const it = inv.items[r.ing];
       return !!(it && it.qty != null && it.qty < r.qty);
@@ -1723,7 +1999,7 @@ export class KitchenStore extends DurableObject {
         case "/api/analytics":
           return [200, { events: this.listAnalytics() }];
         case "/api/bar-inventory":
-          return [200, { inventory: this.kvGet("barInventory", {}) }];
+          return [200, { inventory: this.kvGet("barInventory", {}), bar: this.barView(), autoOut: this.invAutoOut() }];
         case "/api/kitchen-inventory":
           return [200, { inventory: this.invRead(), autoOut: this.invAutoOut() }];
       }
@@ -1741,6 +2017,7 @@ export class KitchenStore extends DurableObject {
         return [200, this.kvSet("hours", this.normalizeHours(raw))];
       }
       case "/api/bar-inventory": {
+        if (data.action) return this.barAdmin(data);
         let inv = data.inventory && typeof data.inventory === "object" ? data.inventory : data;
         if (inv === data) {
           inv = { ...data };

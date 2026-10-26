@@ -771,6 +771,10 @@
   function scheduleInventoryRefresh(delay) {
     clearTimeout(invRefreshTimer);
     invRefreshTimer = setTimeout(() => {
+      if (state.tab === "bar" && window.BarInventory) {
+        BarInventory.refresh(); // skips itself while a field is being edited
+        return;
+      }
       if (state.tab !== "inventory" || !window.KitchenInventory) return; // opening the tab always loads fresh data
       const active = document.activeElement;
       if (active && active.closest && active.closest("#kInvRoot") && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) {
@@ -2561,7 +2565,7 @@
     if (tab === "costing" && window.KitchenRecipes) KitchenRecipes.renderCosting(ADMIN_CODE);
     if (tab === "bar") {
       loadOrders(true).then(() => {
-        if (window.BarInventory) BarInventory.render(state.orders);
+        if (window.BarInventory) BarInventory.render();
       });
     }
   }
@@ -2653,38 +2657,9 @@
     $("#stockFilter")?.addEventListener("input", () => renderStock());
     $("#barInvRefresh")?.addEventListener("click", () => {
       loadOrders(true).then(() => {
-        if (window.BarInventory) BarInventory.render(state.orders);
+        if (window.BarInventory) BarInventory.render();
       });
     });
-    $("#barInvCopyYday")?.addEventListener("click", () => {
-      if (!window.BarInventory) return;
-      const ok = BarInventory.copyYesterdayStarts();
-      toast(ok ? "Conteo de ayer copiado" : "No hay conteo de ayer en este dispositivo");
-      BarInventory.render(state.orders);
-    });
-    if (window.BarInventory) {
-      BarInventory.onOosChange = async ({ add, remove }) => {
-        let changed = false;
-        (add || []).forEach((id) => {
-          id = String(id);
-          if (!state.outOfStock.has(id)) {
-            state.outOfStock.add(id);
-            changed = true;
-          }
-        });
-        (remove || []).forEach((id) => {
-          id = String(id);
-          if (state.outOfStock.has(id)) {
-            state.outOfStock.delete(id);
-            changed = true;
-          }
-        });
-        if (!changed) return;
-        renderStock();
-        renderCatalog();
-        await saveStock({ silent: true });
-      };
-    }
     $("#catalogFilterAdm")?.addEventListener("input", () => renderCatalog());
     $("#reportRefresh")?.addEventListener("click", () => loadOrders().then(renderReport));
     $("#trafficRefresh")?.addEventListener("click", () => loadTraffic());

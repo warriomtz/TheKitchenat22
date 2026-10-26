@@ -101,5 +101,35 @@ ok(s === 200 && !(j.order.inv && j.order.inv["recipiente-llevar"]), "drinks-only
 [s, j] = await call("POST", "/api/orders", { action: "update", orderId: toid, status: "dismissed" }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 ok(j.inventory.items["recipiente-llevar"].qty === 82, "dismissed takeout order gives its containers back");
+// ---- bar inventory on the server
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-ing-prosecco", bottles: 3, openPct: 50 }, CODE);
+ok(j.ok && Math.abs(j.bar.groups[0].rows[0].qty - 2.5 * (750 / (2 * 29.5735))) < 0.05, "bar: bottles+open% set the servings on hand");
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-ing-aperol", bottles: 1 }, CODE);
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-beer-corona", qty: 6 }, CODE);
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "d-soda-ginger-ale", qty: 2 }, CODE);
+const barRows = (jj) => Object.fromEntries(jj.bar.groups.flatMap((g) => g.rows).map((r) => [r.id, r]));
+[s, j] = await call("GET", "/api/bar-inventory", null, CODE);
+const b0 = barRows(j);
+[s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
+  { id: "b-aperol", name: "Aperol Spritz", qty: 2 },
+  { id: "b-st-germain", name: "St Germain", qty: 1 },
+  { id: "b-cerveza", name: "Cerveza", qty: 2, customizations: "Corona" } ] });
+const barOrder = j.order.id;
+[s, j] = await call("GET", "/api/bar-inventory", null, CODE);
+let b1 = barRows(j);
+ok(Math.abs(b0["b-ing-prosecco"].qty - b1["b-ing-prosecco"].qty - 3) < 0.01 && Math.abs(b0["b-ing-aperol"].qty - b1["b-ing-aperol"].qty - 2) < 0.01, "bar: spritz drinks deduct prosecco/aperol");
+ok(b1["b-beer-corona"].qty === 4 && b1["d-soda-ginger-ale"].qty === 1, "bar: beer by name and ginger ale deduct");
+ok(b1["b-ing-cointreau"].qty === null && b1["b-ing-cointreau"].sold === 1 && !j.autoOut.includes("b-ing-cointreau"), "bar: not-counted item is not controlled (no agotado)");
+[s, j] = await call("POST", "/api/orders", { action: "update", orderId: barOrder, status: "dismissed" }, CODE);
+[s, j] = await call("GET", "/api/bar-inventory", null, CODE);
+b1 = barRows(j);
+ok(b1["b-beer-corona"].qty === 6 && Math.abs(b0["b-ing-prosecco"].qty - b1["b-ing-prosecco"].qty) < 0.01 && b1["b-beer-corona"].sold === 0, "bar: dismissing gives the drinks back");
+[s, j] = await call("POST", "/api/orders", { action: "update", orderId: barOrder, status: "open" }, CODE);
+[s, j] = await call("GET", "/api/bar-inventory", null, CODE);
+ok(barRows(j)["b-beer-corona"].qty === 4, "bar: reopening deducts again");
+[s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "d-soda-ginger-ale", qty: 0 }, CODE);
+ok(j.autoOut.includes("d-soda-ginger-ale"), "bar: count 0 -> agotado");
+[s, j] = await call("GET", "/api/stock", null);
+ok(j.outOfStock.includes("d-soda-ginger-ale"), "bar: agotado reaches the public stock list");
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);

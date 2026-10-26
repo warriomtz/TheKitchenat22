@@ -583,6 +583,23 @@
       }
     },
 
+    /** Bar inventory as the server sees it (groups, counts, sold today). */
+    async barInventoryView(code) {
+      const res = await fetch(apiUrl("/api/bar-inventory"), { headers: adminHeaders(code), cache: "no-store" });
+      if (!res.ok) throw new Error("bar_inventory_" + res.status);
+      return res.json();
+    },
+    async barInventoryAction(payload, code) {
+      const res = await fetch(apiUrl("/api/bar-inventory"), {
+        method: "POST",
+        headers: adminHeaders(code, { "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "bar_inventory_" + res.status);
+      return data;
+    },
+
     async setBarInventory(inventory, adminCode) {
       const payload = inventory && typeof inventory === "object" ? inventory : {};
       if (mode === "local") {
