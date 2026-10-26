@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 58;
+const INV_VERSION = 59;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -79,7 +79,7 @@ const INV_DEFAULT = {
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     salmon: { name: "Salmón", unit: "unidades", group: "Proteínas", qty: 3, min: 1 },
-    arroz: { name: "Arroz cocido (porciones)", unit: "porciones", group: "Complementos", qty: 6, min: 3, cookFrom: "arroz-crudo", cookLabel: "🍚 Ya cociné arroz", cookRatio: 250 / 6, cookBatch: 6 },
+    arroz: { name: "Arroz cocido (porciones)", unit: "porciones", group: "Complementos", qty: 12, min: 3, cookFrom: "arroz-crudo", cookLabel: "🍚 Ya cociné arroz", cookRatio: 250 / 6, cookBatch: 6 },
     "arroz-crudo": { name: "Arroz sin hacer (crudo)", unit: "g", group: "Complementos", qty: 2000, min: 250 },
     frijol: { name: "Frijol", unit: "unidades", group: "Complementos", qty: 3, min: 1 },
     quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
@@ -609,6 +609,8 @@ export class KitchenStore extends DurableObject {
         Object.assign(inv.items.arroz, INV_DEFAULT.items.arroz);
         if (inv.items["arroz-crudo"] == null) inv.items["arroz-crudo"] = { ...INV_DEFAULT.items["arroz-crudo"] };
       }
+      // v59: Mario has 12 cooked rice portions, not 6 (v58 set 6 by mistake: add the 6 back, keeping any orders since)
+      if ((inv.v || 1) === 58 && inv.items.arroz && inv.items.arroz.qty != null) inv.items.arroz.qty = Math.round((inv.items.arroz.qty + 6) * 100) / 100;
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
