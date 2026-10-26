@@ -33,7 +33,7 @@ const DEFAULT_HOURS = {
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 54;
+const INV_VERSION = 55;
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -70,6 +70,7 @@ const INV_DEFAULT = {
     "salsa-alfredo": { name: "Salsa Alfredo", unit: "porciones", group: "Salsas", qty: 6, min: 3 },
     "salsa-pesto": { name: "Salsa Pesto", unit: "porciones", group: "Salsas", qty: 7, min: 3 },
     "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: 150 },
+    ranch: { name: "Aderezo ranch", unit: "g", group: "Salsas", qty: 640, min: 150 },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Pan", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -97,7 +98,7 @@ const INV_DEFAULT = {
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
-    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }],
+    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
     "f-paletas": [
