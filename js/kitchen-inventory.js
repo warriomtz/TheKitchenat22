@@ -325,6 +325,127 @@
     });
   }
 
+  // ---- Consumo propio / merma
+  let ownLines = []; // { t: "dish"|"ing", id, qty, label }
+  let ownLog = [];
+
+  function dishLabel(key) {
+    if (key.startsWith("side:")) return "Complemento " + (SIDE_LABELS[key.slice(5)] || key.slice(5));
+    return ITEM_LABELS[key] || (window.KITCHEN_ITEM_NAMES && window.KITCHEN_ITEM_NAMES.es && window.KITCHEN_ITEM_NAMES.es[key]) || key;
+  }
+
+  function ownFill() {
+    const inv = (data && data.inventory) || {};
+    const dish = $("#kInvOwnDish");
+    const ing = $("#kInvOwnIng");
+    if (!dish || !ing) return;
+    const keep = [dish.value, ing.value];
+    const keys = Object.keys(inv.recipes || {}).filter((k) => k !== "order:takeout");
+    dish.innerHTML = keys
+      .map((k) => [k, dishLabel(k)])
+      .sort((a, b) => a[1].localeCompare(b[1], "es"))
+      .map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`)
+      .join("");
+    ing.innerHTML = Object.entries(inv.items || {})
+      .sort((a, b) => String(a[1].name).localeCompare(String(b[1].name), "es"))
+      .map(([k, it]) => `<option value="${esc(k)}">${esc(it.name)} (${esc(it.unit || "")})</option>`)
+      .join("");
+    if (keep[0]) dish.value = keep[0];
+    if (keep[1]) ing.value = keep[1];
+  }
+
+  function ownPaint() {
+    const ul = $("#kInvOwnLines");
+    if (ul)
+      ul.innerHTML = ownLines.length
+        ? ownLines.map((l, i) => `<li>${esc(l.label)} × <strong>${l.qty}</strong> <button type="button" class="btn btn--ghost btn--sm" data-own-rm="${i}">✕</button></li>`).join("")
+        : '<li class="adm-muted">Agrega platillos o ingredientes.</li>';
+    const lg = $("#kInvOwnLog");
+    if (lg) {
+      const f = (ts) => new Date(ts).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      const names = (inv) => ((data && data.inventory && data.inventory.items) || {})[inv];
+      lg.innerHTML = ownLog.length
+        ? ownLog
+            .map((e) => {
+              const what = (e.lines || []).map((l) => `${l.t === "dish" ? dishLabel(l.id) : (names(l.id) || {}).name || l.id} ×${l.qty}`).join(", ");
+              return `<div class="kinv-own-log"><span>${e.kind === "merma" ? "🗑️" : "🍽️"} <strong>${esc(e.who)}</strong> · ${esc(f(e.ts))}<br>${esc(what)}${e.note ? " · " + esc(e.note) : ""}</span><button type="button" class="btn btn--ghost btn--sm" data-own-undo="${esc(e.id)}">Deshacer</button></div>`;
+            })
+            .join("")
+        : "Sin registros todavía.";
+    }
+  }
+
+  async function ownLoad(code) {
+    try {
+      const r = await KitchenStore.kitchenInventoryAction({ action: "own_list" }, code);
+      ownLog = r.ownLog || [];
+    } catch (_) {}
+    ownPaint();
+  }
+
+  let ownBound = false;
+  function ownBind(code) {
+    if (ownBound) return;
+    const box = $("#kInvOwn");
+    if (!box) return;
+    ownBound = true;
+    box.addEventListener("click", async (e) => {
+      const c = window.__kinvCode;
+      const t = e.target.closest("button");
+      if (!t) return;
+      const out = $("#kInvOwnOut");
+      if (t.id === "kInvOwnAddDish") {
+        const sel = $("#kInvOwnDish");
+        const q = Math.max(1, parseInt($("#kInvOwnDishQty").value, 10) || 1);
+        if (sel.value) ownLines.push({ t: "dish", id: sel.value, qty: q, label: dishLabel(sel.value) });
+        ownPaint();
+      } else if (t.id === "kInvOwnAddIng") {
+        const sel = $("#kInvOwnIng");
+        const q = Number($("#kInvOwnIngQty").value);
+        if (sel.value && q > 0) ownLines.push({ t: "ing", id: sel.value, qty: q, label: sel.options[sel.selectedIndex].text });
+        ownPaint();
+      } else if (t.dataset.ownRm != null) {
+        ownLines.splice(Number(t.dataset.ownRm), 1);
+        ownPaint();
+      } else if (t.id === "kInvOwnApply") {
+        if (!ownLines.length) return;
+        t.disabled = true;
+        try {
+          const r = await KitchenStore.kitchenInventoryAction(
+            {
+              action: "own",
+              kind: $("#kInvOwnKind").value,
+              who: $("#kInvOwnWho").value,
+              note: $("#kInvOwnNote").value,
+              dishes: ownLines.filter((l) => l.t === "dish").map((l) => ({ id: l.id, qty: l.qty })),
+              ings: ownLines.filter((l) => l.t === "ing").map((l) => ({ id: l.id, qty: l.qty })),
+            },
+            c
+          );
+          ownLog = r.ownLog || ownLog;
+          data = { inventory: r.inventory, autoOut: r.autoOut };
+          ownLines = [];
+          $("#kInvOwnNote").value = "";
+          if (out) out.innerHTML = '<p><strong>Descontado del inventario.</strong></p>';
+          paint();
+          ownPaint();
+        } catch (err) {
+          if (out) out.innerHTML = `<p class="kinv-warn">No se pudo: ${esc(err && err.message ? err.message : err)}</p>`;
+        } finally {
+          t.disabled = false;
+        }
+      } else if (t.dataset.ownUndo) {
+        try {
+          const r = await KitchenStore.kitchenInventoryAction({ action: "own_undo", id: t.dataset.ownUndo }, c);
+          ownLog = r.ownLog || [];
+          data = { inventory: r.inventory, autoOut: r.autoOut };
+          paint();
+          ownPaint();
+        } catch (_) {}
+      }
+    });
+  }
+
   window.KitchenInventory = {
     async render(code) {
       window.__kinvCode = code;
@@ -333,6 +454,9 @@
       if (root && !data) root.innerHTML = '<p class="adm-muted">Cargando…</p>';
       data = await KitchenStore.kitchenInventory(code);
       paint();
+      ownBind(code);
+      ownFill();
+      ownLoad(code);
     },
     /** Purchase ticket: review (dry run) or apply the pasted lines. */
     async receive(code, apply) {

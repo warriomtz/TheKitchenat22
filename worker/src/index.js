@@ -1308,6 +1308,63 @@ export class KitchenStore extends DurableObject {
       const rules = (Array.isArray(data.rules) ? data.rules : []).slice(0, 20).map((r) => ({ ing: str(r.ing, 60), qty: Number(r.qty), ...(r.if && typeof r.if === "object" ? { if: r.if } : {}), ...(r.default ? { default: true } : {}) })).filter((r) => inv.items[r.ing] && Number.isFinite(r.qty) && r.qty > 0);
       if (rules.length) inv.recipes[key] = rules;
       else delete inv.recipes[key];
+    } else if (act === "own") {
+      // Staff meal / waste: deduct by recipe (or by ingredient) without creating an order or a sale.
+      const kind = data.kind === "merma" ? "merma" : "consumo";
+      const lines = [];
+      const dishes = [];
+      for (const d of (Array.isArray(data.dishes) ? data.dishes : []).slice(0, 30)) {
+        const key = str(d.id, 80).trim();
+        const q = Math.max(1, Math.min(50, parseInt(d.qty, 10) || 1));
+        if (!key || !inv.recipes[key]) continue;
+        dishes.push({ id: key, qty: q });
+        lines.push({ t: "dish", id: key, qty: q });
+      }
+      const used = this.invConsumption(dishes, inv, null);
+      for (const g of (Array.isArray(data.ings) ? data.ings : []).slice(0, 30)) {
+        const ing = str(g.id, 60).trim();
+        const q = Number(g.qty);
+        if (!inv.items[ing] || !Number.isFinite(q) || q <= 0) continue;
+        used[ing] = Math.round(((used[ing] || 0) + q) * 100) / 100;
+        lines.push({ t: "ing", id: ing, qty: q });
+      }
+      if (!lines.length) return [400, { error: "empty" }];
+      const applied = {};
+      for (const [ing, q] of Object.entries(used)) {
+        const it = inv.items[ing];
+        if (!it || it.qty == null) continue;
+        const after = Math.max(0, Math.round((it.qty - q) * 100) / 100);
+        applied[ing] = Math.round((it.qty - after) * 100) / 100;
+        it.qty = after;
+      }
+      const log = this.kvGet("ownLog", []);
+      const entry = {
+        id: "o" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        ts: nowIso(),
+        kind,
+        who: str(data.who, 30).trim() || "—",
+        note: str(data.note, 120).trim(),
+        lines,
+        applied,
+      };
+      log.unshift(entry);
+      this.kvSet("ownLog", log.slice(0, 300));
+      this.kvSet("kitchenInv", inv);
+      return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), entry, ownLog: log.slice(0, 40) }];
+    } else if (act === "own_list") {
+      return [200, { ok: true, ownLog: this.kvGet("ownLog", []).slice(0, 40) }];
+    } else if (act === "own_undo") {
+      const log = this.kvGet("ownLog", []);
+      const k = log.findIndex((e) => e.id === id);
+      if (k < 0) return [404, { error: "not_found" }];
+      for (const [ing, q] of Object.entries(log[k].applied || {})) {
+        const it = inv.items[ing];
+        if (it && it.qty != null) it.qty = Math.round((it.qty + q) * 100) / 100;
+      }
+      log.splice(k, 1);
+      this.kvSet("ownLog", log);
+      this.kvSet("kitchenInv", inv);
+      return [200, { ok: true, inventory: inv, autoOut: this.invAutoOut(), ownLog: log.slice(0, 40) }];
     } else {
       return [400, { error: "bad_action" }];
     }

@@ -134,5 +134,15 @@ ok(j.outOfStock.includes("d-soda-ginger-ale"), "bar: agotado reaches the public 
 [s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-ing-aperol", bottles: 0 }, CODE);
 [s, j] = await call("POST", "/api/bar-inventory", { action: "set", id: "b-spirit-mezcal", bottles: 0 }, CODE);
 ok(!j.autoOut.includes("b-ing-aperol") && !j.autoOut.includes("b-spirit-mezcal"), "bar: mixology/bottle drinks are counted but never auto-agotado");
+{
+  let [s0, g0] = await call("GET", "/api/kitchen-inventory", null, CODE);
+  const before = g0.inventory.items.salmon.qty;
+  const [s1, o1] = await call("POST", "/api/kitchen-inventory", { action: "own", kind: "consumo", who: "Mario", dishes: [{ id: "m-salmon", qty: 1 }] }, CODE);
+  ok(s1 === 200 && o1.inventory.items.salmon.qty === before - 1 && o1.ownLog.length >= 1, "own: staff meal deducts by recipe");
+  const [s2, o2] = await call("POST", "/api/kitchen-inventory", { action: "own_undo", id: o1.entry.id }, CODE);
+  ok(s2 === 200 && o2.inventory.items.salmon.qty === before, "own: undo gives it back");
+  const [s3] = await call("POST", "/api/kitchen-inventory", { action: "own", dishes: [] }, CODE);
+  ok(s3 === 400, "own: empty rejected");
+}
 console.log(fails ? "FAILED " + fails : "ALL PASS");
 process.exit(fails ? 1 : 0);

@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
   <link rel="stylesheet" href="css/styles.css?v=admin-20261025c" />
-  <link rel="stylesheet" href="css/admin.css?v=admin-20261026b" />
+  <link rel="stylesheet" href="css/admin.css?v=admin-20261026c" />
 </head>
 <body class="admin-page">
   <div class="noise" aria-hidden="true"></div>
@@ -209,6 +209,30 @@
             <button type="button" class="btn btn--primary btn--sm" id="kInvRecvApply">Aplicar compra</button>
           </div>
           <div id="kInvRecvOut"></div>
+        </details>
+        <details class="kinv-recv kinv-own" id="kInvOwn">
+          <summary><strong>🍽️ Consumo propio / merma</strong></summary>
+          <p class="adm-muted">Descuenta del inventario lo que comimos nosotros o lo que se tiró, por receta. No es una venta y no llega a cocina.</p>
+          <div class="kinv-own-row">
+            <select id="kInvOwnKind"><option value="consumo">Consumo propio</option><option value="merma">Merma</option></select>
+            <select id="kInvOwnWho"><option>Mario</option><option>Diego</option><option>Equipo</option></select>
+            <input type="text" id="kInvOwnNote" maxlength="120" placeholder="Nota (opcional)" />
+          </div>
+          <div class="kinv-own-row">
+            <select id="kInvOwnDish"></select>
+            <input type="number" id="kInvOwnDishQty" min="1" step="1" value="1" />
+            <button type="button" class="btn btn--ghost btn--sm" id="kInvOwnAddDish">+ Platillo</button>
+          </div>
+          <div class="kinv-own-row">
+            <select id="kInvOwnIng"></select>
+            <input type="number" id="kInvOwnIngQty" min="0" step="any" value="1" />
+            <button type="button" class="btn btn--ghost btn--sm" id="kInvOwnAddIng">+ Ingrediente</button>
+          </div>
+          <ul id="kInvOwnLines" class="kinv-recv-list"></ul>
+          <button type="button" class="btn btn--primary btn--sm" id="kInvOwnApply">Descontar del inventario</button>
+          <div id="kInvOwnOut"></div>
+          <h4>Últimos registros</h4>
+          <div id="kInvOwnLog" class="adm-muted">—</div>
         </details>
       </section>
 
@@ -528,7 +552,7 @@
   <script src="js/item-i18n.js?v=admin-20261026a"></script>
   <script src="js/quote.js?v=admin-20261025c"></script>
   <script src="js/kitchen-recipes.js?v=admin-20261025x"></script>
-  <script src="js/kitchen-inventory.js?v=admin-20261026b"></script>
+  <script src="js/kitchen-inventory.js?v=admin-20261026c"></script>
   <script src="js/bar-inventory.js?v=admin-20261026d"></script>
   <script src="js/admin.js?v=admin-20261026e"></script>
 </body>
