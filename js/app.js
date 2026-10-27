@@ -2203,12 +2203,6 @@ const DEFAULT_HOURS = {
     }
     if (flags.includes("sides3")) {
       const only = isSidesOnly(item);
-      if (only) {
-        fields += chips("sidesCount", t("mpSidesCountLabel"), [
-          { v: t("mpSidesCount3"), k: "3" },
-          { v: t("mpSidesCount1"), k: "1" },
-        ]);
-      }
       fields += chips(
         "mpSides",
         only ? t("mpSidesShort") : t("mpSides3Label"),
@@ -2218,7 +2212,7 @@ const DEFAULT_HOURS = {
           img: `assets/sides/${k}.jpg`,
           disabled: isOut(`mp-side-${k}`),
         })),
-        { qty: true, max: 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
+        { qty: true, max: only ? 9 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
       );
     }
     if (flags.includes("martini")) {
@@ -2524,7 +2518,8 @@ const DEFAULT_HOURS = {
             })
             .join(", ")}`
         );
-      if (isSidesOnly(item) && selected("sidesCount") === "1") extra -= 60;
+      // "Solo complementos": $60 each, as many as they want (the item's base price is only a placeholder)
+      if (isSidesOnly(item)) extra += 60 * Math.max(1, picked.length) - item.price;
       if (f.includes("sides2") && $("#thirdSideToggle")?.classList.contains("is-selected")) {
         extra += 60;
         parts.push(t("mpThirdSideShort"));
@@ -2784,9 +2779,9 @@ const DEFAULT_HOURS = {
       }
     }
     if (flags.includes("sides3")) {
-      const need = isSidesOnly(item) && selected("sidesCount") === "1" ? 1 : 3;
-      if (selectedAll("mpSides").length !== need) {
-        toast(need === 1 ? t("mpSides1Need") : t("mpSides3Need"));
+      const nPicked = selectedAll("mpSides").length;
+      if (isSidesOnly(item) ? nPicked < 1 : nPicked !== 3) {
+        toast(isSidesOnly(item) ? t("mpSides1Need") : t("mpSides3Need"));
         return;
       }
     }
