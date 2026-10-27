@@ -214,7 +214,7 @@ const INV_DEFAULT = {
     "m-salmon": [{ ing: "salmon", qty: 1 }],
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 25, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
-    "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 250 }, { ing: "ensalada", qty: 50 }, { ing: "zanahoria-baby", qty: 40 }],
+    "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 140 }, { ing: "ensalada", qty: 50 }, { ing: "zanahoria-baby", qty: 40 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
@@ -798,6 +798,13 @@ export class KitchenStore extends DurableObject {
       const r = inv.recipes["side:sopaTomate"];
       if (Array.isArray(r)) inv.recipes["side:sopaTomate"] = r.filter((x) => x.ing !== "queso-rayado");
       inv.sopaQuesoOnce = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Salmón con papas gajo uses 140 g of papas gajo, not 250 (Mario 2026-10-26).
+    if (!inv.salmonGajo140) {
+      const r = inv.recipes["f-salmon-plate"];
+      if (Array.isArray(r)) for (const x of r) if (x.ing === "papas-gajo") x.qty = 140;
+      inv.salmonGajo140 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
