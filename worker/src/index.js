@@ -1643,6 +1643,21 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-10-26): own photos for "Ensalada sin proteína" and "Papas con queso amarillo suave". */
+  seedPhotos2610(menu) {
+    if (this.kvGet("photos2610", false)) return;
+    const want = { "f-ensalada-sin": "assets/products/f-ensalada-sin.jpg", "f-papas-queso": "assets/products/f-papas-queso.jpg" };
+    let n = 0;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) if (want[it.id]) { it.img = want[it.id]; n++; }
+      }
+    }
+    if (n >= 2) {
+      this.kvSet("menu", menu);
+      this.kvSet("photos2610", true);
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2182,6 +2197,7 @@ export class KitchenStore extends DurableObject {
           this.seedRenameSirloin(menu);
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
+          this.seedPhotos2610(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);

@@ -150,7 +150,7 @@ window.KITCHEN_MENU = {
       Street: {
         label: "Street food",
         items: [
-          { id: "f-papas-queso", name: "Papas con queso amarillo suave", price: 119, notes: "", flags: [], img: "" },
+          { id: "f-papas-queso", name: "Papas con queso amarillo suave", price: 119, notes: "", flags: [], img: "assets/products/f-papas-queso.jpg" },
           { id: "f-papas-t", name: "Papas trufadas", price: 99, notes: "", flags: [], img: "assets/products/f-papas-t.jpg" },
           { id: "f-papas-g", name: "Papas gajo picantes", price: 99, notes: "", flags: [], img: "assets/products/f-papas-g.jpg" },
           { id: "f-guac", name: "Guacamole", price: 130, notes: "", flags: [], img: "assets/products/f-guac.jpg" },
@@ -178,7 +178,7 @@ window.KITCHEN_MENU = {
         label: "Light",
         items: [
           { id: "f-ensalada", name: "Ensalada con pollo", price: 155, notesKey: "dressingNote", flags: ["dressing", "extraChicken"], img: "assets/products/f-ensalada.jpg" },
-          { id: "f-ensalada-sin", name: "Ensalada sin proteína", price: 100, notesKey: "dressingNote", flags: ["dressing"], img: "assets/products/f-ensalada.jpg" },
+          { id: "f-ensalada-sin", name: "Ensalada sin proteína", price: 100, notesKey: "dressingNote", flags: ["dressing"], img: "assets/products/f-ensalada-sin.jpg" },
         ],
       },
       Dulces: {
