@@ -71,8 +71,16 @@
     return out;
   }
 
+  /** Ingredient bought only when the dish it feeds is at its minimum (e.g. soup ingredients): 0 on hand is normal until then. */
+  function tiedIdle(it) {
+    if (!it || !it.buyWith) return false;
+    const par = data && data.inventory && data.inventory.items && data.inventory.items[it.buyWith];
+    return !(par && par.qty != null && par.min != null && par.qty <= par.min);
+  }
+
   function status(it) {
     if (it.qty == null) return ["Sin control", "kinv-chip--off"];
+    if (tiedIdle(it)) return ["Se compra al cocinar", "kinv-chip--ok"];
     if (it.qty <= 0) return ["Agotado", "kinv-chip--out"];
     if (it.min != null && it.qty <= it.min) return ["Bajo", "kinv-chip--low"];
     return ["OK", "kinv-chip--ok"];
@@ -196,8 +204,8 @@
       return;
     }
     const items = data.inventory.items || {};
-    const isOut = (i) => i.qty != null && i.qty <= 0;
-    const isLow = (i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min;
+    const isOut = (i) => i.qty != null && i.qty <= 0 && !tiedIdle(i);
+    const isLow = (i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min && !tiedIdle(i);
     const out = Object.values(items).filter(isOut).length;
     const low = Object.values(items).filter(isLow).length;
     const pass = (i) => filter === "all" || (filter === "low" && isLow(i)) || (filter === "out" && isOut(i)) || (filter === "need" && (isLow(i) || isOut(i)));
