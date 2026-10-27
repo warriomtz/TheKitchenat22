@@ -829,6 +829,13 @@ export class KitchenStore extends DurableObject {
       inv.cherry30sides = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Guacamole: 1 portion = 2 aguacates (Mario 2026-10-27). Aguacate starts uncounted (qty null) so nothing is deducted or flagged until he counts it.
+    if (!inv.guacAguacate) {
+      if (!inv.items.aguacate) inv.items.aguacate = { name: "Aguacate", unit: "piezas", group: "Verdura", qty: null };
+      if (inv.items.guacamole) Object.assign(inv.items.guacamole, { cookRecipe: [{ ing: "aguacate", qty: 2 }], cookBatch: 1, cookLabel: "Ya preparé 1 porción (2 aguacates)" });
+      inv.guacAguacate = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
