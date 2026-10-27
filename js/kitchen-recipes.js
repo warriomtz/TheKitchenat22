@@ -148,10 +148,47 @@
     return g;
   }
 
-  async function renderRecipes(code) {
+  let showAllRecipes = false; // "Ver todas las recetas" toggle while there are open orders
+  let lastOpenOrders = [];
+  let lastCode = "";
+
+  /** Rules of a recipe that apply to one order line (same logic the server uses to deduct). */
+  function matchedRules(rules, opts) {
+    const list = Array.isArray(rules) ? rules : [];
+    const hit = (r) => r.if && Object.entries(r.if).every(([k, v]) => String((opts || {})[k] || "") === String(v));
+    const always = list.filter((r) => !r.if);
+    const hits = list.filter(hit);
+    const hasAlt = list.some((r) => r.if && !r.optional);
+    const fallback = hasAlt && !hits.some((r) => !r.optional) ? list.filter((r) => r.default) : [];
+    return [...always, ...hits, ...fallback.filter((r) => !hits.includes(r))];
+  }
+
+  /** What the open orders are preparing: recipe key -> { qty, lines: [{qty, opts}] } (dishes + Meal Prep sides). */
+  function collectActive(orders) {
+    const act = new Map();
+    const add = (key, qty, opts, name) => {
+      const e = act.get(key) || { qty: 0, lines: [], name };
+      e.qty += qty;
+      e.lines.push({ qty, opts });
+      act.set(key, e);
+    };
+    (orders || []).forEach((o) => {
+      if (!o || o.status !== "open") return;
+      (o.items || []).forEach((it) => {
+        const q = Math.max(1, parseInt(it.qty, 10) || 1);
+        add(String(it.id), q, it.opts, it.name);
+        Object.entries((it.opts && it.opts.mpSides) || {}).forEach(([k, n]) => add("side:" + k, q * (Number(n) || 1), null, ""));
+      });
+    });
+    return act;
+  }
+
+  async function renderRecipes(code, openOrders, silent) {
     const root = $("#kRecRoot");
     if (!root) return;
-    root.innerHTML = '<p class="adm-muted">Cargando…</p>';
+    if (Array.isArray(openOrders)) lastOpenOrders = openOrders;
+    if (code) lastCode = code;
+    if (!silent) root.innerHTML = '<p class="adm-muted">Cargando…</p>';
     let inv;
     try {
       inv = await load(code);
@@ -162,6 +199,29 @@
     const items = inv.items || {};
     const q = (($("#kRecSearch") || {}).value || "").trim().toLowerCase();
     let html = "";
+    const active = collectActive(lastOpenOrders);
+    if (active.size && !q && !showAllRecipes) {
+      // Only what the kitchen is making right now (open orders)
+      const all = dishes(inv);
+      const byKey = Object.fromEntries(all.map((d) => [d.key, d]));
+      const nOrders = lastOpenOrders.filter((o) => o && o.status === "open").length;
+      html += `<div class="krec-live"><p class="kinv-sum"><strong>🔥 ${nOrders} pedido${nOrders === 1 ? "" : "s"} abierto${nOrders === 1 ? "" : "s"}</strong> · mostrando solo lo que se está preparando</p><button type="button" class="btn btn--ghost btn--sm" data-rec-all="1">Ver todas las recetas</button></div>`;
+      [...active.entries()].forEach(([key, a]) => {
+        const d = byKey[key] || { key, name: a.name || itemName(key), price: 0, rules: [] };
+        const rules = new Map();
+        a.lines.forEach((l) => matchedRules(d.rules, l.opts).forEach((r) => rules.set(JSON.stringify(r), r)));
+        const base = [...rules.values()].filter((r) => !r.if);
+        const opts = [...rules.values()].filter((r) => r.if);
+        html += `<article class="krec-card krec-card--live"><h4>${esc(d.name)} <span class="krec-price">×${a.qty}</span></h4>`;
+        if (!d.rules.length) html += '<p class="adm-muted">Sin receta registrada (no descuenta inventario).</p>';
+        if (base.length) html += `<p class="krec-sub">Siempre lleva</p><ul>${base.map((r) => ruleLine(r, items, false)).join("")}</ul>`;
+        if (opts.length) html += `<p class="krec-sub">Según lo que eligieron</p><ul>${opts.map((r) => ruleLine(r, items, false)).join("")}</ul>`;
+        html += "</article>";
+      });
+      root.innerHTML = html;
+      return;
+    }
+    if (active.size && !q) html += '<div class="krec-live"><p class="kinv-sum">Mostrando todas las recetas</p><button type="button" class="btn btn--ghost btn--sm" data-rec-live="1">Solo pedidos abiertos</button></div>';
     Object.entries(groupBy(dishes(inv))).forEach(([g, list]) => {
       const shown = list.filter((d) => !q || d.name.toLowerCase().includes(q) || d.rules.some((r) => ((items[r.ing] && items[r.ing].name) || r.ing).toLowerCase().includes(q)));
       if (!shown.length) return;
@@ -222,5 +282,11 @@
     root.innerHTML = html;
   }
 
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("#kRecRoot [data-rec-all], #kRecRoot [data-rec-live]");
+    if (!b) return;
+    showAllRecipes = b.hasAttribute("data-rec-all");
+    renderRecipes(lastCode, undefined, true);
+  });
   window.KitchenRecipes = { renderRecipes, renderCosting };
 })();

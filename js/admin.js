@@ -724,6 +724,19 @@
     }).length;
   }
 
+  /** Recetas tab: shows what the open orders are preparing (falls back to every recipe when nothing is open). */
+  let recipesSig = "";
+  const openOrdersSig = () =>
+    (state.orders || [])
+      .filter((o) => o && o.status === "open")
+      .map((o) => `${o.id}:${(o.items || []).length}:${o.editedAt || ""}`)
+      .join("|");
+  function renderRecipesTab(silent) {
+    if (!window.KitchenRecipes) return;
+    recipesSig = openOrdersSig();
+    KitchenRecipes.renderRecipes(ADMIN_CODE, (state.orders || []).filter((o) => o && o.status === "open"), silent);
+  }
+
   async function loadOrders(silent) {
     try {
       const prev = Array.isArray(state.orders) ? state.orders : [];
@@ -750,6 +763,7 @@
     }
     if (state.tab === "kitchen" || !state.tab) renderKitchen();
     if (state.tab === "report") renderReport();
+    if (state.tab === "recipes" && openOrdersSig() !== recipesSig && !(document.activeElement && document.activeElement.id === "kRecSearch")) renderRecipesTab(true);
     if (window.BarInventory) BarInventory.tick(state.orders);
   }
 
@@ -2562,7 +2576,7 @@
       fillQuoteForm();
     }
     if (tab === "inventory" && window.KitchenInventory) KitchenInventory.render(ADMIN_CODE);
-    if (tab === "recipes" && window.KitchenRecipes) KitchenRecipes.renderRecipes(ADMIN_CODE);
+    if (tab === "recipes" && window.KitchenRecipes) renderRecipesTab();
     if (tab === "costing" && window.KitchenRecipes) KitchenRecipes.renderCosting(ADMIN_CODE);
     if (tab === "bar") {
       loadOrders(true).then(() => {
@@ -2618,8 +2632,8 @@
     $("#announceTranslate")?.addEventListener("click", translateEsToEn);
     $("#hoursSave")?.addEventListener("click", saveHours);
     $("#kInvRefresh")?.addEventListener("click", () => window.KitchenInventory?.render(ADMIN_CODE));
-    $("#kRecRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
-    $("#kRecSearch")?.addEventListener("input", () => window.KitchenRecipes?.renderRecipes(ADMIN_CODE));
+    $("#kRecRefresh")?.addEventListener("click", () => renderRecipesTab());
+    $("#kRecSearch")?.addEventListener("input", () => renderRecipesTab());
     $("#kCostRefresh")?.addEventListener("click", () => window.KitchenRecipes?.renderCosting(ADMIN_CODE));
     $("#kInvRecvCheck")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, false));
     $("#kInvRecvApply")?.addEventListener("click", () => window.KitchenInventory?.receive(ADMIN_CODE, true));

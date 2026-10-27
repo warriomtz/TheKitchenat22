@@ -1496,6 +1496,8 @@
 .kinv-pgroup > .kinv-buy { margin: 8px 6px 2px; }
 .kinv-ownbtn{grid-column:1/-1;display:flex;align-items:center;gap:.4rem;margin-top:.2rem}
 .kinv-ownbtn input{width:5rem}
+.krec-live{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;margin:.4rem 0 .8rem}
+.krec-card--live{border-left:3px solid var(--accent,#c0392b)}
 .kinv-own-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0}
 .kinv-own-row select,.kinv-own-row input{min-width:0;flex:1 1 9rem}
 .kinv-own-row input[type=number]{flex:0 0 5.5rem}
