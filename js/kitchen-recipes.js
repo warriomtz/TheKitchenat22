@@ -102,7 +102,7 @@
     const tags = [];
     if (r.if) tags.push(ifText(r.if));
     if (r.optional) tags.push("extra");
-    return `<li><span class="krec-ing">${esc(name)}</span> <b>${num(r.qty)}${esc(unit)}</b>${tags.length ? ` <em class="krec-tag">${esc(tags.join(" · "))}</em>` : ""}${
+    return `<li><span class="krec-ing">${esc(name)}</span> <b>${num(r.qty)}${esc(unit)}</b>${it && it.recipeNote ? ` <em class="krec-tag">${esc(it.recipeNote)}</em>` : ""}${tags.length ? ` <em class="krec-tag">${esc(tags.join(" · "))}</em>` : ""}${
       withCost ? ` <span class="krec-cost">${line != null ? money(line) : '<span class="adm-muted">pendiente</span>'}</span>` : ""
     }</li>`;
   }

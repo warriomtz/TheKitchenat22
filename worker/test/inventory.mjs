@@ -157,11 +157,8 @@ ok(!j.autoOut.includes("b-ing-aperol") && !j.autoOut.includes("b-spirit-mezcal")
   const [, g7] = await call("GET", "/api/kitchen-inventory", null, CODE);
   ok(g7.inventory.items["ajo-cabeza"].qty === 0 && g7.inventory.items["ajo-cabeza"].buyWith === "sopa-tomate" && !g7.autoOut.includes("ajo-cabeza"), "sopa: ajo starts at 0, tied to the soup, not agotado");
   ok(!g7.inventory.recipes["side:sopaTomate"].some((r) => r.ing === "queso-rayado"), "sopa: no queso per portion (it is in the batch)");
-  await call("POST", "/api/kitchen-inventory", { action: "set", id: "aguacate", qty: 6 }, CODE);
   const [, g8] = await call("GET", "/api/kitchen-inventory", null, CODE);
-  const gb = g8.inventory.items.guacamole.qty;
-  const [s9, k9] = await call("POST", "/api/kitchen-inventory", { action: "cook", id: "guacamole", n: 1 }, CODE);
-  ok(s9 === 200 && k9.inventory.items.guacamole.qty === gb + 1 && k9.inventory.items.aguacate.qty === 4, "guacamole: 1 porcion = 2 aguacates");
+  ok(!g8.inventory.items.aguacate && g8.inventory.items.guacamole.recipeNote === "2 aguacates" && !g8.inventory.items.guacamole.cookRecipe, "guacamole: single item, recipe note says 2 aguacates");
   const [s3] = await call("POST", "/api/kitchen-inventory", { action: "own", dishes: [] }, CODE);
   ok(s3 === 400, "own: empty rejected");
 }

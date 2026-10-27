@@ -829,11 +829,23 @@ export class KitchenStore extends DurableObject {
       inv.cherry30sides = true;
       this.kvSet("kitchenInv", inv);
     }
-    // Guacamole: 1 portion = 2 aguacates (Mario 2026-10-27). Aguacate starts uncounted (qty null) so nothing is deducted or flagged until he counts it.
+    // (superseded by guacClean below)
     if (!inv.guacAguacate) {
-      if (!inv.items.aguacate) inv.items.aguacate = { name: "Aguacate", unit: "piezas", group: "Verdura", qty: null };
-      if (inv.items.guacamole) Object.assign(inv.items.guacamole, { cookRecipe: [{ ing: "aguacate", qty: 2 }], cookBatch: 1, cookLabel: "Ya preparé 1 porción (2 aguacates)" });
       inv.guacAguacate = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Guacamole stays a single inventory item (portions). Its recipe note says 1 portion = 2 aguacates; no separate Aguacate item (Mario 2026-10-27).
+    if (!inv.guacClean) {
+      delete inv.items.aguacate;
+      const g = inv.items.guacamole;
+      if (g) {
+        delete g.cookRecipe;
+        delete g.cookBatch;
+        delete g.cookLabel;
+        g.recipeNote = "2 aguacates";
+        if (g.packQty == null) Object.assign(g, { presentation: g.presentation || "Porción (2 aguacates)", packText: "1 porción", packQty: 1 });
+      }
+      inv.guacClean = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
