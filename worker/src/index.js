@@ -246,12 +246,12 @@ const INV_DEFAULT = {
       { ing: "pollo-empanizado", qty: 1, if: { burger: "chicken" }, variant: true, outId: "f-burger-chicken" },
     ],
     "f-guac": [{ ing: "guacamole", qty: 1 }, { ing: "totopos", qty: 70 }],
-    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 60 }, { ing: "salsa-pomodoro", qty: 30 }],
+    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pomodoro", qty: 30 }],
     "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }, { ing: "salsa-pomodoro", qty: 60 }],
     "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 13 }, { ing: "salsa-alfredo", qty: 1 }],
-    "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 60 }, { ing: "salsa-pesto", qty: 1 }],
+    "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pesto", qty: 1 }],
     "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }, { ing: "ranch", qty: 35, if: { dressing: "ranch" }, variant: true, outId: "dressing-ranch" }, { ing: "cesar", qty: 35, if: { dressing: "cesar" }, variant: true, outId: "dressing-cesar" }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
@@ -805,6 +805,15 @@ export class KitchenStore extends DurableObject {
       const r = inv.recipes["f-salmon-plate"];
       if (Array.isArray(r)) for (const x of r) if (x.ing === "papas-gajo") x.qty = 140;
       inv.salmonGajo140 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pechuga Pomodoro and Pasta Pesto use 30 g parmesano, not 60 (Mario 2026-11-01). Only changes a recipe that still says 60.
+    if (!inv.parmesano30) {
+      for (const k of ["f-pechuga-pomodoro", "f-pesto"]) {
+        const r = inv.recipes[k];
+        if (Array.isArray(r)) for (const x of r) if (x.ing === "parmesano" && x.qty === 60) x.qty = 30;
+      }
+      inv.parmesano30 = true;
       this.kvSet("kitchenInv", inv);
     }
     // The salmon plate's salad also has 30 g tomate cherry (Mario 2026-10-26).
