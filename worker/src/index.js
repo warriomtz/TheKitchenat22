@@ -1749,6 +1749,23 @@ export class KitchenStore extends DurableObject {
     if (changed) this.kvSet("menu", menu);
     this.kvSet("sirloinRenamed", true);
   }
+  /** One-time: Meal Prep "Res" is now called "Rib Eye" (Mario 2026-11-01; keeps id, price, photo and stock). Only if the name is still the one set by seedRenameSirloin. */
+  seedRenameRibEye(menu) {
+    if (this.kvGet("ribEyeRenamed", false)) return;
+    let changed = false;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id === "m-sirloin" && it.name === "Res · 1 pieza (230-250 g)") {
+          it.name = "Rib Eye · 1 pieza (230-250 g)";
+          it.name_en = "Rib Eye · 1 piece (230-250 g)";
+          it.name_ja = "リブアイ · 1枚 (230-250g)";
+          changed = true;
+        }
+      }
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("ribEyeRenamed", true);
+  }
   /** One-time: add the Meal Prep "Solo complementos" option (no protein, up to 3 sides, $120). */
   seedMealPrepSidesOnly(menu) {
     if (this.kvGet("mealprepSidesOnlySeeded", false)) return;
@@ -2243,6 +2260,7 @@ export class KitchenStore extends DurableObject {
           this.seedBeerNA(menu);
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
+          this.seedRenameRibEye(menu);
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
           this.seedPhotos2610(menu);
