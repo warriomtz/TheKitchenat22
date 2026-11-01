@@ -1766,6 +1766,23 @@ export class KitchenStore extends DurableObject {
     if (changed) this.kvSet("menu", menu);
     this.kvSet("ribEyeRenamed", true);
   }
+  /** One-time: Meal Prep Rib Eye weight is "~220 g" (Mario 2026-11-01). Applies whether the name is still "Res" or already "Rib Eye"; a name edited by hand is left alone. */
+  seedRibEyeWeight(menu) {
+    if (this.kvGet("ribEye220", false)) return;
+    let changed = false;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id === "m-sirloin" && (it.name === "Rib Eye · 1 pieza (230-250 g)" || it.name === "Res · 1 pieza (230-250 g)")) {
+          it.name = "Rib Eye · 1 pieza (~220 g)";
+          it.name_en = "Rib Eye · 1 piece (~220 g)";
+          it.name_ja = "リブアイ · 1枚 (約220g)";
+          changed = true;
+        }
+      }
+    }
+    if (changed) this.kvSet("menu", menu);
+    this.kvSet("ribEye220", true);
+  }
   /** One-time: add the Meal Prep "Solo complementos" option (no protein, up to 3 sides, $120). */
   seedMealPrepSidesOnly(menu) {
     if (this.kvGet("mealprepSidesOnlySeeded", false)) return;
@@ -2261,6 +2278,7 @@ export class KitchenStore extends DurableObject {
           this.seedRemoveRamen(menu);
           this.seedRenameSirloin(menu);
           this.seedRenameRibEye(menu);
+          this.seedRibEyeWeight(menu);
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
           this.seedPhotos2610(menu);
