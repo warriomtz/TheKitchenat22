@@ -212,7 +212,7 @@ const INV_DEFAULT = {
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
-    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "ranch", qty: 40 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 140 }, { ing: "ensalada", qty: 30 }, { ing: "tomate-cherry", qty: 30 }, { ing: "zanahoria-baby", qty: 40 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
@@ -230,11 +230,12 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
-    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "ranch", qty: 40 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
       { ing: "pan-hamburguesa", qty: 1 },
       { ing: "queso-suizo", qty: 1 },
+      { ing: "ranch", qty: 30 },
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "salsa-buffalo", qty: 45, if: { burgerSauce: "buffalo" }, variant: true, outId: "boneless-buffalo" },
       { ing: "salsa-cfa-original", qty: 45, if: { burgerSauce: "cfa_original" }, variant: true, outId: "boneless-cfa-original" },
@@ -836,6 +837,18 @@ export class KitchenStore extends DurableObject {
         for (const x of inv.recipes[k] || []) if (x.ing === "tomate-cherry" && x.qty === 25) x.qty = 30;
       }
       inv.cherry30sides = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Ranch in both burgers (30 g, beef or chicken), club sandwich and grilled cheese (40 g) (Mario 2026-11-01). Added only where the recipe has no ranch yet.
+    if (!inv.ranchSandwiches) {
+      for (const [k, q] of [["f-burger", 30], ["f-club", 40], ["f-grilled", 40]]) {
+        const r = inv.recipes[k];
+        if (!Array.isArray(r) || r.some((x) => x.ing === "ranch")) continue;
+        let at = 0;
+        r.forEach((x, i) => { if (!x.if) at = i + 1; });
+        r.splice(at, 0, { ing: "ranch", qty: q });
+      }
+      inv.ranchSandwiches = true;
       this.kvSet("kitchenInv", inv);
     }
     // (superseded by guacClean below)
