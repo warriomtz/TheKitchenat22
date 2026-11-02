@@ -840,12 +840,23 @@ export class KitchenStore extends DurableObject {
       inv.cherry30sides = true;
       this.kvSet("kitchenInv", inv);
     }
-    // No salad and no "Complementos" (rice, beans, quinoa, soups, vegetables) anymore: qty 0 makes every dish/side that uses them show as agotado (Mario 2026-11-02). Restock in Inventario to bring them back.
-    if (!inv.noSaladNoSides) {
-      for (const it of Object.values(inv.items || {})) {
-        if (it && (it.group === "Complementos" || it === inv.items.ensalada)) { it.qty = 0; delete it.min; delete it.target; }
+    // No salad right now: qty 0 makes every dish/side that uses it show as agotado, and it stays on the shopping list to resupply (Mario 2026-11-02). Restock in Inventario to bring it back.
+    if (!inv.noSalad) {
+      const e = inv.items && inv.items.ensalada;
+      if (e) { e.qty = 0; if (e.min == null) e.min = INV_DEFAULT.items.ensalada.min; }
+      inv.noSalad = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Undo of an earlier version of the change above that also zeroed every "Complementos" item: put them back to their default levels (rice, beans, quinoa, soups, vegetables are not gone).
+    if (inv.noSaladNoSides && !inv.sidesRestored) {
+      for (const [k, d] of Object.entries(INV_DEFAULT.items)) {
+        const it = inv.items && inv.items[k];
+        if (d.group !== "Complementos" || !it) continue;
+        it.qty = d.qty;
+        if (d.min != null) it.min = d.min; else delete it.min;
+        if (d.target != null) it.target = d.target; else delete it.target;
       }
-      inv.noSaladNoSides = true;
+      inv.sidesRestored = true;
       this.kvSet("kitchenInv", inv);
     }
     // Ranch in both burgers (30 g, beef or chicken), club sandwich and grilled cheese (40 g) (Mario 2026-11-01). Added only where the recipe has no ranch yet.

@@ -23,11 +23,11 @@ ok(s === 200 && j.order.inv && j.order.inv.salmon === 2, "order deducts salmon x
 const oid = j.order.id;
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 const it = j.inventory.items;
-ok(it.salmon.qty === 1 && it["pollo-100"].qty === 1 && it["pollo-200"].qty === 7, "quantities after order (sides are at 0 since 2026-11-02)");
-ok(j.autoOut.includes("m-sirloin") === false && j.autoOut.includes("mp-side-quinoa") && j.autoOut.includes("side-salad") && j.autoOut.includes("f-ensalada"), "quinoa and salad agotados");
+ok(it.salmon.qty === 1 && it["pollo-100"].qty === 1 && it["pollo-200"].qty === 7 && it.arroz.qty === 12 - 2 * 2 - 1 && it.quinoa.qty === 0 && it.frijol.qty === 2, "quantities after order");
+ok(j.autoOut.includes("m-sirloin") === false && j.autoOut.includes("mp-side-quinoa") && j.autoOut.includes("side-salad") && j.autoOut.includes("f-ensalada") && !j.autoOut.includes("mp-side-arroz"), "quinoa agotada, salad agotada, rice available");
 [s, j] = await call("POST", "/api/orders", { action: "update", orderId: oid, status: "dismissed" }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
-ok(j.inventory.items.salmon.qty === 3, "dismiss gives back");
+ok(j.inventory.items.salmon.qty === 3 && j.inventory.items.quinoa.qty === 2, "dismiss gives back");
 [s, j] = await call("POST", "/api/orders", { action: "update", orderId: oid, status: "open" }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 ok(j.inventory.items.salmon.qty === 1, "reopen deducts again");
