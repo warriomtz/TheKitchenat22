@@ -57,8 +57,16 @@
       .toLowerCase()
       .trim();
 
+  /** "3108" / "31-08" -> "3108". Floor 33 is also written "SK05" (SK = sky): "SK05", "sk-5", "SK 05" -> "3305". */
   function parseApt(raw) {
-    const digits = String(raw || "").replace(/\D/g, "");
+    const text = String(raw || "").trim();
+    const sk = text.match(/^sk[\s\-_.#]*(\d{1,4})$/i);
+    if (sk) {
+      const d = sk[1];
+      const key = d.length === 4 ? d : "33" + pad2(Number(d));
+      return d.length <= 2 && KEY_SET.has(key) ? key : d.length === 4 && KEY_SET.has(key) ? key : null;
+    }
+    const digits = text.replace(/\D/g, "");
     return digits.length === 4 && KEY_SET.has(digits) ? digits : null;
   }
 
