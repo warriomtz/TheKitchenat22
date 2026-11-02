@@ -763,6 +763,7 @@
     }
     if (state.tab === "kitchen" || !state.tab) renderKitchen();
     if (state.tab === "report") renderReport();
+    if (state.tab === "tower" && window.TowerMap) TowerMap.tick(state.orders);
     if (state.tab === "recipes" && openOrdersSig() !== recipesSig && !(document.activeElement && document.activeElement.id === "kRecSearch")) renderRecipesTab(true);
     if (window.BarInventory) BarInventory.tick(state.orders);
   }
@@ -1101,7 +1102,7 @@
     }
     if (
       !confirm(
-        `¿Eliminar ${n} pedido(s) completado(s) o descartado(s) de la base de datos?\nLos abiertos se conservan. No se puede deshacer.`
+        `¿Eliminar ${n} pedido(s) completado(s) o descartado(s) de la base de datos?\nLos abiertos se conservan. No se puede deshacer.\n\nOjo: Reportes y Torre se calculan con los pedidos que existen; al borrarlos se pierde ese historial.`
       )
     ) {
       return;
@@ -2565,6 +2566,10 @@
         renderApartmentDetail();
       });
     }
+    if (tab === "tower") {
+      if (window.TowerMap) TowerMap.render(state.orders);
+      loadOrders(true);
+    }
     if (tab === "traffic") loadTraffic();
     if (tab === "surveys") loadSurveys();
     if (tab === "announce") loadAnnouncementForm();
@@ -2677,6 +2682,7 @@
     });
     $("#catalogFilterAdm")?.addEventListener("input", () => renderCatalog());
     $("#reportRefresh")?.addEventListener("click", () => loadOrders().then(renderReport));
+    $("#towerRefresh")?.addEventListener("click", () => loadOrders().then(() => window.TowerMap && TowerMap.render(state.orders)));
     $("#trafficRefresh")?.addEventListener("click", () => loadTraffic());
     $("#surveyRefresh")?.addEventListener("click", () => loadSurveys());
     $("#surveyCsv")?.addEventListener("click", () => downloadSurveyCsv());

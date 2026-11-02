@@ -1506,3 +1506,153 @@
 .kinv-recv textarea { width: 100%; box-sizing: border-box; margin: 8px 0; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); color: inherit; font-family: ui-monospace, monospace; }
 .kinv-recv-actions { display: flex; gap: 8px; margin-bottom: 8px; }
 .kinv-recv-list { padding-left: 18px; }
+
+/* —— Torre (mapa de la torre por departamento) —— */
+.tw-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.tw-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+.tw-mapcard {
+  padding: 0.85rem 0.9rem;
+}
+.tw-map {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+.tw-floor {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  min-width: max-content;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.tw-floor:last-child {
+  border-bottom: 0;
+}
+.tw-floor__label {
+  width: 6.2rem;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-top: 0.35rem;
+}
+.tw-floor__label small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+.tw-floor__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.tw-row {
+  display: flex;
+  gap: 0.3rem;
+}
+.tw-cell {
+  width: 3.4rem;
+  height: 2.9rem;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: rgba(164, 52, 58, 0.5);
+  color: #fff;
+  font-family: var(--font-body);
+  cursor: pointer;
+  padding: 0;
+}
+.tw-cell .tw-u {
+  font-size: 0.78rem;
+  opacity: 0.85;
+  line-height: 1;
+}
+.tw-cell .tw-n {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1;
+  min-height: 1.15rem;
+}
+.tw-l0 {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+}
+.tw-l1 { background: rgba(164, 52, 58, 0.22); }
+.tw-l2 { background: rgba(164, 52, 58, 0.4); }
+.tw-l3 { background: rgba(164, 52, 58, 0.6); }
+.tw-l4 { background: rgba(164, 52, 58, 0.8); }
+.tw-l5 { background: var(--accent); border-color: #fff; }
+.tw-cell.is-sel {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.tw-cell:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+.tw-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.tw-legend__sw {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  cursor: default;
+}
+.tw-legend__gap {
+  width: 0.8rem;
+}
+.tw-detail {
+  margin-top: 1rem;
+}
+.tw-detail__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+.tw-detail__head h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  font-weight: 400;
+}
+.tw-bar {
+  display: inline-block;
+  height: 0.55rem;
+  border-radius: 3px;
+  background: var(--accent);
+  vertical-align: middle;
+}
+.tw-never summary {
+  cursor: pointer;
+}
+.tw-never__line {
+  margin-top: 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
