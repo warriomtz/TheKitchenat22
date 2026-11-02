@@ -1211,6 +1211,10 @@ export class KitchenStore extends DurableObject {
       if (whole) out.add(key.startsWith("side:") ? "mp-side-" + key.slice(5) : key);
       for (const r of list) if (r.outId && !r.optional && blocked(r)) out.add(r.outId);
     }
+    // Side/dressing options (salad, fries, dressings...) also follow the default recipes, so an older or edited live recipe that lacks the option link can't keep selling it with the ingredient at 0.
+    for (const rules of Object.values(INV_DEFAULT.recipes || {})) {
+      for (const r of Array.isArray(rules) ? rules : []) if (r.outId && !r.optional && blocked(r)) out.add(r.outId);
+    }
     return [...out];
   }
   /** Daily shopping list: everything that is out, low, or needs cooking. */
