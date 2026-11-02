@@ -840,6 +840,14 @@ export class KitchenStore extends DurableObject {
       inv.cherry30sides = true;
       this.kvSet("kitchenInv", inv);
     }
+    // No salad and no "Complementos" (rice, beans, quinoa, soups, vegetables) anymore: qty 0 makes every dish/side that uses them show as agotado (Mario 2026-11-02). Restock in Inventario to bring them back.
+    if (!inv.noSaladNoSides) {
+      for (const it of Object.values(inv.items || {})) {
+        if (it && (it.group === "Complementos" || it === inv.items.ensalada)) { it.qty = 0; delete it.min; delete it.target; }
+      }
+      inv.noSaladNoSides = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Ranch in both burgers (30 g, beef or chicken), club sandwich and grilled cheese (40 g) (Mario 2026-11-01). Added only where the recipe has no ranch yet.
     if (!inv.ranchSandwiches) {
       for (const [k, q] of [["f-burger", 30], ["f-club", 40], ["f-grilled", 40]]) {
