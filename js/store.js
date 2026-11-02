@@ -476,6 +476,23 @@
       return data;
     },
 
+    /** Tower tab: resident names + salon visits per apartment (entered by hand). */
+    async towerView(code) {
+      const res = await fetch(apiUrl("/api/tower"), { headers: adminHeaders(code), cache: "no-store" });
+      if (!res.ok) throw new Error("tower_" + res.status);
+      return res.json();
+    },
+    async towerAction(payload, code) {
+      const res = await fetch(apiUrl("/api/tower"), {
+        method: "POST",
+        headers: adminHeaders(code, { "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "tower_" + res.status);
+      return data;
+    },
+
     /** Admin: send a Telegram test message and report what Telegram answered. */
     async telegramTest(code) {
       try {

@@ -2567,7 +2567,10 @@
       });
     }
     if (tab === "tower") {
-      if (window.TowerMap) TowerMap.render(state.orders);
+      if (window.TowerMap) {
+        TowerMap.render(state.orders);
+        TowerMap.load(ADMIN_CODE);
+      }
       loadOrders(true);
     }
     if (tab === "traffic") loadTraffic();
@@ -2682,7 +2685,13 @@
     });
     $("#catalogFilterAdm")?.addEventListener("input", () => renderCatalog());
     $("#reportRefresh")?.addEventListener("click", () => loadOrders().then(renderReport));
-    $("#towerRefresh")?.addEventListener("click", () => loadOrders().then(() => window.TowerMap && TowerMap.render(state.orders)));
+    $("#towerRefresh")?.addEventListener("click", () =>
+      loadOrders().then(() => {
+        if (!window.TowerMap) return;
+        TowerMap.render(state.orders);
+        TowerMap.load(ADMIN_CODE);
+      })
+    );
     $("#trafficRefresh")?.addEventListener("click", () => loadTraffic());
     $("#surveyRefresh")?.addEventListener("click", () => loadSurveys());
     $("#surveyCsv")?.addEventListener("click", () => downloadSurveyCsv());

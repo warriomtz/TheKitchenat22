@@ -1656,3 +1656,73 @@
   font-size: 0.85rem;
   line-height: 1.5;
 }
+
+/* Torre: esquina 18/19, nombres, visitas al salón */
+.tw-gap {
+  width: 3.4rem;
+  height: 2.9rem;
+  flex: none;
+}
+.tw-search {
+  min-width: 12rem;
+  max-width: 16rem;
+}
+.tw-name {
+  display: inline-block;
+  margin-left: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.tw-cell {
+  position: relative;
+}
+.tw-cell.has-name::after,
+.tw-dotkey {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f5f5f5;
+}
+.tw-dotkey {
+  position: static;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.2rem 0 0;
+  border: 1px solid var(--border-strong);
+}
+.tw-cell.is-dim {
+  opacity: 0.25;
+}
+.tw-cell.is-match {
+  outline: 2px solid #ffd45a;
+  outline-offset: 1px;
+}
+.tw-manual {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  margin-bottom: 0.25rem;
+}
+.tw-manual .kinv-warn,
+.tw-manual .tw-msg {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.tw-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.tw-inline input[type="text"] {
+  flex: 1;
+  min-width: 10rem;
+}
+.tw-inline input[type="number"] {
+  width: 4.2rem;
+}

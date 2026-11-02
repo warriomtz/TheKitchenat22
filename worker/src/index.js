@@ -445,11 +445,12 @@ async function notifyText(env, title, lines) {
 // ----------------------------------------------------------------- Worker
 
 const PUBLIC_GET = new Set(["/api/stock", "/api/hours", "/api/menu", "/api/announcement"]);
-const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory"]);
+const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory", "/api/tower"]);
 const POST_ROUTES = new Set([
   "/api/stock",
   "/api/bar-inventory",
   "/api/kitchen-inventory",
+  "/api/tower",
   "/api/hours",
   "/api/menu/item",
   "/api/menu/image",
@@ -2124,6 +2125,49 @@ export class KitchenStore extends DurableObject {
     this._barAlerts = [];
     return [200, { ok: true, order, inventoryAlerts, barAlerts }];
   }
+  // ---- tower: resident names + salon (dine-in) visits per apartment. Dine-in orders carry no apartment,
+  // so these are entered by hand from the admin "Torre" tab. { apts: { "3108": { name, visits: [ISO...] } } }
+  towerRead() {
+    const t = this.kvGet("tower", null);
+    return t && typeof t === "object" && t.apts && typeof t.apts === "object" ? t : { apts: {} };
+  }
+  towerAdmin(data) {
+    const act = String(data.action || "").toLowerCase();
+    const apt = String(data.apt || "").replace(/\D/g, "");
+    const floor = Number(apt.slice(0, 2));
+    const unit = Number(apt.slice(2));
+    if (apt.length !== 4 || floor < 22 || floor > 33 || unit < 1 || unit > 22 || unit === 13) {
+      return [400, { error: "bad_apartment" }];
+    }
+    const t = this.towerRead();
+    const rec = t.apts[apt] || { name: "", visits: [] };
+    if (!Array.isArray(rec.visits)) rec.visits = [];
+    if (act === "set_name") {
+      rec.name = str(data.name, 60).replace(/\s+/g, " ").trim();
+    } else if (act === "add_visit") {
+      const n = Math.max(1, Math.min(20, parseInt(data.count, 10) || 1));
+      let at = nowIso();
+      if (data.at) {
+        const ms = Date.parse(String(data.at));
+        if (!Number.isFinite(ms) || ms < Date.parse("2020-01-01") || ms > Date.now() + 86400000) {
+          return [400, { error: "bad_date" }];
+        }
+        at = new Date(ms).toISOString();
+      }
+      for (let i = 0; i < n; i++) rec.visits.push(at);
+      rec.visits.sort();
+      if (rec.visits.length > 1000) rec.visits = rec.visits.slice(-1000);
+    } else if (act === "remove_visit") {
+      rec.visits.sort();
+      rec.visits.pop();
+    } else {
+      return [400, { error: "bad_action" }];
+    }
+    if (!rec.name && !rec.visits.length) delete t.apts[apt];
+    else t.apts[apt] = rec;
+    this.kvSet("tower", t);
+    return [200, { ok: true, tower: t }];
+  }
   orderAdmin(data) {
     const act = String(data.action || "update").toLowerCase();
     if (act === "delete_completed" || act === "purge_completed") {
@@ -2321,6 +2365,8 @@ export class KitchenStore extends DurableObject {
           return [200, { inventory: this.kvGet("barInventory", {}), bar: this.barView(), autoOut: this.invAutoOut() }];
         case "/api/kitchen-inventory":
           return [200, { inventory: this.invRead(), autoOut: this.invAutoOut() }];
+        case "/api/tower":
+          return [200, { tower: this.towerRead() }];
       }
       return [404, { error: "not_found" }];
     }
@@ -2347,6 +2393,8 @@ export class KitchenStore extends DurableObject {
       }
       case "/api/kitchen-inventory":
         return this.invAdmin(data);
+      case "/api/tower":
+        return this.towerAdmin(data);
       case "/api/announcement": {
         const a = this.normalizeAnnouncement(data);
         a.updatedAt = nowIso();
