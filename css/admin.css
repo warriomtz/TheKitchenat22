@@ -1751,3 +1751,59 @@
   margin-top: 0.7rem;
   line-height: 1.45;
 }
+
+/* —— Deportes (calendario mensual) —— */
+.sp { --sp-nfl:#4f8cff; --sp-nba:#ff8a3d; --sp-f1:#ff4d5e; --sp-mx:#35c47c; --sp-mlb:#c58bff; }
+.sp-controls { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.6rem 1rem; margin-bottom:.85rem; }
+.sp-chips, .sp-views { display:flex; flex-wrap:wrap; gap:.4rem; }
+.sp-chip {
+  appearance:none; cursor:pointer; padding:.4rem .8rem; border-radius:999px; font:inherit; font-size:.85rem;
+  color:var(--text-muted); background:transparent; border:1px solid var(--border-strong,rgba(255,255,255,.2));
+}
+.sp-chip.is-on { color:#111; background:var(--accent); border-color:var(--accent); }
+.sp-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.3rem; margin-bottom:1rem; }
+.sp-dow { text-align:center; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); padding:.2rem 0; }
+.sp-day {
+  appearance:none; font:inherit; color:inherit; text-align:left; cursor:pointer;
+  min-height:5.6rem; padding:.35rem .35rem .3rem; border-radius:10px; display:flex; flex-direction:column; gap:.25rem;
+  background:var(--bg-elevated); border:1px solid var(--border); overflow:hidden;
+}
+.sp-day--off { background:transparent; border-color:transparent; cursor:default; }
+.sp-day:not(.has-ev):not(.sp-day--off) { opacity:.6; }
+.sp-day.is-today { border-color:var(--accent); }
+.sp-day.is-sel { outline:2px solid var(--accent); outline-offset:1px; }
+.sp-day__n { font-size:.85rem; font-weight:600; }
+.sp-day.is-today .sp-day__n { color:var(--accent); }
+.sp-day__chips { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.sp-day__dots { display:none; flex-wrap:wrap; gap:3px; }
+.sp-mini {
+  display:block; font-size:.66rem; line-height:1.25; padding:1px 5px; border-radius:5px; color:#0d0d0d;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;
+}
+.sp-more { font-size:.66rem; color:var(--text-muted); }
+.sp-mini--nfl, .sp-dot--nfl, .sp-tag--nfl { background:var(--sp-nfl); }
+.sp-mini--nba, .sp-dot--nba, .sp-tag--nba { background:var(--sp-nba); }
+.sp-mini--f1,  .sp-dot--f1,  .sp-tag--f1  { background:var(--sp-f1); }
+.sp-mini--mx,  .sp-dot--mx,  .sp-tag--mx  { background:var(--sp-mx); }
+.sp-mini--mlb, .sp-dot--mlb, .sp-tag--mlb { background:var(--sp-mlb); }
+.sp-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.sp-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+.sp-ev { display:flex; gap:.75rem; align-items:flex-start; padding:.55rem 0; border-bottom:1px solid var(--border); }
+.sp-ev:last-child { border-bottom:0; }
+.sp-ev__time { flex:none; width:5.2rem; font-variant-numeric:tabular-nums; color:var(--text-muted); font-size:.85rem; padding-top:.1rem; }
+.sp-ev__body { flex:1; min-width:0; display:flex; flex-direction:column; gap:.15rem; }
+.sp-ev__body small { color:var(--text-muted); font-size:.78rem; }
+.sp-ev__multi { color:var(--text-muted); font-size:.75rem; margin-left:.35rem; }
+.sp-tag { flex:none; font-size:.68rem; font-weight:700; color:#0d0d0d; padding:2px 8px; border-radius:999px; }
+.sp-agenda-day { margin-bottom:.7rem; }
+.sp-agenda-day.is-today { border-color:var(--accent); }
+.sp-agenda-day.is-past { opacity:.55; }
+.sp-hint { margin:.25rem 0 1rem; }
+.sp-foot { color:var(--text-muted); font-size:.78rem; margin:.9rem 0; }
+.sp-nextlist { margin:.4rem 0 0; padding-left:1.1rem; color:var(--text-muted); font-size:.88rem; display:flex; flex-direction:column; gap:.25rem; }
+@media (max-width: 720px) {
+  .sp-day { min-height:3.6rem; padding:.3rem; align-items:center; }
+  .sp-day__chips { display:none; }
+  .sp-day__dots { display:flex; justify-content:center; }
+  .sp-ev__time { width:4.4rem; }
+}

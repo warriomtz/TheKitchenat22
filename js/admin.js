@@ -2578,6 +2578,7 @@
       }
       loadOrders(true);
     }
+    if (tab === "sports" && window.SportsCal) SportsCal.render();
     if (tab === "traffic") loadTraffic();
     if (tab === "surveys") loadSurveys();
     if (tab === "announce") loadAnnouncementForm();
