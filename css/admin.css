@@ -1726,3 +1726,26 @@
 .tw-inline input[type="number"] {
   width: 4.2rem;
 }
+
+.tw-compare {
+  margin-bottom: 1rem;
+}
+.tw-compare__t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.tw-compare__t th,
+.tw-compare__t td {
+  text-align: left;
+  padding: 0.4rem 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+.tw-compare__t th {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.tw-compare__v {
+  margin-top: 0.7rem;
+  line-height: 1.45;
+}

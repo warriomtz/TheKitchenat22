@@ -196,6 +196,54 @@
     </div>`;
   }
 
+  /** Riga = odd floors (23, 25 … 33), Vitant = even floors (22, 24 … 32). Respects the period / dismissed filters. */
+  function compareHtml(c) {
+    const T = {
+      riga: { name: "Riga", sub: "pisos nones", units: 0, n: 0, vn: 0, pieces: 0, act: 0, v: 0 },
+      vitant: { name: "Vitant", sub: "pisos pares", units: 0, n: 0, vn: 0, pieces: 0, act: 0, v: 0 },
+    };
+    ALL_KEYS.forEach((k) => {
+      const t = Number(k.slice(0, 2)) % 2 ? T.riga : T.vitant;
+      const r = c.by.get(k);
+      t.units += 1;
+      if (!r) return;
+      t.n += r.n;
+      t.vn += r.vn;
+      t.pieces += r.pieces;
+      t.v += val(r);
+      if (r.n > 0 || r.vn > 0) t.act += 1;
+    });
+    const a = T.riga;
+    const b = T.vitant;
+    const per = (t) => (t.units ? t.v / t.units : 0);
+    const f2 = (x) => (Math.round(x * 100) / 100).toLocaleString("es-MX");
+    const pct = (t) => Math.round((t.act / t.units) * 100);
+    const lead = (x, y) => (x === y ? "Empate" : x > y ? a.name : b.name);
+    const maxV = Math.max(1, a.v, b.v);
+    const bar = (t) =>
+      `<span class="tw-bar" style="width:${Math.round((t.v / maxV) * 140)}px"></span> ${t.v}`;
+    const unmappedN = [...c.unmapped.values()].reduce((n, x) => n + x, 0);
+    const verdict =
+      a.v + b.v === 0
+        ? "Todavía no hay actividad en este periodo."
+        : `Por total (${esc(metricName().toLowerCase())}): <strong>${lead(a.v, b.v)}</strong> (${a.v} vs ${b.v}). Por depto, para compensar que una torre tiene más deptos: <strong>${lead(per(a), per(b))}</strong> (${f2(per(a))} vs ${f2(per(b))}).`;
+    return `<div class="adm-card tw-compare">
+      <h3 class="report-apt-title">Riga vs Vitant</h3>
+      <table class="tw-compare__t">
+        <tr><th></th><th>Riga <small class="adm-muted">(nones)</small></th><th>Vitant <small class="adm-muted">(pares)</small></th></tr>
+        <tr><td>${esc(metricName())}</td><td>${bar(a)}</td><td>${bar(b)}</td></tr>
+        <tr><td>Deptos</td><td>${a.units}</td><td>${b.units}</td></tr>
+        <tr><td>Deptos activos</td><td>${a.act} (${pct(a)}%)</td><td>${b.act} (${pct(b)}%)</td></tr>
+        <tr><td>Pedidos</td><td>${a.n}</td><td>${b.n}</td></tr>
+        <tr><td>Visitas al salón</td><td>${a.vn}</td><td>${b.vn}</td></tr>
+        <tr><td>Piezas</td><td>${a.pieces}</td><td>${b.pieces}</td></tr>
+        <tr><td>${esc(metricName())} por depto</td><td>${f2(per(a))}</td><td>${f2(per(b))}</td></tr>
+      </table>
+      <p class="tw-compare__v">${verdict}</p>
+      ${unmappedN ? `<p class="adm-muted">${unmappedN} pedido(s) sin ubicar no cuentan en ninguna torre.</p>` : ""}
+    </div>`;
+  }
+
   function cellHtml(floor, unit, c, max) {
     if (unit == null) return `<span class="tw-gap" aria-hidden="true"></span>`;
     const key = keyOf(floor, unit);
@@ -442,6 +490,7 @@
     root.innerHTML = [
       controlsHtml(),
       summaryHtml(stats),
+      compareHtml(c),
       mapHtml(c, max),
       detailHtml(c),
       `<div class="report-grid" style="margin-top:1rem">${topHtml(stats, c)}${coolHtml(stats, c)}${floorsHtml(c)}${unmappedHtml(c)}${neverHtml(
