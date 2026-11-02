@@ -321,7 +321,7 @@ function clientIp(request) {
 // ------------------------------------------------------- notifications
 
 function ntfyWhere(o) {
-  if (o.orderType === "dinein") return "Comer aquí";
+  if (o.orderType === "dinein") return o.apartment ? `Comer aquí · Depto ${o.apartment}` : "Comer aquí";
   if (o.orderType === "apartment") return `Para llevar · Depto ${o.apartment || "—"}`;
   if (o.orderType === "amenity") return `Para llevar · ${o.amenity || o.amenityId || "Amenidad"}`;
   return "Pedido";
@@ -2101,7 +2101,7 @@ export class KitchenStore extends DurableObject {
       createdAt: nowIso(),
       status: "open",
       orderType,
-      apartment: orderType === "apartment" ? apartment : "",
+      apartment: orderType === "apartment" || orderType === "dinein" ? apartment : "", // dine in: optional
       amenity: orderType === "amenity" ? amenity : "",
       amenityId: orderType === "amenity" ? amenityId : "",
       items,

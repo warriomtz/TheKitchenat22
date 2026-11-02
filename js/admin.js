@@ -467,7 +467,7 @@
 
   function orderTypeLabel(o) {
     if (o.orderType === "dinein")
-      return { text: "Comer aquí", cls: "k-ticket__where--dinein", ico: "🍽️", togo: false };
+      return { text: o.apartment ? `Comer aquí · Depto ${o.apartment}` : "Comer aquí", cls: "k-ticket__where--dinein", ico: "🍽️", togo: false };
     if (o.orderType === "apartment")
       return { text: `Depto ${o.apartment || "—"}`, cls: "k-ticket__where--togo", ico: "🏠", togo: true };
     if (o.orderType === "amenity") {
@@ -1429,13 +1429,18 @@
       <p class="adm-muted r-hour__hint">Pedidos por hora del día (0–23) en el periodo</p>`;
   }
 
+  /** Delivery to an apartment, or dine in with the (optional) apartment filled in. */
+  function hasAptOrder(o) {
+    return !!o && String(o.apartment || "").trim() !== "" && (o.orderType === "apartment" || o.orderType === "dinein");
+  }
+
   function fillApartmentSelect(orders) {
     const sel = $("#reportAptSelect");
     if (!sel) return;
     const prev = sel.value;
     const apts = new Set();
     (orders || []).forEach((o) => {
-      if (o.orderType === "apartment" && o.apartment) apts.add(String(o.apartment).trim());
+      if (hasAptOrder(o)) apts.add(String(o.apartment).trim());
     });
     const list = [...apts].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     sel.innerHTML =
@@ -1454,7 +1459,7 @@
       return;
     }
     const orders = (state.orders || [])
-      .filter((o) => o.orderType === "apartment" && String(o.apartment || "").trim() === apt)
+      .filter((o) => hasAptOrder(o) && String(o.apartment || "").trim() === apt)
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
     const itemCount = {};
@@ -1601,7 +1606,7 @@
     // By apartment (all-time for list, still useful)
     const byApt = {};
     all.forEach((o) => {
-      if (o.orderType !== "apartment") return;
+      if (o.orderType !== "apartment" && !hasAptOrder(o)) return;
       const apt = String(o.apartment || "—").trim() || "—";
       if (!byApt[apt]) byApt[apt] = { orders: 0, items: 0 };
       byApt[apt].orders += 1;

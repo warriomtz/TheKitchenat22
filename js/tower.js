@@ -107,14 +107,17 @@
     const rec = (key) => {
       let r = by.get(key);
       if (!r) {
-        r = { key, name: "", all: 0, allPieces: 0, n: 0, pieces: 0, first: null, last: null, orders: [], vall: 0, vn: 0, vfirst: null, vlast: null };
+        r = { key, name: "", all: 0, allPieces: 0, n: 0, pieces: 0, dnAll: 0, first: null, last: null, orders: [], vall: 0, vn: 0, vfirst: null, vlast: null };
         by.set(key, r);
       }
       return r;
     };
 
     (orders || []).forEach((o) => {
-      if (!o || o.orderType !== "apartment") return;
+      if (!o) return;
+      const dine = o.orderType === "dinein";
+      // delivery to an apartment, or dine in with the (optional) apartment filled in
+      if (o.orderType !== "apartment" && !(dine && String(o.apartment || "").trim())) return;
       if (!ui.dismissed && o.status === "dismissed") return;
       const ts = Date.parse(o.createdAt);
       if (!Number.isFinite(ts)) return;
@@ -127,6 +130,7 @@
       const r = rec(key);
       const pcs = qtyOf(o);
       r.all += 1;
+      if (dine) r.dnAll += 1;
       r.allPieces += pcs;
       r.first = r.first == null ? ts : Math.min(r.first, ts);
       r.last = r.last == null ? ts : Math.max(r.last, ts);
@@ -366,7 +370,7 @@
       <h3>Sin ubicar en la torre</h3>
       <table><tr><th>Lo que escribieron</th><th>Pedidos</th></tr>
       ${rows.map(([t, n]) => `<tr><td>${esc(t)}</td><td>${n}</td></tr>`).join("")}</table>
-      <p class="adm-muted">No coinciden con un depto de la torre (se espera 4 dígitos, ej. 3108). No cuentan en el mapa.</p></div>`;
+      <p class="adm-muted">No coinciden con un depto de la torre (se espera 4 dígitos, ej. 3108, o SK05 para el piso 33). No cuentan en el mapa.</p></div>`;
   }
 
   function detailHtml(c) {
@@ -383,7 +387,7 @@
         <label class="adm-field tw-manual__name"><span>Nombre del residente</span>
           <span class="tw-inline"><input type="text" data-tw-name maxlength="60" value="${esc(r ? r.name : "")}" placeholder="Ej. María López"${dis} />
           <button type="button" class="btn btn--primary btn--sm" data-tw-savename${dis}>Guardar</button></span></label>
-        <div class="adm-field tw-manual__visits"><span>Visitas al salón <small class="adm-muted">(consumo en el salón no registra depto)</small></span>
+        <div class="adm-field tw-manual__visits"><span>Visitas al salón <small class="adm-muted">(a mano; los pedidos de "Comer aquí" con depto ya cuentan solos como pedidos)</small></span>
           <span class="tw-inline"><input type="number" data-tw-vcount min="1" max="20" step="1" value="1" title="Cuántas visitas"${dis} />
           <input type="date" data-tw-vdate value="${todayStr()}" max="${todayStr()}" title="Fecha de la visita"${dis} />
           <button type="button" class="btn btn--primary btn--sm" data-tw-addvisit${dis}>+ Agregar</button>
@@ -410,7 +414,7 @@
     const gap = r.all > 1 ? Math.round((r.last - r.first) / DAY / (r.all - 1)) : null;
     return `<div class="adm-card tw-detail">${head}${manual}
       <div class="tw-stats" style="margin-top:0.85rem">
-        <span class="kitchen-stat">Pedidos (histórico) <strong>${r.all}</strong></span>
+        <span class="kitchen-stat">Pedidos (histórico) <strong>${r.all}</strong>${r.dnAll ? ` <small class="adm-muted">(${r.dnAll} comiendo aquí)</small>` : ""}</span>
         <span class="kitchen-stat">Piezas <strong>${r.allPieces}</strong></span>
         <span class="kitchen-stat">Visitas al salón <strong>${r.vall}</strong></span>
         ${r.firstAny != null ? `<span class="kitchen-stat">Primera vez <strong>${fmtDay(r.firstAny)}</strong></span>` : ""}

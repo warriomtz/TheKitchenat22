@@ -3026,9 +3026,13 @@ const DEFAULT_HOURS = {
     const aptField = $("#apartmentField");
     const amenityField = $("#amenityField");
     const isApartment = type === "apartment";
+    const isDineIn = type === "dinein";
     const isAmenity = type === "amenity";
+    // Dine in also asks for the apartment (optional) so the restaurant knows which residents come
+    const showApt = isApartment || isDineIn;
 
-    if (aptField) aptField.classList.toggle("is-hidden", !isApartment);
+    if (aptField) aptField.classList.toggle("is-hidden", !showApt);
+    $("#aptOptional")?.classList.toggle("is-hidden", !isDineIn);
     if (amenityField) amenityField.classList.toggle("is-hidden", !isAmenity);
 
     if (isAmenity) renderAmenityGrid();
@@ -3036,7 +3040,7 @@ const DEFAULT_HOURS = {
     // Only show stored apartment when apartment delivery is active
     const input = $("#apartmentInput");
     if (input) {
-      if (isApartment) {
+      if (showApt) {
         input.value = state.apartment || "";
         input.removeAttribute("readonly");
       } else {
@@ -3164,6 +3168,7 @@ const DEFAULT_HOURS = {
     lines.push(t("waOrderTitle"));
     if (orderType === "dinein") {
       lines.push(`📍 *${t("waService")}:* ${t("orderTypeDineIn")}`);
+      if (apartment) lines.push(`🏠 *${t("waApt")}:* ${apartment}`);
     } else if (orderType === "apartment") {
       lines.push(`🏠 *${t("waService")}:* ${t("orderTypeApartment")}`);
       if (apartment) lines.push(`🏠 *${t("waApt")}:* ${apartment}`);
@@ -3260,6 +3265,9 @@ const DEFAULT_HOURS = {
       }
     }
     let apartment = "";
+    if (state.orderType === "dinein") {
+      apartment = getApartment(); // optional
+    }
     if (state.orderType === "apartment") {
       apartment = getApartment();
       if (!apartment) {
@@ -3579,7 +3587,7 @@ const DEFAULT_HOURS = {
     const aptInput = $("#apartmentInput");
     if (aptInput) {
       aptInput.addEventListener("input", () => {
-        if (state.orderType === "apartment") {
+        if (state.orderType === "apartment" || state.orderType === "dinein") {
           getApartment();
           if (aptInput.value.trim()) setApartmentError(false);
         }
