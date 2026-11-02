@@ -57,15 +57,23 @@
       .toLowerCase()
       .trim();
 
-  /** "3108" / "31-08" -> "3108". Floor 33 is also written "SK05" (SK = sky): "SK05", "sk-5", "SK 05" -> "3305". */
+  /**
+   * The order form is free text, so people type their apartment in many ways. Understood here:
+   *  - "3108", "31-08", "31 08", "Depto 3108, Torre B"  -> 3108
+   *  - floor 33 is written with SK (sky): "SK05", "sk-5", "SK 05", "Sky 5", "Depto SK05", "05 SK" -> 3305
+   * Anything else returns null and shows up under "Sin ubicar" so you can see how it was typed.
+   */
   function parseApt(raw) {
     const text = String(raw || "").trim();
-    const sk = text.match(/^sk[\s\-_.#]*(\d{1,4})$/i);
+    if (!text) return null;
+    const sk = text.match(/\bsk[a-z]*[\s\-_.#:]*0*(\d{1,4})\b/i) || text.match(/\b0*(\d{1,2})[\s\-_.#]*sk[a-z]*\b/i);
     if (sk) {
       const d = sk[1];
       const key = d.length === 4 ? d : "33" + pad2(Number(d));
-      return d.length <= 2 && KEY_SET.has(key) ? key : d.length === 4 && KEY_SET.has(key) ? key : null;
+      return KEY_SET.has(key) ? key : null;
     }
+    const four = (text.match(/(?<!\d)\d{4}(?!\d)/g) || []).find((k) => KEY_SET.has(k));
+    if (four) return four;
     const digits = text.replace(/\D/g, "");
     return digits.length === 4 && KEY_SET.has(digits) ? digits : null;
   }
