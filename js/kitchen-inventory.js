@@ -78,11 +78,16 @@
     return !(par && par.qty != null && par.min != null && par.qty <= par.min);
   }
 
+  // "Considerar": still above the minimum, but within 50% of it, so it is worth adding to the next shopping trip (e.g. tomorrow's Costco run).
+  const CONSIDER_RATIO = 1.5;
+  const nearMin = (it) => it.qty != null && it.min != null && it.min > 0 && it.qty > it.min && it.qty <= it.min * CONSIDER_RATIO;
+
   function status(it) {
     if (it.qty == null) return ["Sin control", "kinv-chip--off"];
     if (tiedIdle(it)) return ["Se compra al cocinar", "kinv-chip--ok"];
     if (it.qty <= 0) return ["Agotado", "kinv-chip--out"];
     if (it.min != null && it.qty <= it.min) return ["Bajo", "kinv-chip--low"];
+    if (nearMin(it)) return ["Considerar", "kinv-chip--consider"];
     return ["OK", "kinv-chip--ok"];
   }
 
@@ -206,9 +211,11 @@
     const items = data.inventory.items || {};
     const isOut = (i) => i.qty != null && i.qty <= 0 && !tiedIdle(i);
     const isLow = (i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min && !tiedIdle(i);
+    const isNear = (i) => nearMin(i) && !tiedIdle(i);
+    const near = Object.values(items).filter(isNear).length;
     const out = Object.values(items).filter(isOut).length;
     const low = Object.values(items).filter(isLow).length;
-    const pass = (i) => filter === "all" || (filter === "low" && isLow(i)) || (filter === "out" && isOut(i)) || (filter === "need" && (isLow(i) || isOut(i)));
+    const pass = (i) => filter === "all" || (filter === "low" && isLow(i)) || (filter === "out" && isOut(i)) || (filter === "consider" && isNear(i)) || (filter === "need" && (isLow(i) || isOut(i)));
     const groups = {};
     const isPortion = (it) => !!(it.costFrom && items[it.costFrom]);
     const isSource = (id) => portionsOf(items, id).length > 0;
@@ -222,7 +229,7 @@
       if (visible) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
     }
     const btn = (k, label) => `<button type="button" class="kinv-filter${filter === k ? " is-active" : ""}" data-filter="${k}">${label}</button>`;
-    let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}</div><label class="kinv-cat">Categoría <select data-cat><option value="">Todas las categorías</option>${Object.entries(catCount).map(([g, n]) => `<option value="${esc(g)}"${catFilter === g ? " selected" : ""}>${esc(g)} (${n})</option>`).join("")}</select></label><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span></p>`;
+    let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}${btn("consider", "👀 Considerar (" + near + ")")}</div><label class="kinv-cat">Categoría <select data-cat><option value="">Todas las categorías</option>${Object.entries(catCount).map(([g, n]) => `<option value="${esc(g)}"${catFilter === g ? " selected" : ""}>${esc(g)} (${n})</option>`).join("")}</select></label><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span> · <span class="${near ? "is-consider" : ""}">${near} por considerar</span></p>`;
     if (!Object.keys(groups).length) html += '<p class="adm-muted">No hay ingredientes en esta vista. ✅</p>';
     for (const [g, list] of Object.entries(groups)) {
       html += `<h3 class="kinv-group">${esc(g)}</h3>` + list.map(([id, it]) => (isSource(id) ? groupCard(id, it, items, pass) : row(id, it))).join("");
