@@ -1196,7 +1196,8 @@ export class KitchenStore extends DurableObject {
     if (bar && bar.items) {
       for (const [id, it] of Object.entries(bar.items)) if (BAR_BY_ID[id] && !BAR_NO_AUTO_OUT.has(BAR_BY_ID[id].group) && it.qty != null && it.qty < 1) out.add(id);
     }
-    const inv = this.kvGet("kitchenInv", null);
+    // invRead() also runs the one-time inventory migrations, so a change like "no salad" reaches the public menu without anyone opening Inventario first.
+    const inv = this.invRead();
     if (!inv || !inv.items) return [...out];
     const blocked = (r) => {
       const it = inv.items[r.ing];
