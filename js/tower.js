@@ -28,7 +28,7 @@
 
   const ui = {
     period: "all",
-    metric: "orders",
+    metric: "both", // both = pedidos + visitas al salón (default) | orders | salon | pieces
     dismissed: false,
     sel: "",
     q: "",
@@ -162,9 +162,9 @@
     return { now, by, unmapped };
   }
 
-  const val = (r) => (!r ? 0 : ui.metric === "pieces" ? r.pieces : ui.metric === "both" ? r.n + r.vn : r.n);
-  const metricShort = () => (ui.metric === "pieces" ? "pzs." : ui.metric === "both" ? "act." : "ped.");
-  const metricName = () => (ui.metric === "pieces" ? "Piezas" : ui.metric === "both" ? "Pedidos + salón" : "Pedidos");
+  const val = (r) => (!r ? 0 : ui.metric === "pieces" ? r.pieces : ui.metric === "both" ? r.n + r.vn : ui.metric === "salon" ? r.vn : r.n);
+  const metricShort = () => (ui.metric === "pieces" ? "pzs." : ui.metric === "both" ? "act." : ui.metric === "salon" ? "vis." : "ped.");
+  const metricName = () => (ui.metric === "pieces" ? "Piezas" : ui.metric === "both" ? "Pedidos + salón" : ui.metric === "salon" ? "Visitas al salón" : "Pedidos");
   const nameTag = (r) => (r && r.name ? ` <small class="tw-name">${esc(r.name)}</small>` : "");
 
   /* —— Render pieces —— */
@@ -175,7 +175,7 @@
       `<button type="button" class="btn btn--ghost btn--sm${ui.metric === id ? " is-period-on" : ""}" data-tw-metric="${id}">${label}</button>`;
     return `<div class="tw-controls">
       <div class="report-period" role="group" aria-label="Periodo">${per("all", "Todo")}${per("30", "30 días")}${per("7", "7 días")}</div>
-      <div class="report-period" role="group" aria-label="Medir por">${met("orders", "Pedidos")}${met("pieces", "Piezas")}${met("both", "Pedidos + salón")}</div>
+      <div class="report-period" role="group" aria-label="Medir por">${met("both", "Pedidos + salón")}${met("orders", "Solo pedidos")}${met("salon", "Solo salón")}${met("pieces", "Piezas")}</div>
       <label class="adm-check"><input type="checkbox" data-tw-dismissed ${ui.dismissed ? "checked" : ""} /><span>Incluir descartados</span></label>
       <input type="search" class="adm-search tw-search" data-tw-q placeholder="Buscar depto o nombre" value="${esc(ui.q)}" autocomplete="off" />
       <span class="adm-muted" data-tw-qcount></span>
@@ -234,7 +234,7 @@
   function topHtml(stats, c) {
     const rows = stats.ranked.slice(0, 10);
     return `<div class="report-card">
-      <h3>Quién más ${ui.metric === "both" ? "viene y pide" : "pide"}</h3>
+      <h3>Quién más ${ui.metric === "both" ? "viene y pide" : ui.metric === "salon" ? "viene al salón" : "pide"}</h3>
       <table><tr><th>Depto</th><th>Pedidos</th><th>Salón</th><th>Último</th></tr>
       ${
         rows.length
@@ -474,7 +474,8 @@
       const r = await KitchenStore.towerAction(payload, ui.code);
       if (r && r.tower && r.tower.apts) ui.tower = r.tower;
       ui.towerOk = true;
-      ui.msg = okMsg;
+      const rec = ui.tower.apts && ui.tower.apts[payload.apt];
+      ui.msg = payload.action === "set_name" ? okMsg : `${okMsg} Total en el salón: ${rec ? rec.visits.length : 0}.`;
     } catch (e) {
       ui.msg = "No se pudo guardar" + (e && e.message ? ` (${e.message})` : "") + ".";
       if (/_404$|failed|fetch/i.test((e && e.message) || "")) ui.towerOk = false;
