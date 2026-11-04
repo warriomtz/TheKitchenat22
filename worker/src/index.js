@@ -1766,6 +1766,20 @@ export class KitchenStore extends DurableObject {
       this.kvSet("photos2610", true);
     }
   }
+  /** One-time (2026-11-04): Bagel pizza and Salmón con ensalada y papas gajo are no longer "Nuevo". */
+  seedUnNew1104(menu) {
+    if (this.kvGet("unNew1104", false)) return;
+    let n = 0;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) if (it.id === "f-bagel-pizza" || it.id === "f-salmon-plate") { it.isNew = false; n++; }
+      }
+    }
+    if (n >= 2) {
+      this.kvSet("menu", menu);
+      this.kvSet("unNew1104", true);
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2385,6 +2399,7 @@ export class KitchenStore extends DurableObject {
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
           this.seedPhotos2610(menu);
+          this.seedUnNew1104(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);

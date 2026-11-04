@@ -586,7 +586,6 @@
             "flags": [
               "side"
             ],
-            "isNew": true,
             "img": "assets/products/f-bagel-pizza.jpg"
           },
           {
@@ -605,7 +604,6 @@
             "price": 300,
             "notes": "",
             "flags": [],
-            "isNew": true,
             "img": "assets/products/f-salmon-plate.jpg"
           },
           {
