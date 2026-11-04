@@ -167,7 +167,7 @@ const INV_DEFAULT = {
     "papas-gajo": { name: "Papas gajo", unit: "g", group: "Papas", qty: 1900, min: 500 },
     waffle: { name: "Waffle", unit: "unidades", group: "Panes", qty: 1, min: null },
     "verduras-salteadas": { name: "Verduras salteadas", unit: "g", group: "Complementos", qty: 510, min: 600 },
-    boneless: { name: "Boneless", unit: "g", group: "Pollo", qty: 1900, min: 600 },
+    boneless: { name: "Boneless", unit: "g", group: "Proteínas", qty: 1900, min: 600 },
     "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
@@ -896,6 +896,12 @@ export class KitchenStore extends DurableObject {
       if (!inv.items["recipiente-llevar"]) inv.items["recipiente-llevar"] = { name: "Recipiente para llevar 7x7", unit: "piezas", group: "Empaques", qty: 82, min: 10, presentation: "Biodegradable plano 7x7" };
       if (!inv.recipes["order:takeout"]) inv.recipes["order:takeout"] = [{ ing: "recipiente-llevar", qty: TAKEOUT_BOXES_PER_DISH }];
       inv.takeoutBoxes = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Boneless moved to the Proteínas group (Mario 2026-11-03). One-time, flag-guarded.
+    if (!inv.bonelessProteinas) {
+      if (inv.items.boneless && inv.items.boneless.group === "Pollo") inv.items.boneless.group = "Proteínas";
+      inv.bonelessProteinas = true;
       this.kvSet("kitchenInv", inv);
     }
     return inv;
