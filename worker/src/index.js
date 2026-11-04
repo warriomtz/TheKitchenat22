@@ -199,6 +199,7 @@ const INV_DEFAULT = {
     "arroz-crudo": { name: "Arroz sin hacer (crudo)", unit: "g", group: "Complementos", qty: 2000, min: 250 },
     frijol: { name: "Frijol", unit: "unidades", group: "Complementos", qty: 3, min: 1 },
     quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
+    "rollos-primavera": { name: "Rollos primavera de vegetales", unit: "piezas", group: "Complementos", qty: 46, min: 10, supplier: "Costco", presentation: "paquete", packText: "50 piezas", packQty: 50 },
     "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
     "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
   },
@@ -257,6 +258,7 @@ const INV_DEFAULT = {
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
+    "side:rollosPrimavera": [{ ing: "rollos-primavera", qty: 5 }],
     "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "parmesano", qty: 50 }],
     "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }, { ing: "parmesano", qty: 50 }],
   },
@@ -888,6 +890,14 @@ export class KitchenStore extends DurableObject {
         if (g.packQty == null) Object.assign(g, { presentation: g.presentation || "Porción (2 aguacates)", packText: "1 porción", packQty: 1 });
       }
       inv.guacClean = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Rollos primavera de vegetales (Mario 2026-11-04): new first bowl side, 5 pieces per portion, 50 per pack, 46 on hand.
+    if (!inv.rollosPrimavera) {
+      if (!inv.items["rollos-primavera"]) inv.items["rollos-primavera"] = { name: "Rollos primavera de vegetales", unit: "piezas", group: "Complementos", qty: 46, min: 10, supplier: "Costco", presentation: "paquete", packText: "50 piezas", packQty: 50 };
+      inv.recipes = inv.recipes || {};
+      inv.recipes["side:rollosPrimavera"] = [{ ing: "rollos-primavera", qty: 5 }];
+      inv.rollosPrimavera = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
