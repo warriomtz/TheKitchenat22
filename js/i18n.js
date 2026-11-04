@@ -6,7 +6,8 @@ window.KITCHEN_I18N = {
   es: {
     navMealPrep: "Meal Prep",
     mealprepTag: "Meal Prep",
-    mealprepDesc: "Pre-ordena para otro día o pídelo ahora.",
+    mealprepTitle: "Bowls de comida",
+    mealprepDesc: "1 proteína + 2 complementos, servido caliente. Pídelo ahora o pre-ordena para otro día.",
     badgeNewTag: "NUEVO",
     mpNowTitle: "Pídelo ahora",
     mpNowDesc: "Lo preparamos en este momento.",
@@ -405,7 +406,8 @@ window.KITCHEN_I18N = {
   en: {
     navMealPrep: "Meal Prep",
     mealprepTag: "Meal Prep",
-    mealprepDesc: "Pre-order for another day or order it now.",
+    mealprepTitle: "Food Bowls",
+    mealprepDesc: "1 protein + 2 sides, served hot. Order now or pre-order for another day.",
     badgeNewTag: "NEW",
     mpNowTitle: "Order now",
     mpNowDesc: "We prepare it right away.",
@@ -804,7 +806,8 @@ window.KITCHEN_I18N = {
   ja: {
     navMealPrep: "ミールプレップ",
     mealprepTag: "ミールプレップ",
-    mealprepDesc: "別の日に予約、またはいますぐ注文。",
+    mealprepTitle: "フードボウル",
+    mealprepDesc: "メイン1品＋サイド2品、温かい状態でお出しします。いますぐ注文、または別の日に予約。",
     badgeNewTag: "新登場",
     mpNowTitle: "いますぐ注文",
     mpNowDesc: "すぐにご用意します。",
