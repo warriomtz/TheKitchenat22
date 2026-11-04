@@ -1780,6 +1780,20 @@ export class KitchenStore extends DurableObject {
       this.kvSet("unNew1104", true);
     }
   }
+  /** One-time (2026-11-04): "Papas con queso amarillo suave" gets the "Nuevo" label. */
+  seedNewFries1104(menu) {
+    if (this.kvGet("newFries1104", false)) return;
+    let n = 0;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) if (it.id === "f-papas-queso") { it.isNew = true; n++; }
+      }
+    }
+    if (n >= 1) {
+      this.kvSet("menu", menu);
+      this.kvSet("newFries1104", true);
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2400,6 +2414,7 @@ export class KitchenStore extends DurableObject {
           this.seedCheeseFries(menu);
           this.seedPhotos2610(menu);
           this.seedUnNew1104(menu);
+          this.seedNewFries1104(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);
