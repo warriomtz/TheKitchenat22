@@ -845,7 +845,7 @@ const DEFAULT_HOURS = {
   }
 
   /* ---------- Meal Prep (pre-order / order now) ---------- */
-  const MEALPREP_SIDES = ["ensalada", "arroz", "frijol", "quinoa", "sopaTomate", "cremaEspinacas", "vegetales"];
+  const MEALPREP_SIDES = ["rollosPrimavera", "ensalada", "arroz", "frijol", "quinoa", "sopaTomate", "cremaEspinacas", "vegetales"];
   // No minimum notice anymore (Mario 2026-11-02): scheduling is allowed for any moment that is not already in the past.
   const MEALPREP_MIN_LEAD_HOURS = 0;
   const MEALPREP_MAX_DAYS = 14;
@@ -2035,9 +2035,10 @@ const DEFAULT_HOURS = {
               const pic = o.img
                 ? `<img class="chip__img" src="${escapeHtml(o.img)}" alt="" loading="lazy" />`
                 : "";
+              const newTag = o.isNew ? `<em class="chip__new">${escapeHtml(t("badgeNew"))}</em>` : "";
               return `<button type="button" class="chip${o.img ? " chip--img" : ""}${disabled ? " is-disabled" : ""}" data-value="${escapeHtml(
                 o.k
-              )}" aria-checked="false"${disabled ? " disabled aria-disabled=\"true\"" : ""}>${pic}${escapeHtml(o.v)}${
+              )}" aria-checked="false"${disabled ? " disabled aria-disabled=\"true\"" : ""}>${newTag}${pic}${escapeHtml(o.v)}${
                 disabled ? ` · ${escapeHtml(t("outOfStock"))}` : ""
               }${
                 qty && !disabled
@@ -2192,6 +2193,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
+          isNew: k === "rollosPrimavera",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: 2, hint: t("mpSidesHint") }

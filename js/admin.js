@@ -166,6 +166,7 @@
   }
 
   const MEALPREP_SIDES = [
+    { k: "rollosPrimavera", stockId: "mp-side-rollosPrimavera", label: "Rollos primavera" },
     { k: "ensalada", stockId: "mp-side-ensalada", label: "Ensalada" },
     { k: "arroz", stockId: "mp-side-arroz", label: "Arroz" },
     { k: "frijol", stockId: "mp-side-frijol", label: "Frijol" },

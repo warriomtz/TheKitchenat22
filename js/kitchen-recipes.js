@@ -13,6 +13,7 @@
   const num = (n) => String(Math.round(n * 100) / 100);
 
   const SIDE_LABELS = {
+    rollosPrimavera: "Rollos primavera",
     ensalada: "Ensalada",
     arroz: "Arroz",
     frijol: "Frijol",

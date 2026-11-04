@@ -10,6 +10,7 @@
     String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   const SIDE_LABELS = {
+    rollosPrimavera: "Rollos primavera",
     ensalada: "Ensalada",
     arroz: "Arroz",
     frijol: "Frijol",
