@@ -159,7 +159,7 @@ const INV_DEFAULT = {
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
     pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookFrom: "pasta-cruda", cookLabel: "🍝 Ya cociné pasta", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
     "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "porciones", group: "Pastas", qty: 6, min: null, target: 6 },
-    guacamole: { name: "Guacamole", unit: "porciones", group: "Entradas", qty: 2, min: 1, target: 2 },
+    guacamole: { name: "Guacamole", unit: "porciones", group: "Verdura", qty: 2, min: 1, target: 2 },
     "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
     "queso-suizo": { name: "Queso suizo", unit: "rebanadas", group: "Lácteos", qty: 37, min: 10 },
     salami: { name: "Salami", unit: "g", group: "Carnes frías", qty: 220, min: 36 },
@@ -176,7 +176,7 @@ const INV_DEFAULT = {
     "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
     ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: 160 },
     chips: { name: "Papas fritas (chips)", unit: "g", group: "Papas", qty: 600, min: 200 },
-    totopos: { name: "Totopos", unit: "g", group: "Entradas", qty: 820, min: 140 },
+    totopos: { name: "Totopos", unit: "g", group: "Snacks", qty: 820, min: 140 },
     "zanahoria-baby": { name: "Zanahoria baby", unit: "g", group: "Verdura", qty: 1870, min: 200 },
     "tomate-cherry": { name: "Tomate cherry", unit: "g", group: "Verdura", qty: 200, min: 230 },
     parmesano: { name: "Queso parmesano", unit: "g", group: "Lácteos", qty: 650, min: 150 },
@@ -902,6 +902,13 @@ export class KitchenStore extends DurableObject {
     if (!inv.bonelessProteinas) {
       if (inv.items.boneless && inv.items.boneless.group === "Pollo") inv.items.boneless.group = "Proteínas";
       inv.bonelessProteinas = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Guacamole -> Verdura, Totopos -> Snacks (Mario 2026-11-03). One-time, flag-guarded.
+    if (!inv.guacVerduraTotoposSnacks) {
+      if (inv.items.guacamole && inv.items.guacamole.group === "Entradas") inv.items.guacamole.group = "Verdura";
+      if (inv.items.totopos && inv.items.totopos.group === "Entradas") inv.items.totopos.group = "Snacks";
+      inv.guacVerduraTotoposSnacks = true;
       this.kvSet("kitchenInv", inv);
     }
     return inv;
