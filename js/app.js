@@ -2193,7 +2193,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "rollosPrimavera",
+          isNew: k === "rollosPrimavera" || k === "edamames",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: 2, hint: t("mpSidesHint") }

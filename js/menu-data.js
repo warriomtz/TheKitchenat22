@@ -150,10 +150,10 @@ window.KITCHEN_MENU = {
       Street: {
         label: "Street food",
         items: [
+          { id: "f-edamames", name: "Edamames preparados", price: 99, notesKey: "edamamesNote", flags: [], isNew: true, img: "" },
           { id: "f-papas-queso", name: "Papas con queso amarillo suave", price: 119, notes: "", flags: [], isNew: true, img: "assets/products/f-papas-queso.jpg" },
           { id: "f-papas-t", name: "Papas trufadas", price: 99, notes: "", flags: [], img: "assets/products/f-papas-t.jpg" },
           { id: "f-papas-g", name: "Papas gajo picantes", price: 99, notes: "", flags: [], img: "assets/products/f-papas-g.jpg" },
-          { id: "f-edamames", name: "Edamames preparados", price: 99, notesKey: "edamamesNote", flags: [], isNew: true, img: "" },
           { id: "f-guac", name: "Guacamole", price: 130, notes: "", flags: [], img: "assets/products/f-guac.jpg" },
           { id: "f-tacos", name: "Tacos callejeros (orden de 4)", price: 135, notesKey: "tacosNote", flags: ["tacos"], img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=640&h=640&fit=crop&q=80" },
           { id: "f-boneless", name: "Boneless", price: 165, notes: "", flags: ["boneless"], img: "assets/products/f-boneless.jpg" },

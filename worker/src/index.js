@@ -1816,20 +1816,20 @@ export class KitchenStore extends DurableObject {
       this.kvSet("newFries1104", true);
     }
   }
-  /** One-time (2026-11-05): "Edamames preparados" plate ($99) in Street food, right before Guacamole. */
+  /** One-time (2026-11-05): "Edamames preparados" plate ($99) in Street food, first, right before Papas con queso. Moves it if an earlier seed placed it elsewhere. */
   seedEdamames1105(menu) {
-    if (this.kvGet("edamames1105", false)) return;
+    if (this.kvGet("edamames1105b", false)) return;
     for (const cat of Object.values(menu || {})) {
       for (const sb of Object.values((cat && cat.subcategories) || {})) {
         const items = sb.items || [];
-        const idx = items.findIndex((i) => i.id === "f-guac");
-        if (idx < 0) continue;
-        if (!items.some((i) => i.id === "f-edamames")) {
-          items.splice(idx, 0, { id: "f-edamames", name: "Edamames preparados", price: 99, notes: "", notesKey: "edamamesNote", flags: [], isNew: true, img: "", name_en: "Seasoned edamame", name_ja: "味付け枝豆" });
-          sb.items = items;
-        }
+        if (!items.some((i) => i.id === "f-papas-queso")) continue;
+        let it = items.find((i) => i.id === "f-edamames");
+        const rest = items.filter((i) => i.id !== "f-edamames");
+        if (!it) it = { id: "f-edamames", name: "Edamames preparados", price: 99, notes: "", notesKey: "edamamesNote", flags: [], isNew: true, img: "", name_en: "Seasoned edamame", name_ja: "味付け枝豆" };
+        rest.splice(rest.findIndex((i) => i.id === "f-papas-queso"), 0, it);
+        sb.items = rest;
         this.kvSet("menu", menu);
-        this.kvSet("edamames1105", true);
+        this.kvSet("edamames1105b", true);
         return;
       }
     }
