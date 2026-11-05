@@ -150,7 +150,7 @@ window.KITCHEN_MENU = {
       Street: {
         label: "Street food",
         items: [
-          { id: "f-edamames", name: "Edamames preparados", price: 99, notesKey: "edamamesNote", flags: [], isNew: true, img: "" },
+          { id: "f-edamames", name: "Edamames preparados", price: 99, notesKey: "edamamesNote", flags: [], isNew: true, img: "assets/products/f-edamames.jpg" },
           { id: "f-papas-queso", name: "Papas con queso amarillo suave", price: 119, notes: "", flags: [], isNew: true, img: "assets/products/f-papas-queso.jpg" },
           { id: "f-papas-t", name: "Papas trufadas", price: 99, notes: "", flags: [], img: "assets/products/f-papas-t.jpg" },
           { id: "f-papas-g", name: "Papas gajo picantes", price: 99, notes: "", flags: [], img: "assets/products/f-papas-g.jpg" },
