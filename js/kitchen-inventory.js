@@ -11,6 +11,7 @@
 
   const SIDE_LABELS = {
     rollosPrimavera: "Rollos primavera",
+    edamames: "Edamames preparados",
     ensalada: "Ensalada",
     arroz: "Arroz",
     frijol: "Frijol",
@@ -29,6 +30,7 @@
     "f-club": "Club sandwich",
     "f-burger": "Hamburguesa",
     "f-pechuga-pomodoro": "Pechuga Pomodoro",
+    "f-edamames": "Edamames preparados",
     "f-guac": "Guacamole",
     "f-empanadas": "Empanadas (papas a la francesa)",
     "f-papas-t": "Papas trufadas",

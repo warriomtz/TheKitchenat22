@@ -199,6 +199,7 @@ const INV_DEFAULT = {
     "arroz-crudo": { name: "Arroz sin hacer (crudo)", unit: "g", group: "Complementos", qty: 2000, min: 250 },
     frijol: { name: "Frijol", unit: "unidades", group: "Complementos", qty: 3, min: 1 },
     quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
+    edamames: { name: "Edamames preparados", unit: "g", group: "Verdura", qty: 1900, min: 440 },
     "rollos-primavera": { name: "Rollos primavera de vegetales", unit: "piezas", group: "Complementos", qty: 46, min: 10, supplier: "Costco", presentation: "paquete", packText: "50 piezas", packQty: 50 },
     "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
     "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
@@ -258,6 +259,8 @@ const INV_DEFAULT = {
     "side:arroz": [{ ing: "arroz", qty: 1 }],
     "side:frijol": [{ ing: "frijol", qty: 1 }],
     "side:quinoa": [{ ing: "quinoa", qty: 1 }],
+    "side:edamames": [{ ing: "edamames", qty: 100 }],
+    "f-edamames": [{ ing: "edamames", qty: 220 }],
     "side:rollosPrimavera": [{ ing: "rollos-primavera", qty: 5 }],
     "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "parmesano", qty: 50 }],
     "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }, { ing: "parmesano", qty: 50 }],
@@ -898,6 +901,15 @@ export class KitchenStore extends DurableObject {
       inv.recipes = inv.recipes || {};
       inv.recipes["side:rollosPrimavera"] = [{ ing: "rollos-primavera", qty: 5 }];
       inv.rollosPrimavera = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Edamames preparados (Mario 2026-11-05): 1.9 kg on hand; 100 g per bowl side, 220 g per Street-food plate.
+    if (!inv.edamames1105) {
+      if (!inv.items.edamames) inv.items.edamames = { name: "Edamames preparados", unit: "g", group: "Verdura", qty: 1900, min: 440 };
+      inv.recipes = inv.recipes || {};
+      inv.recipes["side:edamames"] = [{ ing: "edamames", qty: 100 }];
+      inv.recipes["f-edamames"] = [{ ing: "edamames", qty: 220 }];
+      inv.edamames1105 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
@@ -1804,6 +1816,24 @@ export class KitchenStore extends DurableObject {
       this.kvSet("newFries1104", true);
     }
   }
+  /** One-time (2026-11-05): "Edamames preparados" plate ($99) in Street food, right before Guacamole. */
+  seedEdamames1105(menu) {
+    if (this.kvGet("edamames1105", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-guac");
+        if (idx < 0) continue;
+        if (!items.some((i) => i.id === "f-edamames")) {
+          items.splice(idx, 0, { id: "f-edamames", name: "Edamames preparados", price: 99, notes: "", notesKey: "edamamesNote", flags: [], isNew: true, img: "", name_en: "Seasoned edamame", name_ja: "味付け枝豆" });
+          sb.items = items;
+        }
+        this.kvSet("menu", menu);
+        this.kvSet("edamames1105", true);
+        return;
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2425,6 +2455,7 @@ export class KitchenStore extends DurableObject {
           this.seedPhotos2610(menu);
           this.seedUnNew1104(menu);
           this.seedNewFries1104(menu);
+          this.seedEdamames1105(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);

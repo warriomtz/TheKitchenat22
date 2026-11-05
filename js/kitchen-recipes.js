@@ -14,6 +14,7 @@
 
   const SIDE_LABELS = {
     rollosPrimavera: "Rollos primavera",
+    edamames: "Edamames preparados",
     ensalada: "Ensalada",
     arroz: "Arroz",
     frijol: "Frijol",
