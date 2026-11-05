@@ -1788,6 +1788,22 @@ export class KitchenStore extends DurableObject {
       this.kvSet("photos2610", true);
     }
   }
+  /** One-time (2026-11-05): Boneless price 165 -> 169 (extras stay as they are). */
+  seedBonelessPrice1105(menu) {
+    if (this.kvGet("bonelessPrice1105", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-boneless") {
+            it.price = 169;
+            this.kvSet("menu", menu);
+            this.kvSet("bonelessPrice1105", true);
+            return;
+          }
+        }
+      }
+    }
+  }
   /** One-time (2026-11-05): photo for "Edamames preparados". */
   seedEdamamesPhoto1105(menu) {
     if (this.kvGet("edamamesPhoto1105", false)) return;
@@ -2473,6 +2489,7 @@ export class KitchenStore extends DurableObject {
           this.seedNewFries1104(menu);
           this.seedEdamames1105(menu);
           this.seedEdamamesPhoto1105(menu);
+          this.seedBonelessPrice1105(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);

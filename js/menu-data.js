@@ -156,7 +156,7 @@ window.KITCHEN_MENU = {
           { id: "f-papas-g", name: "Papas gajo picantes", price: 99, notes: "", flags: [], img: "assets/products/f-papas-g.jpg" },
           { id: "f-guac", name: "Guacamole", price: 130, notes: "", flags: [], img: "assets/products/f-guac.jpg" },
           { id: "f-tacos", name: "Tacos callejeros (orden de 4)", price: 135, notesKey: "tacosNote", flags: ["tacos"], img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=640&h=640&fit=crop&q=80" },
-          { id: "f-boneless", name: "Boneless", price: 165, notes: "", flags: ["boneless"], img: "assets/products/f-boneless.jpg" },
+          { id: "f-boneless", name: "Boneless", price: 169, notes: "", flags: ["boneless"], img: "assets/products/f-boneless.jpg" },
           { id: "f-grilled", name: "Grilled cheese sandwich", price: 135, notesKey: "includesSide", flags: ["side"], img: "assets/products/f-grilled.jpg" },
           { id: "f-club", name: "Club sandwich", price: 175, notesKey: "includesSide", flags: ["side", "chipsUpgrade"], img: "assets/products/f-club.jpg" },
           { id: "f-bagel-pizza", name: "Bagel pizza", price: 140, notesKey: "includesSide", flags: ["side"], img: "assets/products/f-bagel-pizza.jpg" },
