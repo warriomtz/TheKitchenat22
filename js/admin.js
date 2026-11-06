@@ -1416,19 +1416,30 @@
   }
 
   function hourChartHtml(byHour) {
-    const max = Math.max(1, ...byHour);
-    const cells = byHour
-      .map((v, h) => {
+    // Only the service window (open → close) plus one hour either side; anything outside is summed in the hint.
+    const h = state.hours || DEFAULT_HOURS;
+    const startOf = (hhmm, fallback) => {
+      const n = parseInt(String(hhmm || "").slice(0, 2), 10);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const from = Math.max(0, startOf(h.open, 14) - 1);
+    const to = Math.min(23, startOf(h.close, 21) + 1);
+    const shown = byHour.slice(from, to + 1);
+    const outside = byHour.reduce((a, v) => a + v, 0) - shown.reduce((a, v) => a + v, 0);
+    const max = Math.max(1, ...shown);
+    const cells = shown
+      .map((v, k) => {
+        const hr = from + k;
         const pct = Math.round((v / max) * 100);
-        const hh = String(h).padStart(2, "0");
+        const hh = String(hr).padStart(2, "0");
         return `<div class="r-hour__cell" title="${hh}:00 — ${v} pedidos">
           <div class="r-hour__bar" style="height:${Math.max(v ? 8 : 2, pct)}%"></div>
-          <span class="r-hour__h">${h % 3 === 0 ? hh : ""}</span>
+          <span class="r-hour__h">${hh}</span>
         </div>`;
       })
       .join("");
-    return `<div class="r-hour">${cells}</div>
-      <p class="adm-muted r-hour__hint">Pedidos por hora del día (0–23) en el periodo</p>`;
+    return `<div class="r-hour" style="grid-template-columns:repeat(${shown.length},1fr)">${cells}</div>
+      <p class="adm-muted r-hour__hint">Pedidos por hora (${String(from).padStart(2, "0")}:00–${String(to).padStart(2, "0")}:59) en el periodo${outside ? ` · ${outside} fuera de este rango` : ""}</p>`;
   }
 
   /** Delivery to an apartment, or dine in with the (optional) apartment filled in. */
