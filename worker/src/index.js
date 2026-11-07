@@ -157,8 +157,8 @@ const INV_DEFAULT = {
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
     "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
     bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
-    pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookFrom: "pasta-cruda", cookLabel: "🍝 Ya cociné pasta", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
-    "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "porciones", group: "Pastas", qty: 6, min: null, target: 6 },
+    pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookRatio: 1 / 6, cookFrom: "pasta-cruda", cookLabel: "🍝 Ya cociné pasta", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
+    "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "paquetes", group: "Pastas", qty: 2, min: null },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Verdura", qty: 2, min: 1, target: 2 },
     "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
     "queso-suizo": { name: "Queso suizo", unit: "rebanadas", group: "Lácteos", qty: 37, min: 10 },
@@ -912,6 +912,19 @@ export class KitchenStore extends DurableObject {
       inv.edamames1105 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Pasta (Mario 2026-11-06): raw pasta counts CLOSED PACKAGES (1 package = 6 cooked portions); buy when it reaches 0. Cooked pasta keeps its minimum of 2.
+    if (!inv.pastaPaquetes1106) {
+      const raw = inv.items["pasta-cruda"];
+      const cooked = inv.items.pasta;
+      if (raw && cooked) {
+        raw.unit = "paquetes";
+        raw.min = null;
+        delete raw.target;
+        cooked.cookRatio = 1 / 6;
+        inv.pastaPaquetes1106 = true;
+        this.kvSet("kitchenInv", inv);
+      }
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
@@ -1495,8 +1508,7 @@ export class KitchenStore extends DurableObject {
       if (raw.qty != null) raw.qty = Math.round((raw.qty - n * ratio) * 100) / 100;
       const alerts = [];
       if (it.cookFrom === "pasta-cruda") {
-        const rawTarget = raw.target || it.target || 6;
-        if (raw.qty == null || raw.qty < rawTarget) alerts.push(`🛒 COMPRAR otro paquete de pasta: quedan ${raw.qty ?? 0} sin hacer (meta ${rawTarget}).`);
+        if (raw.qty == null || raw.qty <= 0.0001) alerts.push("🛒 COMPRAR paquete de pasta: ya no quedan paquetes cerrados.");
       } else if (raw.min != null && raw.qty != null && raw.qty <= raw.min && (rawBefore == null || rawBefore > raw.min)) {
         alerts.push(`⚠️ Inventario bajo: ${raw.name} · quedan ${raw.qty} ${raw.unit || ""}`.trim());
       }
