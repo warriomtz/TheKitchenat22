@@ -1817,12 +1817,15 @@
 .tw-cell.is-vacant .tw-u { color: #ff6b6b; font-weight: 700; }
 .tw-vacant-stat strong { color: #ff6b6b; }
 
-/* Torre: studios (units 02, 03, 05, 14, 17 on floors 23-32) get a blue outline; "Solo estudios" dims the rest */
-.tw-cell.is-studio {
-  outline: 2px solid #4da3ff;
-  outline-offset: -2px;
-}
+/* Torre: apartment types (floors 23-32): outline color per type; selecting one type dims the rest */
+.tw-cell.is-t-E { outline: 2px solid #4da3ff; outline-offset: -2px; }
+.tw-cell.is-t-1 { outline: 2px solid #5ccf7a; outline-offset: -2px; }
+.tw-cell.is-t-2 { outline: 2px solid #f0b429; outline-offset: -2px; }
+.tw-cell.is-t-3 { outline: 2px solid #c08bff; outline-offset: -2px; }
 .tw-cell.is-nonstudio { opacity: 0.22; }
-.tw-studio-stat strong { color: #4da3ff; }
+.tw-typetable { margin-top: 0.8rem; overflow-x: auto; }
+.tw-typetable table { width: 100%; font-size: 0.85rem; }
+.tw-typetable .tw-legend__sw { display: inline-block; vertical-align: middle; }
 
 .tw-mapopts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-bottom: 0.6rem; }
+.tw-mapopts select { width: auto; max-width: 14rem; }

@@ -31,8 +31,8 @@
     metric: "both", // both = pedidos + visitas al salón (default) | orders | salon | pieces
     dismissed: false,
     sel: "",
-    studios: false, // optional building view (not about the restaurant): off by default
-    studiosOnly: false,
+    types: false, // optional building view by apartment type (not about the restaurant): off by default
+    typeSel: "all", // all | E | 1 | 2 | 3
     q: "",
     sig: "",
     code: "",
@@ -194,7 +194,6 @@
       <span class="kitchen-stat">Han pedido <strong>${stats.ordered}</strong> de ${ALL_KEYS.length} (${Math.round((stats.ordered / ALL_KEYS.length) * 100)}%)</span>
       <span class="kitchen-stat">Visitan el salón <strong>${stats.salon}</strong></span>
       ${vacantCount(ALL_KEYS) ? `<span class="kitchen-stat tw-vacant-stat">Vacíos <strong>${vacantCount(ALL_KEYS)}</strong></span>` : ""}
-      ${ui.studios ? `<span class="kitchen-stat tw-studio-stat">Estudios <strong>${STUDIO_KEYS.length}</strong> · vacíos <strong>${studioStats(ALL_KEYS).vac}</strong></span>` : ""}
       ${ui.period === "all" ? "" : `<span class="kitchen-stat">En el periodo <strong>${stats.activeKeys.length}</strong> (${Math.round((stats.activeKeys.length / ALL_KEYS.length) * 100)}%)</span>`}
       <span class="kitchen-stat">Ni pedido ni salón <strong>${ALL_KEYS.length - stats.everKeys.length}</strong></span>
       <span class="kitchen-stat">Recurrentes (2+) <strong>${stats.repeat}</strong></span>
@@ -252,14 +251,33 @@
     </div>`;
   }
 
-  /* Studios (Mario 2026-11-07): units 02, 03, 05, 14, 17 on floors 23-32 (none on 22 or 33), Riga or Vitant. Only for his own view of the building; unrelated to orders. */
-  const STUDIO_UNITS = new Set([2, 3, 5, 14, 17]);
-  const isStudio = (key) => Number(key.slice(0, 2)) >= 23 && Number(key.slice(0, 2)) <= 32 && STUDIO_UNITS.has(Number(key.slice(2)));
-  const STUDIO_KEYS = ALL_KEYS.filter(isStudio);
-  const studioStats = (keys) => {
-    const s = keys.filter(isStudio);
-    return { n: s.length, vac: s.filter(isVacant).length };
+  /* Apartment types (Mario 2026-11-07), floors 23-32 only (22 and 33 excluded), Riga or Vitant.
+     Unit numbers: studio 02,03,05,14,17 · 1BR 07,08,12,15,20 · 3BR 19 · 2BR = all the rest. Only for his own view of the building; unrelated to orders. */
+  const TYPES = [
+    { id: "E", label: "Estudio", color: "#4da3ff" },
+    { id: "1", label: "1 recámara", color: "#5ccf7a" },
+    { id: "2", label: "2 recámaras", color: "#f0b429" },
+    { id: "3", label: "3 recámaras", color: "#c08bff" },
+  ];
+  const TYPE_UNITS = { E: [2, 3, 5, 14, 17], 1: [7, 8, 12, 15, 20], 3: [19] };
+  const typeOf = (key) => {
+    const f = Number(key.slice(0, 2));
+    if (f < 23 || f > 32) return null;
+    const u = Number(key.slice(2));
+    for (const id of ["E", "1", "3"]) if (TYPE_UNITS[id].includes(u)) return id;
+    return "2";
   };
+  const TYPE_KEYS = {};
+  TYPES.forEach((t) => (TYPE_KEYS[t.id] = ALL_KEYS.filter((k) => typeOf(k) === t.id)));
+  const typeStats = (keys) => {
+    const o = {};
+    TYPES.forEach((t) => {
+      const ks = keys.filter((k) => typeOf(k) === t.id);
+      o[t.id] = { n: ks.length, vac: ks.filter(isVacant).length };
+    });
+    return o;
+  };
+  const typeShort = (id) => ({ E: "est.", 1: "1 rec.", 2: "2 rec.", 3: "3 rec." })[id];
 
   const isVacant = (key) => !!(ui.tower && ui.tower.vacant && ui.tower.vacant[key]);
   const vacantCount = (keys) => keys.filter(isVacant).length;
@@ -272,13 +290,13 @@
     const level = v <= 0 ? 0 : max <= 1 ? 3 : 1 + Math.min(4, Math.floor(4 * Math.sqrt((v - 1) / (max - 1))));
     const parts = [key + (r && r.name ? " · " + r.name : "")];
     if (isVacant(key)) parts.push("VACÍO");
-    if (ui.studios && isStudio(key)) parts.push("estudio");
+    if (ui.types && typeOf(key)) parts.push(TYPES.find((t) => t.id === typeOf(key)).label);
     if (r && (r.all || r.vall)) {
       parts.push(`${r.n} pedidos`);
       parts.push(`${r.vn} visitas al salón`);
       parts.push(`último ${fmtDay(r.lastAny)}`);
     } else parts.push("sin pedidos ni visitas");
-    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${isVacant(key) ? " is-vacant" : ""}${ui.studios && isStudio(key) ? " is-studio" : ""}${ui.studios && ui.studiosOnly && !isStudio(key) ? " is-nonstudio" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
+    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${isVacant(key) ? " is-vacant" : ""}${ui.types && typeOf(key) ? " is-t-" + typeOf(key) : ""}${ui.types && ui.typeSel !== "all" && typeOf(key) !== ui.typeSel ? " is-nonstudio" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
       <span class="tw-u">${pad2(unit)}</span><span class="tw-n">${v > 0 ? v : ""}</span></button>`;
   }
 
@@ -290,19 +308,35 @@
       const row = (units) =>
         units.length ? `<div class="tw-row">${units.map((u) => cellHtml(fl.floor, u, c, max)).join("")}</div>` : "";
       return `<div class="tw-floor">
-        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}${vacantCount(keys) ? ` · ${vacantCount(keys)} vacíos` : ""}${ui.studios && studioStats(keys).n ? ` · ${studioStats(keys).n} estudios (${studioStats(keys).vac} vacíos)` : ""}</small></div>
+        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}${vacantCount(keys) ? ` · ${vacantCount(keys)} vacíos` : ""}${ui.types ? (() => { const ts = typeStats(keys); return TYPES.filter((t) => ts[t.id].n && (ui.typeSel === "all" || ui.typeSel === t.id)).map((t) => ` · ${typeShort(t.id)} ${ts[t.id].n}${ts[t.id].vac ? " (" + ts[t.id].vac + " vac.)" : ""}`).join(""); })() : ""}</small></div>
         <div class="tw-floor__rows">${row(fl.top)}${row(fl.bot)}</div>
       </div>`;
     }).join("");
     const scale = [1, 2, 3, 4, 5].map((l) => `<i class="tw-cell tw-l${l} tw-legend__sw"></i>`).join("");
     return `<div class="adm-card tw-mapcard">
       <div class="tw-mapopts">
-        <label class="adm-check"><input type="checkbox" data-tw-studios ${ui.studios ? "checked" : ""} /><span>Ver estudios</span></label>
-        ${ui.studios ? `<label class="adm-check"><input type="checkbox" data-tw-studiosonly ${ui.studiosOnly ? "checked" : ""} /><span>Solo estudios</span></label>` : ""}
+        <label class="adm-check"><input type="checkbox" data-tw-types ${ui.types ? "checked" : ""} /><span>Ver tipos de depto</span></label>
+        ${ui.types ? `<select class="adm-select" data-tw-typesel aria-label="Tipo de depto"><option value="all"${ui.typeSel === "all" ? " selected" : ""}>Todos los tipos</option>${TYPES.map((t) => `<option value="${t.id}"${ui.typeSel === t.id ? " selected" : ""}>${t.label}</option>`).join("")}</select>` : ""}
       </div>
-      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío${ui.studios ? ` <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-studio"></span> estudio` : ""}</div>
+      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío${ui.types ? TYPES.map((t) => ` <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-t-${t.id}"></span> ${t.label.toLowerCase()}`).join("") : ""}</div>
       <div class="tw-map">${rows}</div>
+      ${ui.types ? typeTableHtml(c) : ""}
     </div>`;
+  }
+
+  function typeTableHtml(c) {
+    const rows = TYPES.map((t) => {
+      const ks = TYPE_KEYS[t.id];
+      const recs = ks.map((k) => c.by.get(k)).filter(Boolean);
+      const vac = ks.filter(isVacant).length;
+      const occ = ks.length - vac;
+      const ped = recs.reduce((n, r) => n + r.n, 0);
+      const vis = recs.reduce((n, r) => n + r.vn, 0);
+      const act = ks.filter((k) => val(c.by.get(k)) > 0).length;
+      const avg = occ ? (ped / occ).toFixed(1) : "–";
+      return `<tr><td><i class="tw-cell tw-legend__sw is-t-${t.id}"></i> ${t.label}</td><td>${ks.length}</td><td>${vac}</td><td>${ped}</td><td>${vis}</td><td>${act}/${occ}</td><td>${avg}</td></tr>`;
+    }).join("");
+    return `<div class="tw-typetable"><table class="adm-table"><thead><tr><th>Tipo</th><th>Deptos</th><th>Vacíos</th><th>Pedidos</th><th>Salón</th><th>Activos</th><th>Pedidos/depto ocupado</th></tr></thead><tbody>${rows}</tbody></table><small class="adm-muted">Pisos 23–32 · el periodo y descartados siguen los filtros de arriba · vacíos no cuentan en el promedio</small></div>`;
   }
 
   function topHtml(stats, c) {
@@ -608,14 +642,14 @@
     });
 
     root.addEventListener("change", (e) => {
-      if (e.target.matches("[data-tw-studios]")) {
-        ui.studios = e.target.checked;
-        if (!ui.studios) ui.studiosOnly = false;
+      if (e.target.matches("[data-tw-types]")) {
+        ui.types = e.target.checked;
+        if (!ui.types) ui.typeSel = "all";
         render(lastOrders);
         return;
       }
-      if (e.target.matches("[data-tw-studiosonly]")) {
-        ui.studiosOnly = e.target.checked;
+      if (e.target.matches("[data-tw-typesel]")) {
+        ui.typeSel = e.target.value;
         render(lastOrders);
         return;
       }
