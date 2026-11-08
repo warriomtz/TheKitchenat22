@@ -1829,3 +1829,4 @@
 
 .tw-mapopts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-bottom: 0.6rem; }
 .tw-mapopts select { width: auto; max-width: 14rem; }
+.tw-typetop { white-space: normal; min-width: 11rem; }

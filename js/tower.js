@@ -334,9 +334,15 @@
       const vis = recs.reduce((n, r) => n + r.vn, 0);
       const act = ks.filter((k) => val(c.by.get(k)) > 0).length;
       const avg = occ ? (ped / occ).toFixed(1) : "–";
-      return `<tr><td><i class="tw-cell tw-legend__sw is-t-${t.id}"></i> ${t.label}</td><td>${ks.length}</td><td>${vac}</td><td>${ped}</td><td>${vis}</td><td>${act}/${occ}</td><td>${avg}</td></tr>`;
+      const top = recs
+        .filter((r) => val(r) > 0)
+        .sort((x, y) => val(y) - val(x) || (y.lastAny || 0) - (x.lastAny || 0))
+        .slice(0, 3)
+        .map((r) => `<strong>${r.key}</strong>${r.name ? " " + esc(r.name) : ""} (${val(r)})`)
+        .join(", ") || "–";
+      return `<tr><td><i class="tw-cell tw-legend__sw is-t-${t.id}"></i> ${t.label}</td><td>${ks.length}</td><td>${vac}</td><td>${ped}</td><td>${vis}</td><td>${act}/${occ}</td><td>${avg}</td><td class="tw-typetop">${top}</td></tr>`;
     }).join("");
-    return `<div class="tw-typetable"><table class="adm-table"><thead><tr><th>Tipo</th><th>Deptos</th><th>Vacíos</th><th>Pedidos</th><th>Salón</th><th>Activos</th><th>Pedidos/depto ocupado</th></tr></thead><tbody>${rows}</tbody></table><small class="adm-muted">Pisos 23–32 · el periodo y descartados siguen los filtros de arriba · vacíos no cuentan en el promedio</small></div>`;
+    return `<div class="tw-typetable"><table class="adm-table"><thead><tr><th>Tipo</th><th>Deptos</th><th>Vacíos</th><th>Pedidos</th><th>Salón</th><th>Activos</th><th>Pedidos/depto ocupado</th><th>Quién más pide (top 3)</th></tr></thead><tbody>${rows}</tbody></table><small class="adm-muted">Pisos 23–32 · el periodo y descartados siguen los filtros de arriba · vacíos no cuentan en el promedio · entre paréntesis, la métrica activa (${metricShort()})</small></div>`;
   }
 
   function topHtml(stats, c) {
