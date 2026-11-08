@@ -31,6 +31,7 @@
     metric: "both", // both = pedidos + visitas al salón (default) | orders | salon | pieces
     dismissed: false,
     sel: "",
+    studiosOnly: false,
     q: "",
     sig: "",
     code: "",
@@ -180,6 +181,7 @@
     return `<div class="tw-controls">
       <div class="report-period" role="group" aria-label="Periodo">${per("all", "Todo")}${per("30", "30 días")}${per("7", "7 días")}</div>
       <div class="report-period" role="group" aria-label="Medir por">${met("both", "Pedidos + salón")}${met("orders", "Solo pedidos")}${met("salon", "Solo salón")}${met("pieces", "Piezas")}</div>
+      <label class="adm-check"><input type="checkbox" data-tw-studiosonly ${ui.studiosOnly ? "checked" : ""} /><span>Solo estudios</span></label>
       <label class="adm-check"><input type="checkbox" data-tw-dismissed ${ui.dismissed ? "checked" : ""} /><span>Incluir descartados</span></label>
       <input type="search" class="adm-search tw-search" data-tw-q placeholder="Buscar depto o nombre" value="${esc(ui.q)}" autocomplete="off" />
       <span class="adm-muted" data-tw-qcount></span>
@@ -192,6 +194,7 @@
       <span class="kitchen-stat">Han pedido <strong>${stats.ordered}</strong> de ${ALL_KEYS.length} (${Math.round((stats.ordered / ALL_KEYS.length) * 100)}%)</span>
       <span class="kitchen-stat">Visitan el salón <strong>${stats.salon}</strong></span>
       ${vacantCount(ALL_KEYS) ? `<span class="kitchen-stat tw-vacant-stat">Vacíos <strong>${vacantCount(ALL_KEYS)}</strong></span>` : ""}
+      <span class="kitchen-stat tw-studio-stat">Estudios <strong>${STUDIO_KEYS.length}</strong> · vacíos <strong>${studioStats(ALL_KEYS).vac}</strong></span>
       ${ui.period === "all" ? "" : `<span class="kitchen-stat">En el periodo <strong>${stats.activeKeys.length}</strong> (${Math.round((stats.activeKeys.length / ALL_KEYS.length) * 100)}%)</span>`}
       <span class="kitchen-stat">Ni pedido ni salón <strong>${ALL_KEYS.length - stats.everKeys.length}</strong></span>
       <span class="kitchen-stat">Recurrentes (2+) <strong>${stats.repeat}</strong></span>
@@ -249,6 +252,15 @@
     </div>`;
   }
 
+  /* Studios (Mario 2026-11-07): units 02, 03, 05, 14, 17 on every floor except 33, Riga or Vitant. Only for his own view of the building; unrelated to orders. */
+  const STUDIO_UNITS = new Set([2, 3, 5, 14, 17]);
+  const isStudio = (key) => Number(key.slice(0, 2)) <= 32 && STUDIO_UNITS.has(Number(key.slice(2)));
+  const STUDIO_KEYS = ALL_KEYS.filter(isStudio);
+  const studioStats = (keys) => {
+    const s = keys.filter(isStudio);
+    return { n: s.length, vac: s.filter(isVacant).length };
+  };
+
   const isVacant = (key) => !!(ui.tower && ui.tower.vacant && ui.tower.vacant[key]);
   const vacantCount = (keys) => keys.filter(isVacant).length;
 
@@ -260,12 +272,13 @@
     const level = v <= 0 ? 0 : max <= 1 ? 3 : 1 + Math.min(4, Math.floor(4 * Math.sqrt((v - 1) / (max - 1))));
     const parts = [key + (r && r.name ? " · " + r.name : "")];
     if (isVacant(key)) parts.push("VACÍO");
+    if (isStudio(key)) parts.push("estudio");
     if (r && (r.all || r.vall)) {
       parts.push(`${r.n} pedidos`);
       parts.push(`${r.vn} visitas al salón`);
       parts.push(`último ${fmtDay(r.lastAny)}`);
     } else parts.push("sin pedidos ni visitas");
-    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${isVacant(key) ? " is-vacant" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
+    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${isVacant(key) ? " is-vacant" : ""}${isStudio(key) ? " is-studio" : ""}${ui.studiosOnly && !isStudio(key) ? " is-dim" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
       <span class="tw-u">${pad2(unit)}</span><span class="tw-n">${v > 0 ? v : ""}</span></button>`;
   }
 
@@ -277,13 +290,13 @@
       const row = (units) =>
         units.length ? `<div class="tw-row">${units.map((u) => cellHtml(fl.floor, u, c, max)).join("")}</div>` : "";
       return `<div class="tw-floor">
-        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}${vacantCount(keys) ? ` · ${vacantCount(keys)} vacíos` : ""}</small></div>
+        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}${vacantCount(keys) ? ` · ${vacantCount(keys)} vacíos` : ""}${studioStats(keys).n ? ` · ${studioStats(keys).n} estudios (${studioStats(keys).vac} vacíos)` : ""}</small></div>
         <div class="tw-floor__rows">${row(fl.top)}${row(fl.bot)}</div>
       </div>`;
     }).join("");
     const scale = [1, 2, 3, 4, 5].map((l) => `<i class="tw-cell tw-l${l} tw-legend__sw"></i>`).join("");
     return `<div class="adm-card tw-mapcard">
-      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío</div>
+      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-studio"></span> estudio</div>
       <div class="tw-map">${rows}</div>
     </div>`;
   }
@@ -591,6 +604,11 @@
     });
 
     root.addEventListener("change", (e) => {
+      if (e.target.matches("[data-tw-studiosonly]")) {
+        ui.studiosOnly = e.target.checked;
+        render(lastOrders);
+        return;
+      }
       if (e.target.matches("[data-tw-dismissed]")) {
         ui.dismissed = e.target.checked;
         render(lastOrders);
