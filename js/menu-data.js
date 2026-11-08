@@ -135,9 +135,9 @@ window.KITCHEN_MENU = {
       Vinos: {
         label: "Vinos",
         items: [
-          { id: "b-tinto-v", name: "Tinto", price: 95, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-tinto-v.jpg" },
-          { id: "b-blanco", name: "Blanco", price: 95, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-blanco.jpg" },
-          { id: "b-rosado", name: "Rosado", price: 95, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-rosado.jpg" },
+          { id: "b-tinto-v", name: "Tinto", price: 99, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-tinto-v.jpg" },
+          { id: "b-blanco", name: "Blanco", price: 99, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-blanco.jpg" },
+          { id: "b-rosado", name: "Rosado", price: 99, notesKey: "vinosNote", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/b-rosado.jpg" },
         ],
       },
     },

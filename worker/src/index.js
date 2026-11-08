@@ -1800,6 +1800,20 @@ export class KitchenStore extends DurableObject {
       this.kvSet("photos2610", true);
     }
   }
+  /** One-time (2026-11-07): wines (tinto, blanco, rosado) 95 -> 99. */
+  seedWinePrice1107(menu) {
+    if (this.kvGet("winePrice1107", false)) return;
+    let n = 0;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) if (["b-tinto-v", "b-blanco", "b-rosado"].includes(it.id)) { it.price = 99; n++; }
+      }
+    }
+    if (n >= 3) {
+      this.kvSet("menu", menu);
+      this.kvSet("winePrice1107", true);
+    }
+  }
   /** One-time (2026-11-05): Boneless price 165 -> 169 (extras stay as they are). */
   seedBonelessPrice1105(menu) {
     if (this.kvGet("bonelessPrice1105", false)) return;
@@ -2502,6 +2516,7 @@ export class KitchenStore extends DurableObject {
           this.seedEdamames1105(menu);
           this.seedEdamamesPhoto1105(menu);
           this.seedBonelessPrice1105(menu);
+          this.seedWinePrice1107(menu);
           this.seedPaletasOne(menu);
           this.seedMealPrepSidesOnly(menu);
           this.seedSidesOnlyChoice(menu);
