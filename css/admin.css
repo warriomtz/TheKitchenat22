@@ -1807,3 +1807,12 @@
   .sp-day__dots { display:flex; justify-content:center; }
   .sp-ev__time { width:4.4rem; }
 }
+
+/* Torre: vacant apartments in red */
+.tw-cell.is-vacant {
+  background: rgba(214, 40, 40, 0.28);
+  border-color: #d62828;
+  box-shadow: inset 0 0 0 1px #d62828;
+}
+.tw-cell.is-vacant .tw-u { color: #ff6b6b; font-weight: 700; }
+.tw-vacant-stat strong { color: #ff6b6b; }

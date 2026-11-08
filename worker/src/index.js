@@ -2291,8 +2291,16 @@ export class KitchenStore extends DurableObject {
   // ---- tower: resident names + salon (dine-in) visits per apartment. Dine-in orders carry no apartment,
   // so these are entered by hand from the admin "Torre" tab. { apts: { "3108": { name, visits: [ISO...] } } }
   towerRead() {
-    const t = this.kvGet("tower", null);
-    return t && typeof t === "object" && t.apts && typeof t.apts === "object" ? t : { apts: {} };
+    const raw = this.kvGet("tower", null);
+    const t = raw && typeof raw === "object" && raw.apts && typeof raw.apts === "object" ? raw : { apts: {} };
+    if (!t.vacant || typeof t.vacant !== "object") t.vacant = {};
+    // One-time (Mario 2026-11-07): empty Riga apartments, shown in red on the Torre map.
+    if (!t.vacantSeed1107) {
+      for (const k of ["2919", "2911", "3118", "2520", "3120", "2509", "2314", "2702", "2703", "2717", "3114", "2312", "2315", "2907", "2307"]) t.vacant[k] = true;
+      t.vacantSeed1107 = true;
+      this.kvSet("tower", t);
+    }
+    return t;
   }
   towerAdmin(data) {
     const act = String(data.action || "").toLowerCase();
@@ -2323,6 +2331,10 @@ export class KitchenStore extends DurableObject {
     } else if (act === "remove_visit") {
       rec.visits.sort();
       rec.visits.pop();
+    } else if (act === "set_vacant") {
+      if (!t.vacant || typeof t.vacant !== "object") t.vacant = {};
+      if (data.vacant === false || data.vacant === "0" || data.vacant === 0) delete t.vacant[apt];
+      else t.vacant[apt] = true;
     } else {
       return [400, { error: "bad_action" }];
     }

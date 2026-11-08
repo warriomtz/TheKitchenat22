@@ -34,7 +34,7 @@
     q: "",
     sig: "",
     code: "",
-    tower: { apts: {} },
+    tower: { apts: {}, vacant: {} },
     towerOk: null, // null = not loaded yet, true = server answered, false = could not reach /api/tower
     busy: false,
     msg: "",
@@ -191,6 +191,7 @@
     return `<div class="tw-stats">
       <span class="kitchen-stat">Han pedido <strong>${stats.ordered}</strong> de ${ALL_KEYS.length} (${Math.round((stats.ordered / ALL_KEYS.length) * 100)}%)</span>
       <span class="kitchen-stat">Visitan el salón <strong>${stats.salon}</strong></span>
+      ${vacantCount(ALL_KEYS) ? `<span class="kitchen-stat tw-vacant-stat">Vacíos <strong>${vacantCount(ALL_KEYS)}</strong></span>` : ""}
       ${ui.period === "all" ? "" : `<span class="kitchen-stat">En el periodo <strong>${stats.activeKeys.length}</strong> (${Math.round((stats.activeKeys.length / ALL_KEYS.length) * 100)}%)</span>`}
       <span class="kitchen-stat">Ni pedido ni salón <strong>${ALL_KEYS.length - stats.everKeys.length}</strong></span>
       <span class="kitchen-stat">Recurrentes (2+) <strong>${stats.repeat}</strong></span>
@@ -248,6 +249,9 @@
     </div>`;
   }
 
+  const isVacant = (key) => !!(ui.tower && ui.tower.vacant && ui.tower.vacant[key]);
+  const vacantCount = (keys) => keys.filter(isVacant).length;
+
   function cellHtml(floor, unit, c, max) {
     if (unit == null) return `<span class="tw-gap" aria-hidden="true"></span>`;
     const key = keyOf(floor, unit);
@@ -255,12 +259,13 @@
     const v = val(r);
     const level = v <= 0 ? 0 : max <= 1 ? 3 : 1 + Math.min(4, Math.floor(4 * Math.sqrt((v - 1) / (max - 1))));
     const parts = [key + (r && r.name ? " · " + r.name : "")];
+    if (isVacant(key)) parts.push("VACÍO");
     if (r && (r.all || r.vall)) {
       parts.push(`${r.n} pedidos`);
       parts.push(`${r.vn} visitas al salón`);
       parts.push(`último ${fmtDay(r.lastAny)}`);
     } else parts.push("sin pedidos ni visitas");
-    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
+    return `<button type="button" class="tw-cell tw-l${level}${r && r.name ? " has-name" : ""}${isVacant(key) ? " is-vacant" : ""}${ui.sel === key ? " is-sel" : ""}" data-tw-apt="${key}" title="${esc(parts.join(" · "))}">
       <span class="tw-u">${pad2(unit)}</span><span class="tw-n">${v > 0 ? v : ""}</span></button>`;
   }
 
@@ -272,13 +277,13 @@
       const row = (units) =>
         units.length ? `<div class="tw-row">${units.map((u) => cellHtml(fl.floor, u, c, max)).join("")}</div>` : "";
       return `<div class="tw-floor">
-        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}</small></div>
+        <div class="tw-floor__label"><strong>Piso ${fl.floor}</strong><small>${act}/${keys.length} · ${sum} ${metricShort()}${vacantCount(keys) ? ` · ${vacantCount(keys)} vacíos` : ""}</small></div>
         <div class="tw-floor__rows">${row(fl.top)}${row(fl.bot)}</div>
       </div>`;
     }).join("");
     const scale = [1, 2, 3, 4, 5].map((l) => `<i class="tw-cell tw-l${l} tw-legend__sw"></i>`).join("");
     return `<div class="adm-card tw-mapcard">
-      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre</div>
+      <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío</div>
       <div class="tw-map">${rows}</div>
     </div>`;
   }
@@ -392,6 +397,9 @@
           <input type="date" data-tw-vdate value="${todayStr()}" max="${todayStr()}" title="Fecha de la visita"${dis} />
           <button type="button" class="btn btn--primary btn--sm" data-tw-addvisit${dis}>+ Agregar</button>
           <button type="button" class="btn btn--ghost btn--sm" data-tw-rmvisit${dis}${r && r.vall ? "" : " disabled"}>− Quitar la última</button></span></div>
+        <div class="adm-field"><span>Ocupación</span>
+          <span class="tw-inline"><button type="button" class="btn btn--ghost btn--sm" data-tw-vacant="${isVacant(ui.sel) ? "0" : "1"}"${dis}>${isVacant(ui.sel) ? "Quitar marca de vacío" : "Marcar como vacío"}</button>
+          ${isVacant(ui.sel) ? '<small class="adm-muted">Este depto está marcado como vacío (rojo en el mapa).</small>' : ""}</span></div>
         ${ui.msg ? `<p class="adm-muted tw-msg">${esc(ui.msg)}</p>` : ""}
       </div>`;
     if (!r || (!r.all && !r.vall)) {
@@ -510,7 +518,7 @@
     if (!window.KitchenStore || !KitchenStore.towerView) return;
     try {
       const data = await KitchenStore.towerView(ui.code);
-      ui.tower = data && data.tower && data.tower.apts ? data.tower : { apts: {} };
+      ui.tower = data && data.tower && data.tower.apts ? data.tower : { apts: {}, vacant: {} };
       ui.towerOk = true;
     } catch {
       ui.towerOk = false;
@@ -528,7 +536,7 @@
       if (r && r.tower && r.tower.apts) ui.tower = r.tower;
       ui.towerOk = true;
       const rec = ui.tower.apts && ui.tower.apts[payload.apt];
-      ui.msg = payload.action === "set_name" ? okMsg : `${okMsg} Total en el salón: ${rec ? rec.visits.length : 0}.`;
+      ui.msg = payload.action === "set_name" || payload.action === "set_vacant" ? okMsg : `${okMsg} Total en el salón: ${rec ? rec.visits.length : 0}.`;
     } catch (e) {
       ui.msg = "No se pudo guardar" + (e && e.message ? ` (${e.message})` : "") + ".";
       if (/_404$|failed|fetch/i.test((e && e.message) || "")) ui.towerOk = false;
@@ -554,7 +562,7 @@
 
     root.addEventListener("click", (e) => {
       const t = e.target.closest(
-        "[data-tw-period],[data-tw-metric],[data-tw-apt],[data-tw-close],[data-tw-savename],[data-tw-addvisit],[data-tw-rmvisit]"
+        "[data-tw-period],[data-tw-metric],[data-tw-apt],[data-tw-close],[data-tw-savename],[data-tw-addvisit],[data-tw-rmvisit],[data-tw-vacant]"
       );
       if (!t) return;
       if ("twSavename" in t.dataset) return saveName();
@@ -564,6 +572,10 @@
         const payload = { action: "add_visit", apt: ui.sel, count: Math.max(1, Math.min(20, cnt)) };
         if (date && date !== todayStr()) payload.at = new Date(`${date}T12:00:00`).toISOString();
         return act(payload, payload.count === 1 ? "Visita registrada." : `${payload.count} visitas registradas.`);
+      }
+      if ("twVacant" in t.dataset) {
+        const on = t.dataset.twVacant === "1";
+        return act({ action: "set_vacant", apt: ui.sel, vacant: on }, on ? "Marcado como vacío." : "Marca de vacío quitada.");
       }
       if ("twRmvisit" in t.dataset) {
         if (!confirm(`¿Quitar la última visita al salón del depto ${ui.sel}?`)) return;
