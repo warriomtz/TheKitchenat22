@@ -2059,7 +2059,6 @@ const DEFAULT_HOURS = {
       { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
       { v: t("flavorCfaOriginal"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
       { v: t("flavorCfaBbq"), k: "cfa_bbq", disabled: isOut("boneless-cfa-bbq") },
-      { v: t("flavorCfaHoneyMustard"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
     ];
   }
 
@@ -2070,7 +2069,6 @@ const DEFAULT_HOURS = {
       { v: t("flavorBbq"), k: "bbq", disabled: isOut("boneless-bbq") },
       { v: t("flavorCfaOriginalPlain"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
       { v: t("flavorCfaBbqPlain"), k: "cfa_bbq", disabled: isOut("boneless-cfa-bbq") },
-      { v: t("flavorCfaHoneyMustardPlain"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
     ];
   }
 
@@ -2243,7 +2241,6 @@ const DEFAULT_HOURS = {
         { v: t("burgerSauceNone"), k: "none" },
         { v: t("burgerSauceBuffalo"), k: "buffalo", disabled: isOut("boneless-buffalo") },
         { v: t("burgerSauceCfa"), k: "cfa_original", disabled: isOut("boneless-cfa-original") },
-        { v: t("burgerSauceCfaHoney"), k: "cfa_honey_mustard", disabled: isOut("boneless-cfa-honey") },
       ]);
     }
     if (flags.includes("boneless")) {
