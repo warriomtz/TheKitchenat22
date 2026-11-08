@@ -418,7 +418,7 @@
   }
 
   /* —— Kitchen —— */
-  const SNACK_IDS = new Set(["f-galletas", "f-paletas", "f-bolsa", "f-waffle-d"]);
+  const SNACK_IDS = new Set(["f-galletas", "f-paletas", "f-bolsa"]);
 
   /**
    * Beverages + snacks/sweets: still shown, but de-emphasized.
@@ -427,6 +427,8 @@
   function isSecondaryKitchenItem(it) {
     if (!it) return false;
     const id = String(it.id || "");
+    // Waffle dulce is cooked in the kitchen (Mario 2026-11-08): always primary, even though it sits under "Dulces".
+    if (id === "f-waffle-d") return false;
     const section = String(it.sectionId || it.section || "").toLowerCase();
     const sub = String(it.subKey || it.subLabel || "").toLowerCase();
     if (section === "drinks" || section === "bar") return true;
