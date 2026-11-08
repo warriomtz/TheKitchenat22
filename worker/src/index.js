@@ -189,7 +189,6 @@ const INV_DEFAULT = {
     "salsa-bbq": { name: "Salsa BBQ (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 620, min: 620 },
     "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: 60, min: 100 },
     "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: 420, min: null },
-    "salsa-cfa-honey": { name: "Salsa CFA honey mustard", unit: "g", group: "Salsas", qty: 250, min: null },
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Panes", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
@@ -220,7 +219,7 @@ const INV_DEFAULT = {
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
     "f-waffle-d": [{ ing: "waffle", qty: 1 }],
     "side:vegetales": [{ ing: "verduras-salteadas", qty: 180 }],
-    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }, { ing: "salsa-cfa-original", qty: 45, if: { flavor: "cfa_original" }, variant: true, outId: "boneless-cfa-original" }, { ing: "salsa-cfa-bbq", qty: 45, if: { flavor: "cfa_bbq" }, variant: true, outId: "boneless-cfa-bbq" }, { ing: "salsa-cfa-honey", qty: 45, if: { flavor: "cfa_honey_mustard" }, variant: true, outId: "boneless-cfa-honey" }, { ing: "salsa-cfa-original", qty: 45, if: { xsCfaOriginal: "1" }, optional: true }, { ing: "salsa-cfa-bbq", qty: 45, if: { xsCfaBbq: "1" }, optional: true }, { ing: "salsa-cfa-honey", qty: 45, if: { xsCfaHoney: "1" }, optional: true }],
+    "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }, { ing: "salsa-cfa-original", qty: 45, if: { flavor: "cfa_original" }, variant: true, outId: "boneless-cfa-original" }, { ing: "salsa-cfa-bbq", qty: 45, if: { flavor: "cfa_bbq" }, variant: true, outId: "boneless-cfa-bbq" }, { ing: "salsa-cfa-original", qty: 45, if: { xsCfaOriginal: "1" }, optional: true }, { ing: "salsa-cfa-bbq", qty: 45, if: { xsCfaBbq: "1" }, optional: true },],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
     "f-paletas": [
@@ -241,7 +240,7 @@ const INV_DEFAULT = {
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "salsa-buffalo", qty: 45, if: { burgerSauce: "buffalo" }, variant: true, outId: "boneless-buffalo" },
       { ing: "salsa-cfa-original", qty: 45, if: { burgerSauce: "cfa_original" }, variant: true, outId: "boneless-cfa-original" },
-      { ing: "salsa-cfa-honey", qty: 45, if: { burgerSauce: "cfa_honey_mustard" }, variant: true, outId: "boneless-cfa-honey" },
+     
       { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" },
       { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" },
       { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" },
@@ -773,7 +772,6 @@ export class KitchenStore extends DurableObject {
         const it = inv.items;
         if (it["salsa-cfa-original"] && it["salsa-cfa-original"].qty == null) Object.assign(it["salsa-cfa-original"], { qty: 60, min: 100 });
         if (it["salsa-cfa-bbq"] && it["salsa-cfa-bbq"].qty == null) it["salsa-cfa-bbq"].qty = 420;
-        if (it["salsa-cfa-honey"] && it["salsa-cfa-honey"].qty == null) it["salsa-cfa-honey"].qty = 250;
       }
       for (const id of ["pollo-200", "pollo-100", "pollo-club"]) if (inv.items[id] && inv.items[id].costFrom == null) inv.items[id].costFrom = "pollo-crudo";
       // v64: all breads under one group ("Panes")
@@ -924,6 +922,15 @@ export class KitchenStore extends DurableObject {
         inv.pastaPaquetes1106 = true;
         this.kvSet("kitchenInv", inv);
       }
+    }
+    // CFA honey mustard sauce (Mario 2026-11-08): ran out and will not be restocked; removed from the inventory and every recipe so it never shows up in the shopping list.
+    if (!inv.cfaHoneyGone1108) {
+      delete inv.items["salsa-cfa-honey"];
+      for (const k of Object.keys(inv.recipes || {})) {
+        if (Array.isArray(inv.recipes[k])) inv.recipes[k] = inv.recipes[k].filter((x) => x.ing !== "salsa-cfa-honey");
+      }
+      inv.cfaHoneyGone1108 = true;
+      this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
