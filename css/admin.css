@@ -1822,5 +1822,5 @@
   outline: 2px solid #4da3ff;
   outline-offset: -2px;
 }
-.tw-cell.is-dim { opacity: 0.22; }
+.tw-cell.is-nonstudio { opacity: 0.22; }
 .tw-studio-stat strong { color: #4da3ff; }
