@@ -2306,6 +2306,12 @@ export class KitchenStore extends DurableObject {
       t.vacantSeed1107b = true;
       this.kvSet("tower", t);
     }
+    // One-time (Mario 2026-11-07, later): 2417 will be empty in a week; marked red now.
+    if (!t.vacantSeed1107c) {
+      t.vacant["2417"] = true;
+      t.vacantSeed1107c = true;
+      this.kvSet("tower", t);
+    }
     return t;
   }
   towerAdmin(data) {
