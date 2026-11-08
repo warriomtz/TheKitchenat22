@@ -1817,7 +1817,7 @@
 .tw-cell.is-vacant .tw-u { color: #ff6b6b; font-weight: 700; }
 .tw-vacant-stat strong { color: #ff6b6b; }
 
-/* Torre: studios (units 02, 03, 05, 14, 17 on floors 22-32) get a blue outline; "Solo estudios" dims the rest */
+/* Torre: studios (units 02, 03, 05, 14, 17 on floors 23-32) get a blue outline; "Solo estudios" dims the rest */
 .tw-cell.is-studio {
   outline: 2px solid #4da3ff;
   outline-offset: -2px;

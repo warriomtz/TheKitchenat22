@@ -252,9 +252,9 @@
     </div>`;
   }
 
-  /* Studios (Mario 2026-11-07): units 02, 03, 05, 14, 17 on every floor except 33, Riga or Vitant. Only for his own view of the building; unrelated to orders. */
+  /* Studios (Mario 2026-11-07): units 02, 03, 05, 14, 17 on floors 23-32 (none on 22 or 33), Riga or Vitant. Only for his own view of the building; unrelated to orders. */
   const STUDIO_UNITS = new Set([2, 3, 5, 14, 17]);
-  const isStudio = (key) => Number(key.slice(0, 2)) <= 32 && STUDIO_UNITS.has(Number(key.slice(2)));
+  const isStudio = (key) => Number(key.slice(0, 2)) >= 23 && Number(key.slice(0, 2)) <= 32 && STUDIO_UNITS.has(Number(key.slice(2)));
   const STUDIO_KEYS = ALL_KEYS.filter(isStudio);
   const studioStats = (keys) => {
     const s = keys.filter(isStudio);
