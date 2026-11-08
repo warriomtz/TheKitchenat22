@@ -182,8 +182,6 @@
     return `<div class="tw-controls">
       <div class="report-period" role="group" aria-label="Periodo">${per("all", "Todo")}${per("30", "30 días")}${per("7", "7 días")}</div>
       <div class="report-period" role="group" aria-label="Medir por">${met("both", "Pedidos + salón")}${met("orders", "Solo pedidos")}${met("salon", "Solo salón")}${met("pieces", "Piezas")}</div>
-      <label class="adm-check"><input type="checkbox" data-tw-studios ${ui.studios ? "checked" : ""} /><span>Ver estudios</span></label>
-      ${ui.studios ? `<label class="adm-check"><input type="checkbox" data-tw-studiosonly ${ui.studiosOnly ? "checked" : ""} /><span>Solo estudios</span></label>` : ""}
       <label class="adm-check"><input type="checkbox" data-tw-dismissed ${ui.dismissed ? "checked" : ""} /><span>Incluir descartados</span></label>
       <input type="search" class="adm-search tw-search" data-tw-q placeholder="Buscar depto o nombre" value="${esc(ui.q)}" autocomplete="off" />
       <span class="adm-muted" data-tw-qcount></span>
@@ -298,6 +296,10 @@
     }).join("");
     const scale = [1, 2, 3, 4, 5].map((l) => `<i class="tw-cell tw-l${l} tw-legend__sw"></i>`).join("");
     return `<div class="adm-card tw-mapcard">
+      <div class="tw-mapopts">
+        <label class="adm-check"><input type="checkbox" data-tw-studios ${ui.studios ? "checked" : ""} /><span>Ver estudios</span></label>
+        ${ui.studios ? `<label class="adm-check"><input type="checkbox" data-tw-studiosonly ${ui.studiosOnly ? "checked" : ""} /><span>Solo estudios</span></label>` : ""}
+      </div>
       <div class="tw-legend"><span class="tw-cell tw-l0 tw-legend__sw"></span> sin actividad <span class="tw-legend__gap"></span> menos ${scale} más (máx ${max || 0}) <span class="tw-legend__gap"></span> <span class="tw-dotkey"></span> tiene nombre <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-vacant"></span> vacío${ui.studios ? ` <span class="tw-legend__gap"></span> <span class="tw-cell tw-legend__sw is-studio"></span> estudio` : ""}</div>
       <div class="tw-map">${rows}</div>
     </div>`;

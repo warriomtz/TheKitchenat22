@@ -1824,3 +1824,5 @@
 }
 .tw-cell.is-nonstudio { opacity: 0.22; }
 .tw-studio-stat strong { color: #4da3ff; }
+
+.tw-mapopts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-bottom: 0.6rem; }
