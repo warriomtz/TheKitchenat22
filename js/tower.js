@@ -251,7 +251,7 @@
     </div>`;
   }
 
-  /* Apartment types, from the developer's floor plan list (Mario 2026-11-09). Floor 33 has no data (excluded).
+  /* Apartment types, from the developer's floor plan list (Mario 2026-11-09). Floor 33 is all "SK".
      Floors 23-32 share one layout, checked against floor 24: studio 02,03,05,14,17 · 1BR 07,08,12,15,16,20,21,22 · 3BR 19 · 2BR 01,04,06,09,10,11,18.
      Floor 22 has its own layout: 2BR 06,07,08,09,11 · 3BR 10 · 1BR 12,14,15. Only for his view of the building; unrelated to orders. */
   const TYPES = [
@@ -259,6 +259,7 @@
     { id: "1", label: "1 recámara", color: "#5ccf7a" },
     { id: "2", label: "2 recámaras", color: "#f0b429" },
     { id: "3", label: "3 recámaras", color: "#c08bff" },
+    { id: "SK", label: "SK", color: "#ff7eb6" },
   ];
   const TYPE_UNITS = { E: [2, 3, 5, 14, 17], 1: [7, 8, 12, 15, 16, 20, 21, 22], 3: [19] };
   const TYPE_F22 = { 6: "2", 7: "2", 8: "2", 9: "2", 10: "3", 11: "2", 12: "1", 14: "1", 15: "1" };
@@ -266,6 +267,7 @@
     const f = Number(key.slice(0, 2));
     const u = Number(key.slice(2));
     if (f === 22) return TYPE_F22[u] || null;
+    if (f === 33) return "SK"; // whole floor 33 is SK (Mario 2026-11-09)
     if (f < 23 || f > 32) return null;
     for (const id of ["E", "1", "3"]) if (TYPE_UNITS[id].includes(u)) return id;
     return "2";
@@ -280,7 +282,7 @@
     });
     return o;
   };
-  const typeShort = (id) => ({ E: "est.", 1: "1 rec.", 2: "2 rec.", 3: "3 rec." })[id];
+  const typeShort = (id) => ({ E: "est.", 1: "1 rec.", 2: "2 rec.", 3: "3 rec.", SK: "SK" })[id];
 
   const isVacant = (key) => !!(ui.tower && ui.tower.vacant && ui.tower.vacant[key]);
   const vacantCount = (keys) => keys.filter(isVacant).length;
@@ -345,7 +347,7 @@
         .join(", ") || "–";
       return `<tr><td><i class="tw-cell tw-legend__sw is-t-${t.id}"></i> ${t.label}</td><td>${ks.length}</td><td>${vac}</td><td>${ped}</td><td>${vis}</td><td>${act}/${occ}</td><td>${avg}</td><td class="tw-typetop">${top}</td></tr>`;
     }).join("");
-    return `<div class="tw-typetable"><table class="adm-table"><thead><tr><th>Tipo</th><th>Deptos</th><th>Vacíos</th><th>Pedidos</th><th>Salón</th><th>Activos</th><th>Pedidos/depto ocupado</th><th>Quién más pide (top 3)</th></tr></thead><tbody>${rows}</tbody></table><small class="adm-muted">Pisos 22–32 · el periodo y descartados siguen los filtros de arriba · vacíos no cuentan en el promedio · entre paréntesis, la métrica activa (${metricShort()})</small></div>`;
+    return `<div class="tw-typetable"><table class="adm-table"><thead><tr><th>Tipo</th><th>Deptos</th><th>Vacíos</th><th>Pedidos</th><th>Salón</th><th>Activos</th><th>Pedidos/depto ocupado</th><th>Quién más pide (top 3)</th></tr></thead><tbody>${rows}</tbody></table><small class="adm-muted">Pisos 22–33 · el periodo y descartados siguen los filtros de arriba · vacíos no cuentan en el promedio · entre paréntesis, la métrica activa (${metricShort()})</small></div>`;
   }
 
   function topHtml(stats, c) {

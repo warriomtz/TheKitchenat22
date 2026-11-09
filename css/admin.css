@@ -1822,6 +1822,7 @@
 .tw-cell.is-t-1 { outline: 2px solid #5ccf7a; outline-offset: -2px; }
 .tw-cell.is-t-2 { outline: 2px solid #f0b429; outline-offset: -2px; }
 .tw-cell.is-t-3 { outline: 2px solid #c08bff; outline-offset: -2px; }
+.tw-cell.is-t-SK { outline: 2px solid #ff7eb6; outline-offset: -2px; }
 .tw-cell.is-nonstudio { opacity: 0.22; }
 .tw-typetable { margin-top: 0.8rem; overflow-x: auto; }
 .tw-typetable table { width: 100%; font-size: 0.85rem; }
