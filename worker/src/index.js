@@ -2319,6 +2319,12 @@ export class KitchenStore extends DurableObject {
       t.vacantSeed1107c = true;
       this.kvSet("tower", t);
     }
+    // One-time (Mario 2026-11-09): 14 more empty apartments.
+    if (!t.vacantSeed1109) {
+      for (const k of ["2212", "2408", "2409", "2412", "2420", "2601", "2603", "2616", "2618", "2622", "2802", "2807", "2319", "3220"]) t.vacant[k] = true;
+      t.vacantSeed1109 = true;
+      this.kvSet("tower", t);
+    }
     return t;
   }
   towerAdmin(data) {
