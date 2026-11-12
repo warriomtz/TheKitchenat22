@@ -462,6 +462,9 @@
         <div class="adm-field"><span>Ocupación</span>
           <span class="tw-inline"><button type="button" class="btn btn--ghost btn--sm" data-tw-vacant="${isVacant(ui.sel) ? "0" : "1"}"${dis}>${isVacant(ui.sel) ? "Quitar marca de vacío" : "Marcar como vacío"}</button>
           ${isVacant(ui.sel) ? '<small class="adm-muted">Este depto está marcado como vacío (rojo en el mapa).</small>' : ""}</span></div>
+        <div class="adm-field"><span>Cambio de depto <small class="adm-muted">(mueve pedidos, visitas al salón y nombre a otro depto)</small></span>
+          <span class="tw-inline"><input type="text" data-tw-moveto inputmode="numeric" maxlength="4" placeholder="Nuevo depto, ej. 2511" title="Depto al que se mudó"${dis} />
+          <button type="button" class="btn btn--ghost btn--sm" data-tw-move${dis}>Mover historial</button></span></div>
         ${ui.msg ? `<p class="adm-muted tw-msg">${esc(ui.msg)}</p>` : ""}
       </div>`;
     if (!r || (!r.all && !r.vall)) {
@@ -598,7 +601,7 @@
       if (r && r.tower && r.tower.apts) ui.tower = r.tower;
       ui.towerOk = true;
       const rec = ui.tower.apts && ui.tower.apts[payload.apt];
-      ui.msg = payload.action === "set_name" || payload.action === "set_vacant" ? okMsg : `${okMsg} Total en el salón: ${rec ? rec.visits.length : 0}.`;
+      ui.msg = payload.action === "set_name" || payload.action === "set_vacant" || payload.action === "move_history" ? okMsg : `${okMsg} Total en el salón: ${rec ? rec.visits.length : 0}.`;
     } catch (e) {
       ui.msg = "No se pudo guardar" + (e && e.message ? ` (${e.message})` : "") + ".";
       if (/_404$|failed|fetch/i.test((e && e.message) || "")) ui.towerOk = false;
@@ -624,7 +627,7 @@
 
     root.addEventListener("click", (e) => {
       const t = e.target.closest(
-        "[data-tw-period],[data-tw-metric],[data-tw-apt],[data-tw-close],[data-tw-savename],[data-tw-addvisit],[data-tw-rmvisit],[data-tw-vacant]"
+        "[data-tw-period],[data-tw-metric],[data-tw-apt],[data-tw-close],[data-tw-savename],[data-tw-addvisit],[data-tw-rmvisit],[data-tw-vacant],[data-tw-move]"
       );
       if (!t) return;
       if ("twSavename" in t.dataset) return saveName();
@@ -634,6 +637,15 @@
         const payload = { action: "add_visit", apt: ui.sel, count: Math.max(1, Math.min(20, cnt)) };
         if (date && date !== todayStr()) payload.at = new Date(`${date}T12:00:00`).toISOString();
         return act(payload, payload.count === 1 ? "Visita registrada." : `${payload.count} visitas registradas.`);
+      }
+      if ("twMove" in t.dataset) {
+        const to = (root.querySelector("[data-tw-moveto]")?.value || "").replace(/\D/g, "");
+        if (to.length !== 4 || to === ui.sel) {
+          ui.msg = "Escribe el nuevo depto con 4 dígitos (distinto al actual).";
+          return render(lastOrders);
+        }
+        if (!confirm(`¿Mover TODO el historial (pedidos, visitas y nombre) del depto ${ui.sel} al ${to}?`)) return;
+        return act({ action: "move_history", apt: ui.sel, to }, `Historial movido al depto ${to}. Recarga la página para ver los pedidos en el nuevo depto.`);
       }
       if ("twVacant" in t.dataset) {
         const on = t.dataset.twVacant === "1";

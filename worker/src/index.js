@@ -2379,6 +2379,36 @@ export class KitchenStore extends DurableObject {
       if (!t.vacant || typeof t.vacant !== "object") t.vacant = {};
       if (data.vacant === false || data.vacant === "0" || data.vacant === 0) delete t.vacant[apt];
       else t.vacant[apt] = true;
+    } else if (act === "move_history") {
+      // Resident moved to another apartment (Mario 2026-11-12): carry the whole history over. Orders keep a "movedFrom" mark so it can be moved back.
+      const to = String(data.to || "").replace(/\D/g, "");
+      const tf = Number(to.slice(0, 2));
+      const tu = Number(to.slice(2));
+      if (to.length !== 4 || tf < 22 || tf > 33 || tu < 1 || tu > 22 || tu === 13 || to === apt) return [400, { error: "bad_target_apartment" }];
+      let moved = 0;
+      this.ctx.storage.transactionSync(() => {
+        for (const o of this.listOrders()) {
+          if (String(o.apartment || "").replace(/\D/g, "") !== apt) continue;
+          if (o.orderType !== "apartment" && o.orderType !== "dinein") continue;
+          o.movedFrom = o.movedFrom || String(o.apartment);
+          o.apartment = to;
+          this.saveOrder(o);
+          moved++;
+        }
+      });
+      const dest = t.apts[to] || { name: "", visits: [] };
+      if (!Array.isArray(dest.visits)) dest.visits = [];
+      const visitsMoved = rec.visits.length;
+      dest.visits = [...dest.visits, ...rec.visits].sort();
+      if (!dest.name && rec.name) dest.name = rec.name;
+      rec.visits = [];
+      rec.name = "";
+      if (t.vacant) delete t.vacant[to];
+      t.apts[to] = dest;
+      this.kvSet("tower", t);
+      delete t.apts[apt];
+      this.kvSet("tower", t);
+      return [200, { ok: true, tower: t, moved: { orders: moved, visits: visitsMoved, from: apt, to } }];
     } else {
       return [400, { error: "bad_action" }];
     }
