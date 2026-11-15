@@ -1833,3 +1833,9 @@
 .tw-typetop { white-space: normal; min-width: 11rem; }
 .krec-params__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 8px 0; }
 .krec-params__grid input { width: 100%; }
+.ksim { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 800px) { .ksim { grid-template-columns: 1fr; } }
+.ksim-lines input { width: 84px; }
+.ksim-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.ksim-big strong { font-size: 1.6rem; }
+.ksim-what { margin-top: 10px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; }

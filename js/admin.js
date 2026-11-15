@@ -2607,6 +2607,7 @@
     if (tab === "inventory" && window.KitchenInventory) KitchenInventory.render(ADMIN_CODE);
     if (tab === "recipes" && window.KitchenRecipes) renderRecipesTab();
     if (tab === "costing" && window.KitchenRecipes) KitchenRecipes.renderCosting(ADMIN_CODE);
+    if (tab === "simulator" && window.KitchenRecipes) KitchenRecipes.renderSimulator(ADMIN_CODE);
     if (tab === "bar") {
       loadOrders(true).then(() => {
         if (window.BarInventory) BarInventory.render();

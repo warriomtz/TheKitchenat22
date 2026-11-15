@@ -341,5 +341,159 @@
     showAllRecipes = b.hasAttribute("data-rec-all");
     renderRecipes(lastCode, undefined, true);
   });
-  window.KitchenRecipes = { renderRecipes, renderCosting };
+
+  /* ---- Simulator tab: play with a dish/ingredient cost and with the pricing parameters. Nothing is saved unless asked. ---- */
+  const sim = { inv: null, params: null, dish: "", lines: [], manual: 50, price: 0 };
+
+  function simLoadDish(key) {
+    sim.dish = key;
+    sim.lines = [];
+    if (!key) return;
+    const items = sim.inv.items || {};
+    const d = dishes(sim.inv).find((x) => x.key === key);
+    if (!d) return;
+    sim.price = d.price || 0;
+    d.rules.filter((r) => !r.if).forEach((r) => {
+      const it = items[r.ing];
+      sim.lines.push({ label: (it && it.name) || r.ing, unit: (it && it.unit) || "", qty: r.qty, uc: unitCost(it, items) });
+    });
+    // options (size, flavor...): the most expensive one counts, like in Costeo
+    const c = costOf(d.rules, items);
+    c.groupCosts.forEach((g) => {
+      const top = g.slice().sort((a, b) => b.cost - a.cost)[0];
+      if (top) sim.lines.push({ label: "Opción: " + top.label, unit: "", qty: 1, uc: top.cost, fixed: true });
+    });
+  }
+
+  function simCalc() {
+    const p = sim.params;
+    const opex = opexPct(p) / 100;
+    const cost = sim.dish ? sim.lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.uc) || 0), 0) : Number(sim.manual) || 0;
+    const room = 1 - (opex + p.margin / 100);
+    const net = room > 0 ? cost / room : NaN;
+    const customer = net * (1 + p.iva / 100);
+    return { p, opex, cost, room, net, customer };
+  }
+
+  function simOutHtml() {
+    const r = simCalc();
+    const p = r.p;
+    if (!(r.room > 0)) return '<p class="kinv-warn">Los % suman 100% o más: no hay forma de cubrir el costo. Baja alguno.</p>';
+    const rows = [
+      ["Ingredientes", r.cost],
+      ["Renta", r.net * p.rent / 100],
+      ["Impuestos RESICO", r.net * p.resico / 100],
+      ["Servicios", r.net * p.services / 100],
+      ["Trampa de grasa", r.net * p.grease / 100],
+      ["Comisión de terminal", r.net * p.terminal / 100],
+      ["Utilidad (margen)", r.net * p.margin / 100],
+    ];
+    let html = `<div class="ksim-big"><span>Precio sin IVA</span><strong>${money(r.net)}</strong></div>
+      <div class="ksim-big"><span>Precio al cliente (con IVA)</span><strong>${money(r.customer)}</strong><small>redondeado: ${money(Math.ceil(r.customer))}</small></div>
+      <table class="krec-table ksim-table"><thead><tr><th>A dónde va cada venta (sin IVA)</th><th>$</th><th>%</th></tr></thead><tbody>${rows
+        .map(([l, v]) => `<tr><td>${l}</td><td>${money(v)}</td><td>${Math.round((v / r.net) * 1000) / 10}%</td></tr>`)
+        .join("")}</tbody></table>`;
+    if (sim.dish || sim.price > 0) {
+      const price = Number(sim.price) || 0;
+      if (price > 0) {
+        const n2 = price / (1 + p.iva / 100);
+        const real = 1 - r.cost / n2 - r.opex;
+        html += `<div class="ksim-what"><strong>Si lo vendes a ${money(price)}</strong>: precio sin IVA ${money(n2)} · utilidad real <span class="${real < p.margin / 100 - 0.0005 ? "is-low" : ""}"><strong>${Math.round(real * 1000) / 10}%</strong></span> (${money(n2 * real)} por platillo) · ingredientes ${Math.round((r.cost / n2) * 1000) / 10}% de la venta.</div>`;
+      }
+    }
+    return html;
+  }
+
+  function simUpdate() {
+    const out = $("#kSimOut");
+    if (out) out.innerHTML = simOutHtml();
+    const tot = $("#kSimCost");
+    if (tot) tot.textContent = money(simCalc().cost);
+  }
+
+  function simHtml() {
+    const list = dishes(sim.inv).filter((d) => d.rules.length && d.price > 0 || d.key === sim.dish);
+    const opts = ['<option value="">— Costo manual (sin platillo) —</option>']
+      .concat(list.map((d) => `<option value="${esc(d.key)}"${d.key === sim.dish ? " selected" : ""}>${esc(d.name)} · ${money(d.price)}</option>`))
+      .join("");
+    const lines = sim.lines
+      .map(
+        (l, i) =>
+          `<tr><td>${esc(l.label)}</td><td>${l.fixed ? "—" : `<input type="number" step="any" min="0" data-sim-q="${i}" value="${num(l.qty)}" />${esc(l.unit)}`}</td><td><input type="number" step="any" min="0" data-sim-u="${i}" value="${l.uc == null ? "" : Math.round(l.uc * 10000) / 10000}" placeholder="sin costo" />${l.fixed ? " total" : " c/u"}</td></tr>`
+      )
+      .join("");
+    return `<div class="ksim">
+      <div class="ksim-col">
+        <label class="adm-field"><span>Platillo</span><select data-sim-dish>${opts}</select></label>
+        ${
+          sim.dish
+            ? `<table class="krec-table ksim-lines"><thead><tr><th>Ingrediente</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>${lines}</tbody></table><p class="adm-muted">Cambia cantidades o costos para ver qué pasa. Costo total: <strong id="kSimCost"></strong></p>`
+            : `<label class="adm-field"><span>Costo de ingredientes ($)</span><input type="number" step="any" min="0" data-sim-manual value="${sim.manual}" /></label><p class="adm-muted">Total: <strong id="kSimCost"></strong></p>`
+        }
+        <label class="adm-field"><span>Precio de venta a comparar, con IVA ($) <small class="adm-muted">(opcional)</small></span><input type="number" step="any" min="0" data-sim-price value="${sim.price || ""}" /></label>
+        <p class="krec-sub">Parámetros (% sobre ventas sin IVA)</p>
+        <div class="krec-params__grid">${Object.keys(COST_PARAM_LABELS)
+          .map((k) => `<label class="adm-field"><span>${COST_PARAM_LABELS[k]}</span><input type="number" step="0.01" min="0" max="99" data-sim-p="${k}" value="${sim.params[k]}" /></label>`)
+          .join("")}</div>
+        <p><button type="button" class="btn btn--ghost btn--sm" data-sim-reset>Volver a los parámetros guardados</button> <button type="button" class="btn btn--primary btn--sm" data-sim-save>Guardar estos parámetros</button> <span class="adm-muted" data-sim-msg></span></p>
+      </div>
+      <div class="ksim-col" id="kSimOut"></div>
+    </div>`;
+  }
+
+  async function renderSimulator(code) {
+    const root = $("#kSimRoot");
+    if (!root) return;
+    if (code) lastCode = code;
+    if (!sim.inv) root.innerHTML = '<p class="adm-muted">Cargando…</p>';
+    try {
+      sim.inv = await load(code);
+    } catch {
+      root.innerHTML = '<p class="adm-muted">No se pudo cargar el simulador. Abre la pestaña de nuevo.</p>';
+      return;
+    }
+    sim.saved = costParams(sim.inv);
+    if (!sim.params) sim.params = { ...sim.saved };
+    root.innerHTML = simHtml();
+    simUpdate();
+  }
+
+  document.addEventListener("input", (e) => {
+    const t = e.target;
+    if (!t.closest || !t.closest("#kSimRoot")) return;
+    const n = Number(t.value);
+    if (t.matches("[data-sim-q]")) sim.lines[Number(t.dataset.simQ)].qty = n;
+    else if (t.matches("[data-sim-u]")) sim.lines[Number(t.dataset.simU)].uc = t.value === "" ? null : n;
+    else if (t.matches("[data-sim-manual]")) sim.manual = n;
+    else if (t.matches("[data-sim-price]")) sim.price = n;
+    else if (t.matches("[data-sim-p]")) sim.params[t.dataset.simP] = Number.isFinite(n) ? n : 0;
+    else return;
+    simUpdate();
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.matches && e.target.matches("#kSimRoot [data-sim-dish]")) {
+      simLoadDish(e.target.value);
+      $("#kSimRoot").innerHTML = simHtml();
+      simUpdate();
+    }
+  });
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest && e.target.closest("#kSimRoot [data-sim-reset], #kSimRoot [data-sim-save]");
+    if (!b) return;
+    if (b.hasAttribute("data-sim-reset")) {
+      sim.params = { ...sim.saved };
+      $("#kSimRoot").innerHTML = simHtml();
+      simUpdate();
+      return;
+    }
+    const msg = $("#kSimRoot [data-sim-msg]");
+    try {
+      await KitchenStore.kitchenInventoryAction({ action: "cost_params", params: sim.params }, lastCode);
+      sim.saved = { ...sim.params };
+      if (msg) msg.textContent = "Guardados. Ya cuentan en Costeo.";
+    } catch (err) {
+      if (msg) msg.textContent = "No se pudo guardar (" + (err && err.message ? err.message : "error") + ").";
+    }
+  });
+  window.KitchenRecipes = { renderRecipes, renderCosting, renderSimulator };
 })();
