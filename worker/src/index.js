@@ -207,7 +207,7 @@ const INV_DEFAULT = {
   recipes: {
     // Meal Prep chicken: each size has its own portions. outId = per-option "agotado" id used by the menu.
     "m-pollo-100": [
-      { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true, outId: "mp-chicken-200" },
+      { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true, outId: "mp-chicken-200", alt: { ing: "pollo-100", qty: 2 } }, // when the 200 g portions run out, a 200 g order uses 2 x 100 g (Mario 2026-11-14)
       { ing: "pollo-100", qty: 1, if: { chickenSize: "100" }, outId: "mp-chicken-100" },
     ],
     "m-atun": [{ ing: "atun", qty: 1 }],
@@ -951,6 +951,13 @@ export class KitchenStore extends DurableObject {
       inv.tzatziki1110 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // 200 g chicken falls back to 2 x 100 g portions (Mario 2026-11-14).
+    if (!inv.pollo200alt1114) {
+      const mp = inv.recipes["m-pollo-100"];
+      if (Array.isArray(mp)) for (const r of mp) if (r.ing === "pollo-200" && !r.alt) r.alt = { ing: "pollo-100", qty: 2 };
+      inv.pollo200alt1114 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
@@ -993,7 +1000,13 @@ export class KitchenStore extends DurableObject {
     };
     for (const it of items || []) {
       const mult = Math.max(1, parseInt(it.qty, 10) || 1);
-      for (const r of rulesFor(inv.recipes[it.id], it.opts)) add(r.ing, r.qty * mult);
+      for (const r of rulesFor(inv.recipes[it.id], it.opts)) {
+        // r.alt = fallback ingredient used when the main one can't cover this order (e.g. 200 g chicken -> 2 x 100 g)
+        const main = inv.items[r.ing];
+        const alt = r.alt && inv.items[r.alt.ing];
+        if (alt && main && main.qty != null && main.qty - (used[r.ing] || 0) < r.qty * mult && (alt.qty == null || alt.qty - (used[r.alt.ing] || 0) >= r.alt.qty * mult)) add(r.alt.ing, r.alt.qty * mult);
+        else add(r.ing, r.qty * mult);
+      }
       for (const [k, n] of Object.entries((it.opts && it.opts.mpSides) || {})) {
         for (const r of inv.recipes["side:" + k] || []) add(r.ing, r.qty * n * mult);
       }
@@ -1273,10 +1286,12 @@ export class KitchenStore extends DurableObject {
     // invRead() also runs the one-time inventory migrations, so a change like "no salad" reaches the public menu without anyone opening Inventario first.
     const inv = this.invRead();
     if (!inv || !inv.items) return [...out];
-    const blocked = (r) => {
-      const it = inv.items[r.ing];
-      return !!(it && it.qty != null && it.qty < r.qty);
+    const short = (ing, q) => {
+      const it = inv.items[ing];
+      return !!(it && it.qty != null && it.qty < q);
     };
+    // r.alt: a fallback ingredient (e.g. 2 x 100 g chicken stands in for a 200 g portion) keeps the option available
+    const blocked = (r) => short(r.ing, r.qty) && !(r.alt && !short(r.alt.ing, r.alt.qty));
     for (const [key, rules] of Object.entries(inv.recipes || {})) {
       const list = Array.isArray(rules) ? rules : [];
       const must = list.filter((r) => !r.if && !r.variant && !r.optional);
