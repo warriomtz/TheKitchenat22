@@ -1831,3 +1831,5 @@
 .tw-mapopts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-bottom: 0.6rem; }
 .tw-mapopts select { width: auto; max-width: 14rem; }
 .tw-typetop { white-space: normal; min-width: 11rem; }
+.krec-params__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 8px 0; }
+.krec-params__grid input { width: 100%; }

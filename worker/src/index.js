@@ -1439,6 +1439,17 @@ export class KitchenStore extends DurableObject {
       if (!nid || inv.items[nid]) return [400, { error: "id_taken" }];
       const q = num(data.qty);
       inv.items[nid] = { name, unit: str(data.unit, 20) || "unidades", group: str(data.group, 30), qty: q === undefined ? null : q, min: num(data.min) ?? null };
+    } else if (act === "cost_params") {
+      // Pricing model (from Mario's costeo_platillos sheet): % of net sales, set from the Costeo tab.
+      const src = data.params && typeof data.params === "object" ? data.params : {};
+      const out = {};
+      for (const k of ["rent", "resico", "services", "grease", "terminal", "margin", "iva"]) {
+        const n = Number(src[k]);
+        if (!Number.isFinite(n) || n < 0 || n > 99) return [400, { error: "bad_" + k }];
+        out[k] = Math.round(n * 100) / 100;
+      }
+      if (out.rent + out.resico + out.services + out.grease + out.terminal + out.margin >= 100) return [400, { error: "percent_total_too_high" }];
+      inv.costParams = out;
     } else if (act === "meta") {
       const it = inv.items[id];
       if (!it) return [404, { error: "not_found" }];

@@ -241,9 +241,36 @@
     root.innerHTML = html || '<p class="adm-muted">No hay recetas que coincidan.</p>';
   }
 
+  /* Pricing model (Mario's costeo_platillos sheet): rent, taxes, utilities, grease trap, terminal fee and desired
+     margin are % of NET sales, so  net price = ingredient cost / (1 - sum of %)  and customer price = net x (1 + IVA). */
+  const COST_PARAM_DEFAULTS = { rent: 10, resico: 2, services: 3.36, grease: 0.84, terminal: 3.19, margin: 30, iva: 16 };
+  const COST_PARAM_LABELS = {
+    rent: "Renta",
+    resico: "Impuestos RESICO",
+    services: "Servicios (luz, agua, gas)",
+    grease: "Limpieza de trampa de grasa",
+    terminal: "Comisión de terminal",
+    margin: "Margen de utilidad deseado",
+    iva: "IVA (se suma al final)",
+  };
+  const costParams = (inv) => ({ ...COST_PARAM_DEFAULTS, ...((inv && inv.costParams) || {}) });
+  const opexPct = (p) => p.rent + p.resico + p.services + p.grease + p.terminal;
+
+  function paramsHtml(p) {
+    const total = opexPct(p) + p.margin;
+    return `<details class="krec-detail krec-params"><summary>⚙️ Parámetros del negocio · % sobre ventas ${Math.round(total * 100) / 100}% + IVA ${p.iva}%</summary>
+      <p class="adm-muted">Son % sobre las ventas (sin IVA). Precio sin IVA = costo de ingredientes ÷ (1 − suma de %). Precio al cliente = precio sin IVA × (1 + IVA). Los datos vienen de tu hoja costeo_platillos (ventas de julio 2026 como base para servicios y trampa de grasa).</p>
+      <div class="krec-params__grid">${Object.keys(COST_PARAM_LABELS)
+        .map((k) => `<label class="adm-field"><span>${COST_PARAM_LABELS[k]} (%)</span><input type="number" step="0.01" min="0" max="99" data-cp="${k}" value="${p[k]}" /></label>`)
+        .join("")}</div>
+      <p class="adm-muted">Disponible para ingredientes: <strong>${Math.round((100 - total) * 100) / 100}%</strong> de la venta sin IVA.</p>
+      <button type="button" class="btn btn--primary btn--sm" data-cp-save>Guardar parámetros</button> <span class="adm-muted" data-cp-msg></span></details>`;
+  }
+
   async function renderCosting(code) {
     const root = $("#kCostRoot");
     if (!root) return;
+    if (code) lastCode = code;
     root.innerHTML = '<p class="adm-muted">Cargando…</p>';
     let inv;
     try {
@@ -255,19 +282,29 @@
     const items = inv.items || {};
     const noCost = Object.values(items).filter((it) => it.qty !== undefined && unitCost(it, items) == null);
     let html = `<p class="kinv-sum"><strong>${Object.keys(items).length - noCost.length}</strong> ingredientes con costo · <span class="${noCost.length ? "is-low" : ""}">${noCost.length} pendientes</span>. El costo por unidad sale de <em>Costo de la presentación ÷ Cantidad por presentación</em>, que capturas en Inventario → 🛒 Compra.</p>`;
-    html += `<div class="krec-table-wrap"><table class="krec-table"><thead><tr><th>Platillo</th><th>Precio</th><th>Costo</th><th>Utilidad</th><th>Costo %</th></tr></thead><tbody>`;
+    const cp = costParams(inv);
+    const opex = opexPct(cp) / 100;
+    html += paramsHtml(cp);
+    html += `<div class="krec-table-wrap"><table class="krec-table"><thead><tr><th>Platillo</th><th>Precio</th><th>Costo</th><th>Utilidad</th><th>Costo %</th><th title="Con el modelo de la hoja: costo ÷ (1 − %) × (1 + IVA)">Precio sugerido</th><th title="Utilidad real después de renta, impuestos, servicios y comisión, sobre la venta sin IVA">Utilidad real</th></tr></thead><tbody>`;
     let detail = "";
     Object.entries(groupBy(dishes(inv).filter((d) => d.price > 0 && d.rules.length))).forEach(([g, list]) => {
-      html += `<tr class="krec-group"><td colspan="5">${esc(g)}</td></tr>`;
+      html += `<tr class="krec-group"><td colspan="7">${esc(g)}</td></tr>`;
       list.forEach((d) => {
         const c = costOf(d.rules, items);
         const pending = c.missing.length > 0;
         const range = c.maxCost > c.minCost + 0.005 ? `${money(c.minCost)} – ${money(c.maxCost)}` : money(c.maxCost);
         const profit = d.price - c.maxCost;
         html += `<tr><td>${esc(d.name)}</td><td>${money(d.price)}</td>`;
-        if (pending && c.maxCost === 0) html += `<td colspan="3" class="adm-muted">Pendiente · faltan ${c.missing.length} costos</td>`;
-        else
-          html += `<td>${pending ? "≥ " : ""}${range}</td><td>${money(profit)}</td><td>${Math.round((c.maxCost / d.price) * 100)}%</td>`;
+        if (pending && c.maxCost === 0) html += `<td colspan="5" class="adm-muted">Pendiente · faltan ${c.missing.length} costos</td>`;
+        else {
+          const sugg = Math.ceil((c.maxCost / (1 - (opex + cp.margin / 100))) * (1 + cp.iva / 100));
+          const net = d.price / (1 + cp.iva / 100);
+          const real = 1 - c.maxCost / net - opex;
+          const ok = d.price >= sugg;
+          html += `<td>${pending ? "≥ " : ""}${range}</td><td>${money(profit)}</td><td>${Math.round((c.maxCost / d.price) * 100)}%</td>
+            <td class="${ok ? "" : "is-low"}">${pending ? "≥ " : ""}${money(sugg)}${ok ? "" : ` <small>(+${money(sugg - d.price)})</small>`}</td>
+            <td class="${real < cp.margin / 100 - 0.0005 ? "is-low" : ""}">${Math.round(real * 1000) / 10}%</td>`;
+        }
         html += "</tr>";
         detail += `<details class="krec-detail"><summary>${esc(d.name)}</summary>
           <ul>${d.rules.filter((r) => !r.if).map((r) => ruleLine(r, items, true)).join("")}</ul>
@@ -278,13 +315,27 @@
       });
     });
     html += "</tbody></table></div>";
-    html += `<p class="adm-muted">Con opciones (tamaño, sabor, complemento) el costo se muestra como rango y la utilidad se calcula con el costo más alto.</p>`;
+    html += `<p class="adm-muted">Con opciones (tamaño, sabor, complemento) el costo se muestra como rango y la utilidad se calcula con el costo más alto. <strong>Precio sugerido</strong>: el precio al cliente (con IVA, redondeado hacia arriba) que cubre renta, impuestos, servicios, comisión y tu margen deseado (${cp.margin}%). <strong>Utilidad real</strong>: lo que queda con el precio actual; en rojo si es menor al margen deseado.</p>`;
     html += `<h3 class="kinv-group">Detalle por platillo</h3>${detail}`;
     if (noCost.length) html += `<h3 class="kinv-group">Ingredientes sin costo</h3><p class="adm-muted">${esc(noCost.map((i) => i.name).join(" · "))}</p>`;
     root.innerHTML = html;
   }
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
+    const sv = e.target.closest && e.target.closest("#kCostRoot [data-cp-save]");
+    if (sv) {
+      const root = $("#kCostRoot");
+      const msg = root.querySelector("[data-cp-msg]");
+      const params = {};
+      root.querySelectorAll("[data-cp]").forEach((i) => (params[i.dataset.cp] = Number(i.value)));
+      try {
+        await KitchenStore.kitchenInventoryAction({ action: "cost_params", params }, lastCode);
+        renderCosting(lastCode);
+      } catch (err) {
+        if (msg) msg.textContent = "No se pudo guardar (" + (err && err.message ? err.message : "error") + ").";
+      }
+      return;
+    }
     const b = e.target.closest && e.target.closest("#kRecRoot [data-rec-all], #kRecRoot [data-rec-live]");
     if (!b) return;
     showAllRecipes = b.hasAttribute("data-rec-all");
