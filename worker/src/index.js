@@ -1981,6 +1981,24 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-15): "Pasta Boloñesa" ($185, NUEVO) right before Alfredo. The live menu lives in the DO, so bundled menu-data.js alone doesn't add it. */
+  seedBolognesa1115(menu) {
+    if (this.kvGet("bolognesa1115", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const i = items.findIndex((x) => x.id === "f-alfredo");
+        if (i < 0) continue;
+        if (!items.some((x) => x.id === "f-bolognesa")) {
+          items.splice(i, 0, { id: "f-bolognesa", name: "Pasta Boloñesa", price: 185, notes: "", flags: [], isNew: true, img: "assets/products/f-bolognesa.jpg", name_en: "Pasta Bolognese", name_ja: "ボロネーゼ" });
+          sb.items = items;
+        }
+        this.kvSet("menu", menu);
+        this.kvSet("bolognesa1115", true);
+        return;
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2671,6 +2689,7 @@ export class KitchenStore extends DurableObject {
           this.seedSidesOnlyChoice(menu);
           this.seedMergeChicken(menu);
           this.seedChickenDefault200(menu);
+          this.seedBolognesa1115(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
