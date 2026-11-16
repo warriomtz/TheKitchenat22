@@ -48,6 +48,7 @@
     "f-bagel-pizza": "Bagel pizza",
     "f-bagel-h": "Bagel de huevo con tocino",
     "f-alfredo": "Pasta Alfredo con pollo",
+    "f-bolognesa": "Pasta Boloñesa",
     "f-pesto": "Pasta Pesto con pollo",
     "f-ensalada": "Ensalada con pollo",
   };
