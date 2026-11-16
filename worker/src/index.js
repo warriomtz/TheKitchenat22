@@ -184,7 +184,7 @@ const INV_DEFAULT = {
     "salsa-pesto": { name: "Salsa Pesto", unit: "porciones", group: "Salsas", qty: 7, min: 3 },
     "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: 150 },
     ranch: { name: "Aderezo ranch", unit: "g", group: "Salsas", qty: 640, min: 150 },
-    "carne-bolognesa": { name: "Carne boloñesa 100 g", unit: "unidades", group: "Proteínas", qty: null, min: null, packText: "1 porción", packQty: 1, packCost: 35 }, // ~$35 per 100 g (Mario 2026-11-15); qty null = he sets the stock
+    "carne-bolognesa": { name: "Carne boloñesa 100 g", unit: "unidades", group: "Proteínas", qty: null, min: 2, packText: "1 porción", packQty: 1, packCost: 35, cookAlert: true, lowMsg: "🍖 HAY QUE COCINAR CARNE BOLOÑESA (quedan {n})" }, // ~$35 per 100 g (Mario 2026-11-15); qty null = he sets the stock
     tzatziki: { name: "Dip Tzatziki", unit: "g", group: "Salsas", qty: null, min: null }, // Mario sets stock/cost (qty null = not controlled, never marks dishes out)
     cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
     "salsa-buffalo": { name: "Salsa Buffalo (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 480, min: 480 },
@@ -984,6 +984,17 @@ export class KitchenStore extends DurableObject {
       inv.bolognesaPortions1115 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Bolognese meat: at 2 portions the alert is "cook", not "buy" (Mario 2026-11-15).
+    if (!inv.bolognesaCook1115) {
+      const it = inv.items["carne-bolognesa"];
+      if (it) {
+        it.cookAlert = true;
+        it.lowMsg = "🍖 HAY QUE COCINAR CARNE BOLOÑESA (quedan {n})";
+        if (it.min == null) it.min = 2;
+      }
+      inv.bolognesaCook1115 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
@@ -1355,7 +1366,7 @@ export class KitchenStore extends DurableObject {
         }
         continue;
       }
-      if (it.cookFrom) {
+      if (it.cookFrom || it.cookAlert) {
         if (it.min != null && it.qty <= it.min) cook.push(`• ${it.name}: quedan ${fmt(it.qty)}${unit}`);
         continue;
       }
