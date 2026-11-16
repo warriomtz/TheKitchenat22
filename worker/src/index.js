@@ -184,6 +184,7 @@ const INV_DEFAULT = {
     "salsa-pesto": { name: "Salsa Pesto", unit: "porciones", group: "Salsas", qty: 7, min: 3 },
     "salsa-pomodoro": { name: "Salsa pomodoro", unit: "g", group: "Salsas", qty: 540, min: 150 },
     ranch: { name: "Aderezo ranch", unit: "g", group: "Salsas", qty: 640, min: 150 },
+    "carne-bolognesa": { name: "Carne boloñesa", unit: "g", group: "Proteínas", qty: null, min: null, packText: "100 g", packQty: 100, packCost: 35 }, // ~$35 per 100 g (Mario 2026-11-15); qty null = he sets the stock
     tzatziki: { name: "Dip Tzatziki", unit: "g", group: "Salsas", qty: null, min: null }, // Mario sets stock/cost (qty null = not controlled, never marks dishes out)
     cesar: { name: "Aderezo César", unit: "g", group: "Salsas", qty: 380, min: 100 },
     "salsa-buffalo": { name: "Salsa Buffalo (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 480, min: 480 },
@@ -254,6 +255,7 @@ const INV_DEFAULT = {
     "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 30 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 13 }, { ing: "salsa-alfredo", qty: 1 }],
+    "f-bolognesa": [{ ing: "pasta", qty: 1 }, { ing: "carne-bolognesa", qty: 100 }, { ing: "parmesano", qty: 30 }], // 30 g parmesano like Pomodoro; salsa to be added once costed
     "f-pesto": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pesto", qty: 1 }],
     "f-ensalada": [{ ing: "pollo-100", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "ensalada", qty: 80 }, { ing: "tomate-cherry", qty: 40 }, { ing: "parmesano", qty: 13 }, { ing: "ranch", qty: 35, if: { dressing: "ranch" }, variant: true, outId: "dressing-ranch" }, { ing: "cesar", qty: 35, if: { dressing: "cesar" }, variant: true, outId: "dressing-cesar" }],
     "side:arroz": [{ ing: "arroz", qty: 1 }],
@@ -956,6 +958,13 @@ export class KitchenStore extends DurableObject {
       const mp = inv.recipes["m-pollo-100"];
       if (Array.isArray(mp)) for (const r of mp) if (r.ing === "pollo-200" && !r.alt) r.alt = { ing: "pollo-100", qty: 2 };
       inv.pollo200alt1114 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pasta Boloñesa (Mario 2026-11-15): 1 pasta portion (same as Alfredo/Pesto) + 100 g parmesano 30 g (same as Pomodoro) + 100 g bolognese meat at ~$35 / 100 g.
+    if (!inv.bolognesa1115) {
+      if (!inv.items["carne-bolognesa"]) inv.items["carne-bolognesa"] = { name: "Carne boloñesa", unit: "g", group: "Proteínas", qty: null, min: null, packText: "100 g", packQty: 100, packCost: 35 };
+      if (!inv.recipes["f-bolognesa"]) inv.recipes["f-bolognesa"] = [{ ing: "pasta", qty: 1 }, { ing: "carne-bolognesa", qty: 100 }, { ing: "parmesano", qty: 30 }];
+      inv.bolognesa1115 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
