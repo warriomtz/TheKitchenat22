@@ -25,6 +25,7 @@
     "m-pollo-100": "Meal Prep Pollo",
     "m-atun": "Meal Prep Atún",
     "m-carne-molida": "Meal Prep Carne molida",
+    "m-lasagna": "Meal Prep Lasagna",
     "m-sirloin": "Meal Prep Rib Eye",
     "m-salmon": "Meal Prep Salmón",
     "f-club": "Club sandwich",

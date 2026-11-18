@@ -194,6 +194,7 @@ const INV_DEFAULT = {
     "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Panes", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
+    lasagna: { name: "Lasagna 320 g", unit: "unidades", group: "Proteínas", qty: 8, min: 1, packText: "1 porción (~320 g)", packQty: 1, packCost: 51 }, // 8 porciones por $408 (Mario 2026-11-18)
     res: { name: "Res", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     salmon: { name: "Salmón", unit: "unidades", group: "Proteínas", qty: 3, min: 1 },
     arroz: { name: "Arroz cocido (porciones)", unit: "porciones", group: "Complementos", qty: 12, min: 3, cookFrom: "arroz-crudo", cookLabel: "🍚 Ya cociné arroz", cookRatio: 250 / 6, cookBatch: 6 },
@@ -213,6 +214,7 @@ const INV_DEFAULT = {
     ],
     "m-atun": [{ ing: "atun", qty: 1 }],
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
+    "m-lasagna": [{ ing: "lasagna", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 40 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
@@ -993,6 +995,13 @@ export class KitchenStore extends DurableObject {
         if (it.min == null) it.min = 2;
       }
       inv.bolognesaCook1115 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Lasagna meal prep replaces ground beef (Mario 2026-11-18): 8 portions, $408 total.
+    if (!inv.lasagna1118) {
+      if (!inv.items.lasagna) inv.items.lasagna = { name: "Lasagna 320 g", unit: "unidades", group: "Proteínas", qty: 8, min: 1, packText: "1 porción (~320 g)", packQty: 1, packCost: 51 };
+      if (!inv.recipes["m-lasagna"]) inv.recipes["m-lasagna"] = [{ ing: "lasagna", qty: 1 }];
+      inv.lasagna1118 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
@@ -1999,6 +2008,22 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-18): meal prep "Carne molida" becomes "Lasagna · 320 g" ($219, NUEVO), same position. */
+  seedLasagna1118(menu) {
+    if (this.kvGet("lasagna1118", false)) return;
+    const sub = menu.mealprep && (menu.mealprep.subcategories.Plan || Object.values(menu.mealprep.subcategories)[0]);
+    if (!sub) return;
+    const items = sub.items || [];
+    const i = items.findIndex((x) => x.id === "m-carne-molida");
+    const lasa = { id: "m-lasagna", name: "Lasagna · 320 g", price: 219, notes: "", notesKey: "mpIncludesSides", flags: ["sides2"], isNew: true, img: "", name_en: "Lasagna · 320 g", name_ja: "ラザニア · 320g" };
+    if (i >= 0) {
+      const old = items[i];
+      items[i] = { ...old, ...lasa, flags: old.flags || lasa.flags, notesKey: old.notesKey != null ? old.notesKey : lasa.notesKey };
+    } else if (!items.some((x) => x.id === "m-lasagna")) items.splice(Math.min(3, items.length), 0, lasa);
+    sub.items = items;
+    this.kvSet("menu", menu);
+    this.kvSet("lasagna1118", true);
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2690,6 +2715,7 @@ export class KitchenStore extends DurableObject {
           this.seedMergeChicken(menu);
           this.seedChickenDefault200(menu);
           this.seedBolognesa1115(menu);
+          this.seedLasagna1118(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
