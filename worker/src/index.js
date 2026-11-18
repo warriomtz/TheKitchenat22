@@ -2015,7 +2015,7 @@ export class KitchenStore extends DurableObject {
     if (!sub) return;
     const items = sub.items || [];
     const i = items.findIndex((x) => x.id === "m-carne-molida");
-    const lasa = { id: "m-lasagna", name: "Lasagna · 320 g", price: 219, notes: "", notesKey: "mpIncludesSides", flags: ["sides2"], isNew: true, img: "", name_en: "Lasagna · 320 g", name_ja: "ラザニア · 320g" };
+    const lasa = { id: "m-lasagna", name: "Lasagna · 320 g", price: 219, notes: "", notesKey: "mpIncludesSides", flags: ["sides2"], isNew: true, img: "assets/products/m-lasagna.jpg", name_en: "Lasagna · 320 g", name_ja: "ラザニア · 320g" };
     if (i >= 0) {
       const old = items[i];
       items[i] = { ...old, ...lasa, flags: old.flags || lasa.flags, notesKey: old.notesKey != null ? old.notesKey : lasa.notesKey };
@@ -2023,6 +2023,22 @@ export class KitchenStore extends DurableObject {
     sub.items = items;
     this.kvSet("menu", menu);
     this.kvSet("lasagna1118", true);
+  }
+  /** One-time (2026-11-18): photo for the lasagna meal prep. */
+  seedLasagnaPhoto1118(menu) {
+    if (this.kvGet("lasagnaPhoto1118", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "m-lasagna") {
+            it.img = "assets/products/m-lasagna.jpg";
+            this.kvSet("menu", menu);
+            this.kvSet("lasagnaPhoto1118", true);
+            return;
+          }
+        }
+      }
+    }
   }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
@@ -2716,6 +2732,7 @@ export class KitchenStore extends DurableObject {
           this.seedChickenDefault200(menu);
           this.seedBolognesa1115(menu);
           this.seedLasagna1118(menu);
+          this.seedLasagnaPhoto1118(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
