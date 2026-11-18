@@ -2040,6 +2040,22 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-18): cache-bust the lasagna photo (replaced with a black-background cutout; browsers kept the old file). */
+  seedLasagnaPhoto1118b(menu) {
+    if (this.kvGet("lasagnaPhoto1118b", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "m-lasagna") {
+            it.img = "https://thekitchenat22.com/assets/products/m-lasagna.jpg?v=20261118b";
+            this.kvSet("menu", menu);
+            this.kvSet("lasagnaPhoto1118b", true);
+            return;
+          }
+        }
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2733,6 +2749,7 @@ export class KitchenStore extends DurableObject {
           this.seedBolognesa1115(menu);
           this.seedLasagna1118(menu);
           this.seedLasagnaPhoto1118(menu);
+          this.seedLasagnaPhoto1118b(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
