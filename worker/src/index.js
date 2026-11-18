@@ -1004,6 +1004,12 @@ export class KitchenStore extends DurableObject {
       inv.lasagna1118 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Rollos primavera and carne molida out of the shopping list (Mario 2026-11-18): no longer sold / replaced by lasagna.
+    if (!inv.noShop1118) {
+      for (const k of ["rollos-primavera", "carne-molida"]) if (inv.items[k]) inv.items[k].noShop = true;
+      inv.noShop1118 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
     // One-time seed guarded by a flag instead of an INV_VERSION bump, so recipes Mario edited are not reset.
     if (!inv.takeoutBoxes) {
@@ -1364,7 +1370,7 @@ export class KitchenStore extends DurableObject {
       bySup.get(sup).push({ rank, text });
     };
     for (const it of Object.values(inv.items || {})) {
-      if (it.qty == null) continue;
+      if (it.qty == null || it.noShop) continue;
       const unit = it.unit ? " " + it.unit : "";
       if (it.buyWith) {
         // bought only when the dish it feeds is at its minimum (time to cook again)
