@@ -2062,6 +2062,34 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-18): new "Burrito de carne molida" ($189, NUEVO) in Street food, right after the burger; same sides as the burger (salad, french fries, wedges). */
+  seedBurrito1118(menu) {
+    if (this.kvGet("burrito1118", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-burger");
+        if (idx < 0) continue;
+        if (!items.some((i) => i.id === "f-burrito")) {
+          items.splice(idx + 1, 0, {
+            id: "f-burrito",
+            name: "Burrito de carne molida",
+            price: 189,
+            notesKey: "burgerNote",
+            flags: ["side", "burgerSides"],
+            isNew: true,
+            img: "",
+            name_en: "Ground beef burrito",
+            name_ja: "牛ひき肉のブリトー",
+          });
+        }
+        sb.items = items;
+        this.kvSet("menu", menu);
+        this.kvSet("burrito1118", true);
+        return;
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2756,6 +2784,7 @@ export class KitchenStore extends DurableObject {
           this.seedLasagna1118(menu);
           this.seedLasagnaPhoto1118(menu);
           this.seedLasagnaPhoto1118b(menu);
+          this.seedBurrito1118(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
