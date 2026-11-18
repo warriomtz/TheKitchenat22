@@ -142,7 +142,7 @@ const normTxt = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[
 const barDay = () => new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
 
 /** Starting kitchen inventory (Meal Prep). qty:null = not tracked. */
-const INV_VERSION = 64;
+const INV_VERSION = 65;
 const TAKEOUT_BOXES_PER_DISH = 1; // containers per dish in a takeout order (seed value; editable in Recetas)
 // Already packaged / not served in a box: drinks (d-, b-), bag of chips, cookies, popsicles
 const TAKEOUT_NO_BOX = (id) => /^(d-|b-)/.test(String(id)) || ["f-bolsa", "f-galletas", "f-paletas"].includes(String(id));
@@ -155,8 +155,8 @@ const INV_DEFAULT = {
     "pollo-club": { name: "Pollo para Club sandwich", unit: "unidades", group: "Proteínas", qty: 5, min: 1, costFrom: "pollo-crudo" },
     "carne-hamburguesa": { name: "Carne de hamburguesa", unit: "unidades", group: "Proteínas", qty: 9, min: 2 },
     "pollo-empanizado": { name: "Pollo empanizado", unit: "unidades", group: "Proteínas", qty: 12, min: 2 },
-    "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes", qty: 2, min: 4 },
-    bagel: { name: "Bagel", unit: "unidades", group: "Panes", qty: 9, min: 1 },
+    "pan-hamburguesa": { name: "Pan de hamburguesa", unit: "unidades", group: "Panes y harinas", qty: 2, min: 4 },
+    bagel: { name: "Bagel", unit: "unidades", group: "Panes y harinas", qty: 9, min: 1 },
     pasta: { name: "Pasta cocida (lista)", unit: "porciones", group: "Pastas", qty: 6, min: 2, target: 6, cookRatio: 1 / 6, cookFrom: "pasta-cruda", cookLabel: "🍝 Ya cociné pasta", lowMsg: "🍝 HAY QUE HACER PASTA: quedan {n} porciones listas (meta {t})." },
     "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "paquetes", group: "Pastas", qty: 2, min: null },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Verdura", qty: 2, min: 1, target: 2 },
@@ -165,7 +165,7 @@ const INV_DEFAULT = {
     salami: { name: "Salami", unit: "g", group: "Carnes frías", qty: 220, min: 36 },
     "papas-francesa": { name: "Papas a la francesa", unit: "g", group: "Papas", qty: 9900, min: 1300 },
     "papas-gajo": { name: "Papas gajo", unit: "g", group: "Papas", qty: 1900, min: 500 },
-    waffle: { name: "Waffle", unit: "unidades", group: "Panes", qty: 1, min: null },
+    waffle: { name: "Waffle", unit: "unidades", group: "Panes y harinas", qty: 1, min: null },
     "verduras-salteadas": { name: "Verduras salteadas", unit: "g", group: "Complementos", qty: 510, min: 600 },
     boneless: { name: "Boneless", unit: "g", group: "Proteínas", qty: 1900, min: 600 },
     "bolsa-papa": { name: "Bolsas de papa", unit: "piezas", group: "Snacks", qty: 3, min: 5 },
@@ -191,7 +191,7 @@ const INV_DEFAULT = {
     "salsa-bbq": { name: "Salsa BBQ (total: abierta + cerrada)", unit: "g", group: "Salsas", qty: 620, min: 620 },
     "salsa-cfa-original": { name: "Salsa CFA original", unit: "g", group: "Salsas", qty: 60, min: 100 },
     "salsa-cfa-bbq": { name: "Salsa CFA BBQ", unit: "g", group: "Salsas", qty: 420, min: null },
-    "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Panes", qty: 17, min: 6 },
+    "pan-rebanada": { name: "Pan de caja (rebanadas)", unit: "rebanadas", group: "Panes y harinas", qty: 17, min: 6 },
     atun: { name: "Atún", unit: "unidades", group: "Proteínas", qty: 1, min: 1 },
     "carne-molida": { name: "Carne molida", unit: "unidades", group: "Proteínas", qty: 4, min: 1 },
     lasagna: { name: "Lasagna 320 g", unit: "unidades", group: "Proteínas", qty: 8, min: 1, packText: "1 porción (~320 g)", packQty: 1, packCost: 51 }, // 8 porciones por $408 (Mario 2026-11-18)
@@ -779,8 +779,9 @@ export class KitchenStore extends DurableObject {
         if (it["salsa-cfa-bbq"] && it["salsa-cfa-bbq"].qty == null) it["salsa-cfa-bbq"].qty = 420;
       }
       for (const id of ["pollo-200", "pollo-100", "pollo-club"]) if (inv.items[id] && inv.items[id].costFrom == null) inv.items[id].costFrom = "pollo-crudo";
-      // v64: all breads under one group ("Panes")
-      if ((inv.v || 1) < 64) for (const id of ["pan-hamburguesa", "bagel", "pan-rebanada", "waffle"]) if (inv.items[id]) inv.items[id].group = "Panes";
+      // v64: all breads under one group; v65 (2026-11-18): that group is now "Panes y harinas" and holds the flour tortilla too
+      if ((inv.v || 1) < 64) for (const id of ["pan-hamburguesa", "bagel", "pan-rebanada", "waffle"]) if (inv.items[id]) inv.items[id].group = "Panes y harinas";
+      if ((inv.v || 1) < 65) for (const it of Object.values(inv.items)) if (it && (it.group === "Panes" || /tortilla/i.test(it.name || ""))) it.group = "Panes y harinas";
       inv.v = INV_VERSION;
       this.kvSet("kitchenInv", inv);
     }
