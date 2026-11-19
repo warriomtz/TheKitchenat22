@@ -172,6 +172,8 @@ const INV_DEFAULT = {
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
+    "mix-burrito": { name: "Mix burrito (carne, arroz y frijol)", unit: "porciones", group: "Proteínas", qty: null, min: 2, packText: "1 cubo (100 g carne + 100 g arroz + 100 g frijol)", packQty: 1, cookAlert: true, lowMsg: "🌯 HAY QUE COCINAR MIX DE BURRITO (quedan {n})" },
+    "tortilla-harina": { name: "Tortilla de harina", unit: "piezas", group: "Panes y harinas", qty: null, min: null, packText: "paquete de 10", packQty: 10, packCost: 52 },
     stroopwafel: { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null },
     "paleta-choc": { name: "Paletas de chocolate", unit: "piezas", group: "Dulces", qty: 4, min: 1 },
     "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
@@ -219,6 +221,7 @@ const INV_DEFAULT = {
     "m-lasagna": [{ ing: "lasagna", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
+    "f-burrito": [{ ing: "mix-burrito", qty: 1 }, { ing: "tortilla-harina", qty: 1 }, { ing: "queso-rayado", qty: 30 }, { ing: "tzatziki", qty: 30 }, { ing: "ensalada", qty: 20 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }], // mix = carne + arroz + frijol (100 g each); stock/cost entered by Mario
     "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 40 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 140 }, { ing: "ensalada", qty: 30 }, { ing: "tomate-cherry", qty: 30 }, { ing: "zanahoria-baby", qty: 40 }],
@@ -1038,6 +1041,20 @@ export class KitchenStore extends DurableObject {
       if (!inv.items.stroopwafel) inv.items.stroopwafel = { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null };
       if (!inv.recipes["f-stroopwafel"]) inv.recipes["f-stroopwafel"] = [{ ing: "stroopwafel", qty: 1 }];
       inv.stroopwafel1118 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Burrito inventory (Mario 2026-11-18): the mix (meat + rice + beans) is a protein; recipe also uses flour tortilla (reuse an existing tortilla item if one was created), cheese, tzatziki, lettuce and the club-style sides.
+    if (!inv.burrito1118) {
+      if (!inv.items["mix-burrito"]) inv.items["mix-burrito"] = { name: "Mix burrito (carne, arroz y frijol)", unit: "porciones", group: "Proteínas", qty: null, min: 2, packText: "1 cubo (100 g carne + 100 g arroz + 100 g frijol)", packQty: 1, cookAlert: true, lowMsg: "🌯 HAY QUE COCINAR MIX DE BURRITO (quedan {n})" };
+      let tid = Object.keys(inv.items).find((k) => /tortilla/i.test(inv.items[k].name || "") && /harina/i.test(inv.items[k].name || ""));
+      if (!tid) {
+        tid = "tortilla-harina";
+        inv.items[tid] = { name: "Tortilla de harina", unit: "piezas", group: "Panes y harinas", qty: null, min: null, packText: "paquete de 10", packQty: 10, packCost: 52 };
+      }
+      if (!inv.recipes["f-burrito"]) {
+        inv.recipes["f-burrito"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-burrito"])).map((r) => (r.ing === "tortilla-harina" ? { ...r, ing: tid } : r));
+      }
+      inv.burrito1118 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
