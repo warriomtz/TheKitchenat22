@@ -42,6 +42,7 @@
     "f-boneless": "Boneless",
     "f-bolsa": "Bolsa de papa",
     "f-galletas": "Galletas",
+    "f-stroopwafel": "Stroopwafel",
     "f-paletas": "Paletas",
     "f-ensalada-sin": "Ensalada sin proteína",
     "f-papas-g": "Papas gajo picantes",

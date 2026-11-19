@@ -145,7 +145,7 @@ const barDay = () => new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(
 const INV_VERSION = 65;
 const TAKEOUT_BOXES_PER_DISH = 1; // containers per dish in a takeout order (seed value; editable in Recetas)
 // Already packaged / not served in a box: drinks (d-, b-), bag of chips, cookies, popsicles
-const TAKEOUT_NO_BOX = (id) => /^(d-|b-)/.test(String(id)) || ["f-bolsa", "f-galletas", "f-paletas"].includes(String(id));
+const TAKEOUT_NO_BOX = (id) => /^(d-|b-)/.test(String(id)) || ["f-bolsa", "f-galletas", "f-stroopwafel", "f-paletas"].includes(String(id));
 const INV_DEFAULT = {
   v: INV_VERSION,
   items: {
@@ -172,6 +172,7 @@ const INV_DEFAULT = {
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
+    stroopwafel: { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null },
     "paleta-choc": { name: "Paletas de chocolate", unit: "piezas", group: "Dulces", qty: 4, min: 1 },
     "paleta-fruta": { name: "Paletas de frutas", unit: "piezas", group: "Dulces", qty: 7, min: 1 },
     ensalada: { name: "Ensalada (mezcla)", unit: "g", group: "Verdura", qty: 400, min: 160 },
@@ -227,6 +228,7 @@ const INV_DEFAULT = {
     "f-boneless": [{ ing: "boneless", qty: 210 }, { ing: "zanahoria-baby", qty: 80 }, { ing: "ranch", qty: 35 }, { ing: "salsa-buffalo", qty: 45, if: { flavor: "buffalo" }, variant: true, outId: "boneless-buffalo" }, { ing: "salsa-bbq", qty: 45, if: { flavor: "bbq" }, variant: true, outId: "boneless-bbq" }, { ing: "salsa-buffalo", qty: 45, if: { xsBuffalo: "1" }, optional: true }, { ing: "salsa-bbq", qty: 45, if: { xsBbq: "1" }, optional: true }, { ing: "salsa-cfa-original", qty: 45, if: { flavor: "cfa_original" }, variant: true, outId: "boneless-cfa-original" }, { ing: "salsa-cfa-bbq", qty: 45, if: { flavor: "cfa_bbq" }, variant: true, outId: "boneless-cfa-bbq" }, { ing: "salsa-cfa-original", qty: 45, if: { xsCfaOriginal: "1" }, optional: true }, { ing: "salsa-cfa-bbq", qty: 45, if: { xsCfaBbq: "1" }, optional: true },],
     "f-bolsa": [{ ing: "bolsa-papa", qty: 1 }],
     "f-galletas": [{ ing: "galletas", qty: 1 }],
+    "f-stroopwafel": [{ ing: "stroopwafel", qty: 1 }],
     "f-paletas": [
       { ing: "paleta-choc", qty: 1, if: { paleta: "choc" }, outId: "paletas-choc" },
       { ing: "paleta-fruta", qty: 1, if: { paleta: "fruta" }, outId: "paletas-fruta" },
@@ -1029,6 +1031,13 @@ export class KitchenStore extends DurableObject {
         rec.push({ ing: "pollo-empanizado", qty: 1, if: { chickenSize: "empanizado" }, outId: "mp-chicken-empanizado" });
       }
       inv.mpEmpanizado1118 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Stroopwafel (Mario 2026-11-18): new dessert, 1 piece per order; stock/cost to be entered by Mario (qty null = not controlled).
+    if (!inv.stroopwafel1118) {
+      if (!inv.items.stroopwafel) inv.items.stroopwafel = { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null };
+      if (!inv.recipes["f-stroopwafel"]) inv.recipes["f-stroopwafel"] = [{ ing: "stroopwafel", qty: 1 }];
+      inv.stroopwafel1118 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
@@ -2139,6 +2148,24 @@ export class KitchenStore extends DurableObject {
     this.kvSet("menu", menu);
     this.kvSet("pomodoroName1118", true);
   }
+  /** One-time (2026-11-18): Stroopwafel ($25) right after Galletas, before Paletas. */
+  seedStroopwafel1118(menu) {
+    if (this.kvGet("stroopwafel1118", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const i = items.findIndex((x) => x.id === "f-galletas");
+        if (i < 0) continue;
+        if (!items.some((x) => x.id === "f-stroopwafel")) {
+          items.splice(i + 1, 0, { id: "f-stroopwafel", name: "Stroopwafel", price: 25, notes: "", flags: [], img: "", name_en: "Stroopwafel", name_ja: "ストロープワッフル" });
+          sb.items = items;
+        }
+        this.kvSet("menu", menu);
+        this.kvSet("stroopwafel1118", true);
+        return;
+      }
+    }
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2837,6 +2864,7 @@ export class KitchenStore extends DurableObject {
           this.seedLasagnaPhoto1118b(menu);
           this.seedPastaNames1118(menu);
           this.seedPomodoroName1118(menu);
+          this.seedStroopwafel1118(menu);
           this.seedBurrito1118(menu);
           return [200, { menu }];
         }

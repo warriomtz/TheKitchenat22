@@ -189,6 +189,7 @@ window.KITCHEN_MENU = {
         items: [
           { id: "f-waffle-d", name: "Waffle dulce", price: 115, notesKey: "waffleNote", flags: ["waffle"], img: "assets/products/f-waffle-d.jpg" },
           { id: "f-galletas", name: "Galletas", price: 25, notes: "", flags: [], img: "assets/products/f-galletas.jpg" },
+          { id: "f-stroopwafel", name: "Stroopwafel", price: 25, notes: "", flags: [], img: "" },
           { id: "f-paletas", name: "Paletas", price: 35, notes: "", flags: ["paletas"], img: "assets/products/f-paletas.jpg" },
         ],
       },
