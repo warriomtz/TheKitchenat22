@@ -2182,6 +2182,7 @@ const DEFAULT_HOURS = {
       fields += chips("chickenSize", t("mpChickenSize"), [
         { v: `${t("mpChicken200")} · $${Math.round(item.price)}`, k: "200", disabled: isOut("mp-chicken-200") },
         { v: `${t("mpChicken100")} · $${Math.round(item.price - 60)}`, k: "100", disabled: isOut("mp-chicken-100") },
+        { v: `${t("mpChickenBreaded")} · $129`, k: "empanizado", disabled: isOut("mp-chicken-empanizado") },
       ]);
     }
     if (flags.includes("pastaSauce")) {
@@ -2510,6 +2511,9 @@ const DEFAULT_HOURS = {
       if (selected("chickenSize") === "100") {
         extra -= 60;
         parts.push(t("mpChicken100Short"));
+      } else if (selected("chickenSize") === "empanizado") {
+        extra += 129 - item.price;
+        parts.push(t("mpChickenBreadedShort"));
       } else {
         parts.push(t("mpChicken200Short"));
       }

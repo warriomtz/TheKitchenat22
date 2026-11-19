@@ -211,6 +211,7 @@ const INV_DEFAULT = {
     "m-pollo-100": [
       { ing: "pollo-200", qty: 1, if: { chickenSize: "200" }, default: true, outId: "mp-chicken-200", alt: { ing: "pollo-100", qty: 2 } }, // when the 200 g portions run out, a 200 g order uses 2 x 100 g (Mario 2026-11-14)
       { ing: "pollo-100", qty: 1, if: { chickenSize: "100" }, outId: "mp-chicken-100" },
+      { ing: "pollo-empanizado", qty: 1, if: { chickenSize: "empanizado" }, outId: "mp-chicken-empanizado" }, // $129 option (Mario 2026-11-18)
     ],
     "m-atun": [{ ing: "atun", qty: 1 }],
     "m-carne-molida": [{ ing: "carne-molida", qty: 1 }],
@@ -1019,6 +1020,15 @@ export class KitchenStore extends DurableObject {
         rec.push({ ing: "salsa-pesto", qty: 1, if: { pastaSauce: "pesto" }, variant: true, outId: "pasta-sauce-pesto" });
       }
       inv.pomodoroPasta1118 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Meal prep breaded chicken option (Mario 2026-11-18): uses 1 pollo-empanizado.
+    if (!inv.mpEmpanizado1118) {
+      const rec = inv.recipes["m-pollo-100"];
+      if (Array.isArray(rec) && !rec.some((r) => r.if && r.if.chickenSize === "empanizado")) {
+        rec.push({ ing: "pollo-empanizado", qty: 1, if: { chickenSize: "empanizado" }, outId: "mp-chicken-empanizado" });
+      }
+      inv.mpEmpanizado1118 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.

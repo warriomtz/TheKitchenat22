@@ -52,7 +52,10 @@ ok(j.autoOut.includes("f-burger-beef") && !j.autoOut.includes("f-burger"), "beef
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 0 }, CODE);
 ok(j.autoOut.includes("mp-chicken-100") && !j.autoOut.includes("m-pollo-100"), "100 g option blocked only");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-200", qty: 0 }, CODE);
-ok(j.autoOut.includes("m-pollo-100"), "both sizes out -> dish out");
+ok(!j.autoOut.includes("m-pollo-100"), "200+100 out but breaded left -> dish still available");
+[s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-empanizado", qty: 0 }, CODE);
+ok(j.autoOut.includes("m-pollo-100"), "all three chicken options out -> dish out");
+await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-empanizado", qty: 11 }, CODE);
 // pollo 100 g also used by pasta/ensalada (+1 with extra chicken)
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "set", id: "pollo-100", qty: 10 }, CODE);
 [s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
