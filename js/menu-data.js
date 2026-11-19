@@ -164,7 +164,7 @@ window.KITCHEN_MENU = {
           { id: "f-salmon-plate", name: "Salmón con ensalada y papas gajo", price: 300, notes: "", flags: [], img: "assets/products/f-salmon-plate.jpg" },
           { id: "f-waffle-m", name: "Chicken and Waffle", price: 175, notes: "", flags: [], img: "assets/products/f-waffle-m.jpg" },
           { id: "f-burger", name: "Hamburguesa Res o Pollo", price: 189, notesKey: "includesSide", flags: ["burger", "side"], img: "assets/products/f-burger.jpg" },
-          { id: "f-burrito", name: "Burrito", price: 189, notesKey: "burritoNote", flags: ["side", "burgerSides"], isNew: true, img: "" },
+          { id: "f-burrito", name: "Burrito", price: 189, notesKey: "burritoNote", flags: ["side", "chipsUpgrade"], isNew: true, img: "assets/products/f-burrito.jpg" },
           { id: "f-empanadas", name: "Empanadas de carne (orden de 3)", price: 189, notesKey: "empanadasNote", flags: ["side", "chipsUpgrade"], img: "assets/products/f-empanadas.jpg" },
         ],
       },

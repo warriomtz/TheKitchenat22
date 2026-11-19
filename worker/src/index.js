@@ -2106,9 +2106,9 @@ export class KitchenStore extends DurableObject {
             name: "Burrito de carne molida",
             price: 189,
             notesKey: "burgerNote",
-            flags: ["side", "burgerSides"],
+            flags: ["side", "chipsUpgrade"],
             isNew: true,
-            img: "",
+            img: "assets/products/f-burrito.jpg",
             name_en: "Ground beef burrito",
             name_ja: "牛ひき肉のブリトー",
           });
@@ -2206,6 +2206,21 @@ export class KitchenStore extends DurableObject {
     if (!found) return;
     this.kvSet("menu", menu);
     this.kvSet("stroopNew1118", true);
+  }
+  /** One-time (2026-11-18): Burrito sides like the club sandwich (salad or chips, +french fries upgrade) and its photo. */
+  seedBurritoSides1118(menu) {
+    if (this.kvGet("burritoSides1118", false)) return;
+    let found = false;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-burrito") { it.flags = ["side", "chipsUpgrade"]; it.img = "assets/products/f-burrito.jpg"; found = true; }
+        }
+      }
+    }
+    if (!found) return;
+    this.kvSet("menu", menu);
+    this.kvSet("burritoSides1118", true);
   }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
@@ -2908,6 +2923,7 @@ export class KitchenStore extends DurableObject {
           this.seedStroopwafel1118(menu);
           this.seedBurrito1118(menu);
           this.seedBurritoName1118(menu);
+          this.seedBurritoSides1118(menu);
           this.seedStroopwafelPhoto1118(menu);
           this.seedStroopwafelNew1118(menu);
           return [200, { menu }];
