@@ -31,7 +31,7 @@
     "f-club": "Club sandwich",
     "f-burger": "Hamburguesa",
     "f-burrito": "Burrito de carne molida",
-    "f-pechuga-pomodoro": "Pechuga Pomodoro",
+    "f-pechuga-pomodoro": "Pasta c/ pechuga pomodoro",
     "f-edamames": "Edamames preparados",
     "f-guac": "Guacamole",
     "f-empanadas": "Empanadas (papas a la francesa)",

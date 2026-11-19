@@ -2126,6 +2126,19 @@ export class KitchenStore extends DurableObject {
     this.kvSet("menu", menu);
     this.kvSet("pastaNames1118", true);
   }
+  /** One-time (2026-11-18): "Pechuga Pomodoro" -> "Pasta c/ pechuga pomodoro". */
+  seedPomodoroName1118(menu) {
+    if (this.kvGet("pomodoroName1118", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-pechuga-pomodoro") { it.name = "Pasta c/ pechuga pomodoro"; if (it.name_en) it.name_en = "Pasta w/ chicken pomodoro"; }
+        }
+      }
+    }
+    this.kvSet("menu", menu);
+    this.kvSet("pomodoroName1118", true);
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2823,6 +2836,7 @@ export class KitchenStore extends DurableObject {
           this.seedLasagnaPhoto1118(menu);
           this.seedLasagnaPhoto1118b(menu);
           this.seedPastaNames1118(menu);
+          this.seedPomodoroName1118(menu);
           this.seedBurrito1118(menu);
           return [200, { menu }];
         }
