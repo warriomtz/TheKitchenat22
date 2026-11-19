@@ -252,7 +252,7 @@ const INV_DEFAULT = {
       { ing: "pollo-empanizado", qty: 1, if: { burger: "chicken" }, variant: true, outId: "f-burger-chicken" },
     ],
     "f-guac": [{ ing: "guacamole", qty: 1 }, { ing: "totopos", qty: 70 }],
-    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pomodoro", qty: 30 }],
+    "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pomodoro", qty: 30 }, { ing: "salsa-alfredo", qty: 1, if: { pastaSauce: "alfredo" }, variant: true, outId: "pasta-sauce-alfredo" }, { ing: "salsa-pesto", qty: 1, if: { pastaSauce: "pesto" }, variant: true, outId: "pasta-sauce-pesto" }],
     "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }, { ing: "salsa-pomodoro", qty: 60 }],
     "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 30 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
@@ -1009,6 +1009,16 @@ export class KitchenStore extends DurableObject {
     if (!inv.noShop1118) {
       for (const k of ["rollos-primavera", "carne-molida"]) if (inv.items[k]) inv.items[k].noShop = true;
       inv.noShop1118 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pechuga Pomodoro: customer picks pasta Alfredo or Pesto (Mario 2026-11-18); each uses 1 portion of that sauce.
+    if (!inv.pomodoroPasta1118) {
+      const rec = inv.recipes["f-pechuga-pomodoro"];
+      if (Array.isArray(rec) && !rec.some((r) => r.if && r.if.pastaSauce)) {
+        rec.push({ ing: "salsa-alfredo", qty: 1, if: { pastaSauce: "alfredo" }, variant: true, outId: "pasta-sauce-alfredo" });
+        rec.push({ ing: "salsa-pesto", qty: 1, if: { pastaSauce: "pesto" }, variant: true, outId: "pasta-sauce-pesto" });
+      }
+      inv.pomodoroPasta1118 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Takeout containers (Mario 2026-10-26): 82 on hand; each dish in an order that is not "dine in" uses TAKEOUT_BOXES_PER_DISH.
@@ -2091,6 +2101,21 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-18): "Salsa Alfredo/Pesto con pollo" -> "Pasta ..."; Pechuga Pomodoro gets the pasta-sauce choice. */
+  seedPastaNames1118(menu) {
+    if (this.kvGet("pastaNames1118", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-alfredo") { it.name = "Pasta Alfredo con pollo"; it.name_en = "Alfredo pasta with chicken"; }
+          if (it.id === "f-pesto") { it.name = "Pasta Pesto con pollo"; it.name_en = "Pesto pasta with chicken"; }
+          if (it.id === "f-pechuga-pomodoro") it.flags = Array.from(new Set([...(it.flags || []), "pastaSauce"]));
+        }
+      }
+    }
+    this.kvSet("menu", menu);
+    this.kvSet("pastaNames1118", true);
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2377,6 +2402,8 @@ export class KitchenStore extends DurableObject {
     if (cs) opts.chickenSize = cs;
     const bg = str(raw.burger, 20).trim();
     if (bg) opts.burger = bg;
+    const ps = str(raw.pastaSauce, 10).trim();
+    if (ps === "alfredo" || ps === "pesto") opts.pastaSauce = ps;
     const sd = str(raw.side, 12).trim();
     if (sd) opts.side = sd;
     const bs = str(raw.burgerSauce, 24).trim();
@@ -2785,6 +2812,7 @@ export class KitchenStore extends DurableObject {
           this.seedLasagna1118(menu);
           this.seedLasagnaPhoto1118(menu);
           this.seedLasagnaPhoto1118b(menu);
+          this.seedPastaNames1118(menu);
           this.seedBurrito1118(menu);
           return [200, { menu }];
         }

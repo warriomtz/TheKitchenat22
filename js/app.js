@@ -2184,6 +2184,12 @@ const DEFAULT_HOURS = {
         { v: `${t("mpChicken100")} · $${Math.round(item.price - 60)}`, k: "100", disabled: isOut("mp-chicken-100") },
       ]);
     }
+    if (flags.includes("pastaSauce")) {
+      fields += chips("pastaSauce", t("pastaSauce"), [
+        { v: t("pastaSauceAlfredo"), k: "alfredo", disabled: isOut("pasta-sauce-alfredo") },
+        { v: t("pastaSaucePesto"), k: "pesto", disabled: isOut("pasta-sauce-pesto") },
+      ]);
+    }
     if (flags.includes("sides2")) {
       fields += chips(
         "mpSides",
@@ -2579,6 +2585,11 @@ const DEFAULT_HOURS = {
         if (!f.includes("burger") && !f.includes("burgerSides")) extra += 15;
       }
     }
+    if (f.includes("pastaSauce")) {
+      const v = selected("pastaSauce");
+      if (v === "alfredo") parts.push(`${t("pastaSauce")} ${t("pastaSauceAlfredo")}`);
+      if (v === "pesto") parts.push(`${t("pastaSauce")} ${t("pastaSaucePesto")}`);
+    }
     if (f.includes("dressing")) {
       const v = selected("dressing");
       if (v) parts.push(v);
@@ -2772,6 +2783,17 @@ const DEFAULT_HOURS = {
         return;
       }
     }
+    if (flags.includes("pastaSauce")) {
+      const v = selected("pastaSauce");
+      if (!v) {
+        toast(t("pastaSauceNeed"));
+        return;
+      }
+      if (isOut(`pasta-sauce-${v}`)) {
+        toast(t("outOfStock"));
+        return;
+      }
+    }
     if (flags.includes("sides2")) {
       const third = !!$("#thirdSideToggle")?.classList.contains("is-selected");
       if (selectedAll("mpSides").length !== (third ? 3 : 2)) {
@@ -2836,6 +2858,8 @@ const DEFAULT_HOURS = {
         if (dr) o.dressing = { "César": "cesar", "Aderezo ranch": "ranch" }[dr] || "otro";
         const sd = selected("side");
         if (sd) o.side = sd;
+        const psx = selected("pastaSauce");
+        if (psx) o.pastaSauce = psx;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
         if ($("#burgerBaconToggle")?.classList.contains("is-selected")) o.bacon = "1";
         const picked = selectedAll("mpSides");

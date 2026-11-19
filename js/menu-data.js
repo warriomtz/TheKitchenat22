@@ -172,9 +172,9 @@ window.KITCHEN_MENU = {
         label: "Pastas",
         items: [
           { id: "f-bolognesa", name: "Pasta Boloñesa", price: 185, notes: "", flags: [], isNew: true, img: "assets/products/f-bolognesa.jpg" },
-          { id: "f-alfredo", name: "Salsa Alfredo con pollo", price: 175, notes: "", flags: ["extraChicken"], img: "assets/products/f-alfredo.jpg" },
-          { id: "f-pesto", name: "Salsa Pesto con pollo", price: 175, notes: "", flags: ["extraChicken"], img: "assets/products/f-pesto.jpg" },
-          { id: "f-pechuga-pomodoro", name: "Pechuga Pomodoro", price: 185, notes: "", flags: [], img: "assets/products/f-pechuga-pomodoro.jpg" },
+          { id: "f-alfredo", name: "Pasta Alfredo con pollo", price: 175, notes: "", flags: ["extraChicken"], img: "assets/products/f-alfredo.jpg" },
+          { id: "f-pesto", name: "Pasta Pesto con pollo", price: 175, notes: "", flags: ["extraChicken"], img: "assets/products/f-pesto.jpg" },
+          { id: "f-pechuga-pomodoro", name: "Pechuga Pomodoro", price: 185, notes: "", flags: ["pastaSauce"], img: "assets/products/f-pechuga-pomodoro.jpg" },
         ],
       },
       Light: {
