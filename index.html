@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@500;600&family=Outfit:wght@300;400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet" />
   <!-- Flood Std Regular via Adobe Fonts -->
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
-  <link rel="stylesheet" href="css/styles.css?v=pub-20261104a" />
+  <link rel="stylesheet" href="css/styles.css?v=pub-20261118g" />
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -48,10 +48,10 @@
       </a>
 
       <nav class="nav" id="nav">
-        <a href="#mealprep" class="nav__link nav__link--new is-hidden" id="navMealPrep"><span data-i18n="navMealPrep">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em></a>
+        <a href="#mealprep" class="nav__link nav__link--new is-hidden" id="navMealPrep"><span data-i18n="navMealPrep">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">HAY NOVEDADES</em></a>
         <a href="#drinks" class="nav__link" data-i18n="navDrinks">Bebidas</a>
         <a href="#bar" class="nav__link" data-i18n="navBar">Bar</a>
-        <a href="#food" class="nav__link" data-i18n="navFood">Comida</a>
+        <a href="#food" class="nav__link"><span data-i18n="navFood">Comida</span> <em class="new-pill is-hidden" data-new-section="food" data-i18n="badgeNewTag">HAY NOVEDADES</em></a>
         <a href="#order" class="nav__link nav__link--cta" data-i18n="navOrder">Pedido</a>
       </nav>
 
@@ -81,7 +81,7 @@
       <a href="#mealprep" class="menu-switcher__btn menu-switcher__btn--new is-hidden" data-section="mealprep" id="switcherMealPrep">
         <span class="menu-switcher__ico">🥗</span>
         <span data-i18n="navMealPrep">Meal Prep</span>
-        <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em>
+        <em class="new-pill" data-i18n="badgeNewTag">HAY NOVEDADES</em>
       </a>
       <a href="#drinks" class="menu-switcher__btn" data-section="drinks">
         <span class="menu-switcher__ico">☕</span>
@@ -94,6 +94,7 @@
       <a href="#food" class="menu-switcher__btn" data-section="food">
         <span class="menu-switcher__ico">🍽️</span>
         <span data-i18n="navFood">Comida</span>
+        <em class="new-pill is-hidden" data-new-section="food" data-i18n="badgeNewTag">HAY NOVEDADES</em>
       </a>
     </div>
   </nav>
@@ -165,7 +166,7 @@
     <section class="section section--mealprep section--accordion container is-hidden" id="mealprep" aria-labelledby="mealprepTitle">
       <button type="button" class="section__toggle" data-open-section="mealprep" aria-expanded="false" aria-controls="mealprepBody">
         <div class="section__head">
-          <p class="section__tag">🥗 <span data-i18n="mealprepTag">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">NUEVO</em></p>
+          <p class="section__tag">🥗 <span data-i18n="mealprepTag">Meal Prep</span> <em class="new-pill" data-i18n="badgeNewTag">HAY NOVEDADES</em></p>
           <h2 class="section__title" id="mealprepTitle" data-i18n="mealprepTitle">Bowls de comida</h2>
           <p class="section__desc" data-i18n="mealprepDesc">1 proteína + 2 complementos, servido caliente. Pídelo ahora o pre-ordena para otro día.</p>
         </div>
@@ -222,7 +223,7 @@
     <section class="section section--accordion container" id="food">
       <button type="button" class="section__toggle" data-open-section="food" aria-expanded="false" aria-controls="foodBody">
         <div class="section__head">
-          <p class="section__tag">🍽️ <span data-i18n="foodTag">Comida</span></p>
+          <p class="section__tag">🍽️ <span data-i18n="foodTag">Comida</span> <em class="new-pill is-hidden" data-new-section="food" data-i18n="badgeNewTag">HAY NOVEDADES</em></p>
           <h2 class="section__title" data-i18n="navFood">Comida</h2>
           <p class="section__desc" data-i18n="foodDesc">Street food, pastas, light, dulces y botana.</p>
         </div>
@@ -533,9 +534,9 @@
   <script src="js/config.js?v=pub-20261025g"></script>
   <script src="js/store.js?v=pub-20261102a"></script>
   <script src="js/menu-data.js?v=pub-20261118f"></script>
-  <script src="js/i18n.js?v=pub-20261118f"></script>
+  <script src="js/i18n.js?v=pub-20261118g"></script>
   <script src="js/item-i18n.js?v=pub-20261118f"></script>
-  <script src="js/app.js?v=pub-20261118c"></script>
+  <script src="js/app.js?v=pub-20261118g"></script>
   <script src="js/analytics.js?v=pub-20261025g"></script>
 </body>
 </html>

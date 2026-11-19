@@ -1044,7 +1044,19 @@ const DEFAULT_HOURS = {
     toast(msg);
   }
 
+  /** "Hay novedades" pill on Comida: only while at least one visible dish is marked Nuevo. */
+  function updateNewPills() {
+    const sections = new Set();
+    FLAT.forEach((item) => {
+      if (item.sectionId && isNewItem(item) && !isHiddenItem(item)) sections.add(item.sectionId);
+    });
+    document.querySelectorAll("[data-new-section]").forEach((el) => {
+      el.classList.toggle("is-hidden", !sections.has(el.getAttribute("data-new-section")));
+    });
+  }
+
   function renderAll() {
+    updateNewPills();
     renderMealPrepVisibility();
     renderMealPrepField();
     ["mealprep", "drinks", "bar", "food"].forEach((k) => {
