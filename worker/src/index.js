@@ -2157,7 +2157,7 @@ export class KitchenStore extends DurableObject {
         const i = items.findIndex((x) => x.id === "f-galletas");
         if (i < 0) continue;
         if (!items.some((x) => x.id === "f-stroopwafel")) {
-          items.splice(i + 1, 0, { id: "f-stroopwafel", name: "Stroopwafel", price: 25, notes: "", flags: [], img: "assets/products/f-stroopwafel.jpg", name_en: "Stroopwafel", name_ja: "ストロープワッフル" });
+          items.splice(i + 1, 0, { id: "f-stroopwafel", name: "Stroopwafel", price: 25, notes: "", flags: [], isNew: true, img: "assets/products/f-stroopwafel.jpg", name_en: "Stroopwafel", name_ja: "ストロープワッフル" });
           sb.items = items;
         }
         this.kvSet("menu", menu);
@@ -2193,6 +2193,19 @@ export class KitchenStore extends DurableObject {
     if (!found) return;
     this.kvSet("menu", menu);
     this.kvSet("stroopPhoto1118", true);
+  }
+  /** One-time (2026-11-18): Stroopwafel gets the "Nuevo" tag. */
+  seedStroopwafelNew1118(menu) {
+    if (this.kvGet("stroopNew1118", false)) return;
+    let found = false;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) if (it.id === "f-stroopwafel") { it.isNew = true; found = true; }
+      }
+    }
+    if (!found) return;
+    this.kvSet("menu", menu);
+    this.kvSet("stroopNew1118", true);
   }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
@@ -2896,6 +2909,7 @@ export class KitchenStore extends DurableObject {
           this.seedBurrito1118(menu);
           this.seedBurritoName1118(menu);
           this.seedStroopwafelPhoto1118(menu);
+          this.seedStroopwafelNew1118(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
