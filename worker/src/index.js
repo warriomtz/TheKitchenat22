@@ -2668,6 +2668,13 @@ export class KitchenStore extends DurableObject {
       t.vacantSeed1109 = true;
       this.kvSet("tower", t);
     }
+    // One-time (Mario 2026-11-19): 5 more empty apartments; 2319 was listed by mistake (it is occupied).
+    if (!t.vacantSeed1119) {
+      for (const k of ["2308", "2507", "2519", "2721", "3219"]) t.vacant[k] = true;
+      delete t.vacant["2319"];
+      t.vacantSeed1119 = true;
+      this.kvSet("tower", t);
+    }
     return t;
   }
   /** Magnet tracker (Mario 2026-11-19): which apartments already got a "Room service" magnet. Own record, separate from the Tower tab. apts[key] = ISO date placed. */
