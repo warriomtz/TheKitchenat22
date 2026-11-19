@@ -30,7 +30,7 @@
     "m-salmon": "Meal Prep Salmón",
     "f-club": "Club sandwich",
     "f-burger": "Hamburguesa",
-    "f-burrito": "Burrito de carne molida",
+    "f-burrito": "Burrito",
     "f-pechuga-pomodoro": "Pasta c/ pechuga pomodoro",
     "f-edamames": "Edamames preparados",
     "f-guac": "Guacamole",

@@ -2166,6 +2166,21 @@ export class KitchenStore extends DurableObject {
       }
     }
   }
+  /** One-time (2026-11-18): "Burrito de carne molida" -> "Burrito" with ingredient description. */
+  seedBurritoName1118(menu) {
+    if (this.kvGet("burritoName1118", false)) return;
+    let found = false;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-burrito") { it.name = "Burrito"; it.name_en = "Burrito"; it.name_ja = "ブリトー"; it.notesKey = "burritoNote"; found = true; }
+        }
+      }
+    }
+    if (!found) return;
+    this.kvSet("menu", menu);
+    this.kvSet("burritoName1118", true);
+  }
   seedCheeseFries(menu) {
     if (this.kvGet("cheeseFries", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -2866,6 +2881,7 @@ export class KitchenStore extends DurableObject {
           this.seedPomodoroName1118(menu);
           this.seedStroopwafel1118(menu);
           this.seedBurrito1118(menu);
+          this.seedBurritoName1118(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
