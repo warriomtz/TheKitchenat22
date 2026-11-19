@@ -482,6 +482,22 @@
       if (!res.ok) throw new Error("tower_" + res.status);
       return res.json();
     },
+    /** Magnet tracker tab (which apartments already have a magnet). */
+    async magnetsView(code) {
+      const res = await fetch(apiUrl("/api/magnets"), { headers: adminHeaders(code), cache: "no-store" });
+      if (!res.ok) throw new Error("magnets_" + res.status);
+      return res.json();
+    },
+    async magnetsAction(payload, code) {
+      const res = await fetch(apiUrl("/api/magnets"), {
+        method: "POST",
+        headers: adminHeaders(code, { "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "magnets_" + res.status);
+      return data;
+    },
     async towerAction(payload, code) {
       const res = await fetch(apiUrl("/api/tower"), {
         method: "POST",

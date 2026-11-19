@@ -2593,6 +2593,7 @@
       }
       loadOrders(true);
     }
+    if (tab === "magnets" && window.MagnetsMap) MagnetsMap.load(ADMIN_CODE);
     if (tab === "sports" && window.SportsCal) SportsCal.render();
     if (tab === "traffic") loadTraffic();
     if (tab === "surveys") loadSurveys();

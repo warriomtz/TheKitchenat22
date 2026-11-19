@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://use.typekit.net/ptu3jlt.css" />
   <link rel="stylesheet" href="css/styles.css?v=admin-20261102h" />
-  <link rel="stylesheet" href="css/admin.css?v=admin-20261115b" />
+  <link rel="stylesheet" href="css/admin.css?v=admin-20261119a" />
 </head>
 <body class="admin-page">
   <div class="noise" aria-hidden="true"></div>
@@ -62,6 +62,7 @@
       <button type="button" class="admin-nav__btn" data-tab="quote" role="tab">🖋 Cotización</button>
       <button type="button" class="admin-nav__btn" data-tab="report" role="tab">📊 Reportes</button>
       <button type="button" class="admin-nav__btn" data-tab="tower" role="tab">🏢 Torre</button>
+      <button type="button" class="admin-nav__btn" data-tab="magnets" role="tab">🧲 Imanes</button>
       <button type="button" class="admin-nav__btn" data-tab="sports" role="tab">🏟 Deportes</button>
       <button type="button" class="admin-nav__btn" data-tab="traffic" role="tab">👁 Tráfico</button>
       <button type="button" class="admin-nav__btn" data-tab="surveys" role="tab">📋 Encuestas</button>
@@ -493,6 +494,17 @@
         </div>
       </section>
 
+      <!-- Magnets -->
+      <section class="admin-panel" id="tab-magnets" role="tabpanel" hidden>
+        <div class="admin-panel__head">
+          <div>
+            <h2>Imanes</h2>
+            <p class="admin-panel__desc">Seguimiento propio: toca un departamento para marcar que ya tiene su imán (toca otra vez para quitarlo). Guarda la fecha en que lo marcaste.</p>
+          </div>
+        </div>
+        <div id="magnetsRoot"></div>
+      </section>
+
       <!-- Tower -->
       <section class="admin-panel" id="tab-tower" role="tabpanel" hidden>
         <div class="admin-panel__head">
@@ -584,7 +596,7 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script src="js/config.js?v=admin-20261025c"></script>
-  <script src="js/store.js?v=admin-20261102h"></script>
+  <script src="js/store.js?v=admin-20261119a"></script>
   <script src="js/menu-data.js?v=admin-20261118j"></script>
   <script src="js/i18n.js?v=admin-20261118j"></script>
   <script src="js/item-i18n.js?v=admin-20261118f"></script>
@@ -593,7 +605,8 @@
   <script src="js/kitchen-inventory.js?v=admin-20261118f"></script>
   <script src="js/bar-inventory.js?v=admin-20261026e"></script>
   <script src="js/tower.js?v=admin-20261112a"></script>
+  <script src="js/magnets.js?v=admin-20261119a"></script>
   <script src="js/sports.js?v=admin-20261102j"></script>
-  <script src="js/admin.js?v=admin-20261118e"></script>
+  <script src="js/admin.js?v=admin-20261119a"></script>
 </body>
 </html>

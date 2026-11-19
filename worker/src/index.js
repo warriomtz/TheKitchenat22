@@ -460,12 +460,13 @@ async function notifyText(env, title, lines) {
 // ----------------------------------------------------------------- Worker
 
 const PUBLIC_GET = new Set(["/api/stock", "/api/hours", "/api/menu", "/api/announcement"]);
-const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory", "/api/tower"]);
+const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory", "/api/tower", "/api/magnets"]);
 const POST_ROUTES = new Set([
   "/api/stock",
   "/api/bar-inventory",
   "/api/kitchen-inventory",
   "/api/tower",
+  "/api/magnets",
   "/api/hours",
   "/api/menu/item",
   "/api/menu/image",
@@ -2669,6 +2670,46 @@ export class KitchenStore extends DurableObject {
     }
     return t;
   }
+  /** Magnet tracker (Mario 2026-11-19): which apartments already got a "Room service" magnet. Own record, separate from the Tower tab. apts[key] = ISO date placed. */
+  magnetsAdmin(data) {
+    const m = this.kvGet("magnets", { apts: {} });
+    if (!m.apts || typeof m.apts !== "object") m.apts = {};
+    const valid = (apt) => {
+      const floor = Number(apt.slice(0, 2));
+      const unit = Number(apt.slice(2));
+      return /^\d{4}$/.test(apt) && floor >= 22 && floor <= 33 && unit >= 1 && unit <= 22 && unit !== 13;
+    };
+    const act = str(data.action, 20);
+    const apt = str(data.apt, 4);
+    const placedAt = () => {
+      if (data.at) {
+        const ms = Date.parse(String(data.at));
+        if (!Number.isFinite(ms) || ms < Date.parse("2020-01-01") || ms > Date.now() + 86400000) return null;
+        return new Date(ms).toISOString();
+      }
+      return nowIso();
+    };
+    if (act === "toggle" || act === "set") {
+      if (!valid(apt)) return [400, { error: "bad_apartment" }];
+      const want = act === "toggle" ? !m.apts[apt] : !!data.placed;
+      if (want) {
+        const at = placedAt();
+        if (!at) return [400, { error: "bad_date" }];
+        if (!m.apts[apt]) m.apts[apt] = at;
+      } else delete m.apts[apt];
+    } else if (act === "bulk") {
+      const list = Array.isArray(data.apts) ? data.apts.map((a) => str(a, 4)).filter(valid).slice(0, 400) : [];
+      const at = placedAt();
+      if (!at) return [400, { error: "bad_date" }];
+      for (const a of list) {
+        if (data.placed) {
+          if (!m.apts[a]) m.apts[a] = at;
+        } else delete m.apts[a];
+      }
+    } else return [400, { error: "bad_action" }];
+    this.kvSet("magnets", m);
+    return [200, { ok: true, magnets: m }];
+  }
   towerAdmin(data) {
     const act = String(data.action || "").toLowerCase();
     const apt = String(data.apt || "").replace(/\D/g, "");
@@ -2957,6 +2998,8 @@ export class KitchenStore extends DurableObject {
           return [200, { inventory: this.invRead(), autoOut: this.invAutoOut() }];
         case "/api/tower":
           return [200, { tower: this.towerRead() }];
+        case "/api/magnets":
+          return [200, { magnets: this.kvGet("magnets", { apts: {} }) }];
       }
       return [404, { error: "not_found" }];
     }
@@ -2985,6 +3028,8 @@ export class KitchenStore extends DurableObject {
         return this.invAdmin(data);
       case "/api/tower":
         return this.towerAdmin(data);
+      case "/api/magnets":
+        return this.magnetsAdmin(data);
       case "/api/announcement": {
         const a = this.normalizeAnnouncement(data);
         a.updatedAt = nowIso();
