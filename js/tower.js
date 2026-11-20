@@ -188,14 +188,16 @@
     </div>`;
   }
 
+  const pctOf = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
+
   function summaryHtml(stats) {
     const top = stats.ranked[0];
     return `<div class="tw-stats">
-      <span class="kitchen-stat">Han pedido <strong>${stats.ordered}</strong> de ${ALL_KEYS.length} (${Math.round((stats.ordered / ALL_KEYS.length) * 100)}%)</span>
+      <span class="kitchen-stat" title="Sobre departamentos habitados (los vacíos no cuentan)">Han pedido <strong>${stats.orderedOcc}</strong> de ${stats.occ} habitados (${pctOf(stats.orderedOcc, stats.occ)}%)</span>
       <span class="kitchen-stat">Visitan el salón <strong>${stats.salon}</strong></span>
       ${vacantCount(ALL_KEYS) ? `<span class="kitchen-stat tw-vacant-stat">Vacíos <strong>${vacantCount(ALL_KEYS)}</strong></span>` : ""}
-      ${ui.period === "all" ? "" : `<span class="kitchen-stat">En el periodo <strong>${stats.activeKeys.length}</strong> (${Math.round((stats.activeKeys.length / ALL_KEYS.length) * 100)}%)</span>`}
-      <span class="kitchen-stat">Ni pedido ni salón <strong>${ALL_KEYS.length - stats.everKeys.length}</strong></span>
+      ${ui.period === "all" ? "" : `<span class="kitchen-stat">En el periodo <strong>${stats.activeOcc}</strong> (${pctOf(stats.activeOcc, stats.occ)}%)</span>`}
+      <span class="kitchen-stat">Ni pedido ni salón <strong>${stats.neverOcc}</strong></span>
       <span class="kitchen-stat">Recurrentes (2+) <strong>${stats.repeat}</strong></span>
       <span class="kitchen-stat">Pedidos a depto <strong>${stats.totalOrders}</strong></span>
       <span class="kitchen-stat">Visitas al salón <strong>${stats.totalVisits}</strong></span>
@@ -557,6 +559,11 @@
       ranked,
       cooled,
       ordered: recs.filter((r) => r.all > 0).length,
+      // Habitados only: vacant apartments leave both the numerator and the denominator, so the % follows the vacancy list.
+      occ: ALL_KEYS.filter((k) => !isVacant(k)).length,
+      orderedOcc: recs.filter((r) => r.all > 0 && !isVacant(r.key)).length,
+      activeOcc: activeKeys.filter((k) => !isVacant(k)).length,
+      neverOcc: ALL_KEYS.filter((k) => !isVacant(k) && !everSet.has(k)).length,
       salon: recs.filter((r) => r.vall > 0).length,
       repeat: ever.filter((r) => r.all + r.vall >= 2).length,
       totalOrders: recs.reduce((n, r) => n + r.all, 0),
