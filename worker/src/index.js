@@ -2675,16 +2675,24 @@ export class KitchenStore extends DurableObject {
       t.vacantSeed1119 = true;
       this.kvSet("tower", t);
     }
+    // One-time (Mario 2026-11-19): apartment 3312 does not exist; drop any stored trace of it from the tower record.
+    if (!t.drop3312) {
+      delete t.apts["3312"];
+      delete t.vacant["3312"];
+      t.drop3312 = true;
+      this.kvSet("tower", t);
+    }
     return t;
   }
   /** Magnet tracker (Mario 2026-11-19): which apartments already got a "Room service" magnet. Own record, separate from the Tower tab. apts[key] = ISO date placed. */
   magnetsAdmin(data) {
     const m = this.kvGet("magnets", { apts: {} });
     if (!m.apts || typeof m.apts !== "object") m.apts = {};
+    delete m.apts["3312"];
     const valid = (apt) => {
       const floor = Number(apt.slice(0, 2));
       const unit = Number(apt.slice(2));
-      return /^\d{4}$/.test(apt) && floor >= 22 && floor <= 33 && unit >= 1 && unit <= 22 && unit !== 13;
+      return /^\d{4}$/.test(apt) && floor >= 22 && floor <= 33 && unit >= 1 && unit <= 22 && unit !== 13 && apt !== "3312";
     };
     const act = str(data.action, 20);
     const apt = str(data.apt, 4);
@@ -2722,7 +2730,7 @@ export class KitchenStore extends DurableObject {
     const apt = String(data.apt || "").replace(/\D/g, "");
     const floor = Number(apt.slice(0, 2));
     const unit = Number(apt.slice(2));
-    if (apt.length !== 4 || floor < 22 || floor > 33 || unit < 1 || unit > 22 || unit === 13) {
+    if (apt.length !== 4 || floor < 22 || floor > 33 || unit < 1 || unit > 22 || unit === 13 || apt === "3312") {
       return [400, { error: "bad_apartment" }];
     }
     const t = this.towerRead();

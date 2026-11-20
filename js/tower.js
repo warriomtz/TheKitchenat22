@@ -12,7 +12,7 @@
   const STD_BOT = [10, 11, 12, 14, 15, 16, 17, null, null, null, 18, 19];
   const FLOORS = [{ floor: 22, top: [9, 8, 7, 6], bot: [10, 11, 12, 14, 15] }];
   for (let f = 23; f <= 32; f++) FLOORS.push({ floor: f, top: STD_TOP, bot: STD_BOT });
-  FLOORS.push({ floor: 33, top: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1], bot: [] });
+  FLOORS.push({ floor: 33, top: [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1], bot: [] });
 
   const pad2 = (n) => String(n).padStart(2, "0");
   const keyOf = (floor, unit) => `${floor}${pad2(unit)}`;
