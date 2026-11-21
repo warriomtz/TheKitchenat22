@@ -460,13 +460,14 @@ async function notifyText(env, title, lines) {
 // ----------------------------------------------------------------- Worker
 
 const PUBLIC_GET = new Set(["/api/stock", "/api/hours", "/api/menu", "/api/announcement"]);
-const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory", "/api/tower", "/api/magnets"]);
+const ADMIN_GET = new Set(["/api/orders", "/api/analytics", "/api/bar-inventory", "/api/kitchen-inventory", "/api/tower", "/api/magnets", "/api/attention"]);
 const POST_ROUTES = new Set([
   "/api/stock",
   "/api/bar-inventory",
   "/api/kitchen-inventory",
   "/api/tower",
   "/api/magnets",
+  "/api/attention",
   "/api/hours",
   "/api/menu/item",
   "/api/menu/image",
@@ -2684,6 +2685,22 @@ export class KitchenStore extends DurableObject {
     }
     return t;
   }
+  /** "Atención" call between the two dashboards (Mario 2026-11-21): shared flag; auto-expires after 30 min so a forgotten alert doesn't flash forever. */
+  attentionView() {
+    const a = this.kvGet("attention", { active: false, since: null });
+    if (a.active && a.since && Date.now() - Date.parse(a.since) > 30 * 60 * 1000) return { active: false, since: null };
+    return { active: !!a.active, since: a.active ? a.since : null };
+  }
+  attentionAdmin(data) {
+    const act = str(data.action, 10);
+    if (act === "raise") {
+      const cur = this.attentionView();
+      if (!cur.active) this.kvSet("attention", { active: true, since: nowIso() });
+    } else if (act === "clear") {
+      this.kvSet("attention", { active: false, since: null });
+    } else return [400, { error: "bad_action" }];
+    return [200, { ok: true, attention: this.attentionView() }];
+  }
   /** Magnet tracker (Mario 2026-11-19): which apartments already got a "Room service" magnet. Own record, separate from the Tower tab. apts[key] = ISO date placed. */
   magnetsAdmin(data) {
     const m = this.kvGet("magnets", { apts: {} });
@@ -3015,6 +3032,8 @@ export class KitchenStore extends DurableObject {
           return [200, { tower: this.towerRead() }];
         case "/api/magnets":
           return [200, { magnets: this.kvGet("magnets", { apts: {} }) }];
+        case "/api/attention":
+          return [200, { attention: this.attentionView() }];
       }
       return [404, { error: "not_found" }];
     }
@@ -3045,6 +3064,8 @@ export class KitchenStore extends DurableObject {
         return this.towerAdmin(data);
       case "/api/magnets":
         return this.magnetsAdmin(data);
+      case "/api/attention":
+        return this.attentionAdmin(data);
       case "/api/announcement": {
         const a = this.normalizeAnnouncement(data);
         a.updatedAt = nowIso();

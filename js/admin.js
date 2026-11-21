@@ -1134,6 +1134,50 @@
     }
   }
 
+  /** "Atención": shared flashing bar between the tab strip and the content. Polled every 3s (cheap read), independent of the 30s orders poll. */
+  const attn = { active: false, timer: null, busy: false };
+  function paintAttention() {
+    const bar = $("#attnBar");
+    const btn = $("#attnBtn");
+    if (bar) bar.hidden = !attn.active;
+    if (btn) btn.classList.toggle("is-on", attn.active);
+  }
+  async function pollAttention() {
+    if (!state.authed || !window.KitchenStore || !KitchenStore.attentionView) return;
+    try {
+      const d = await KitchenStore.attentionView(ADMIN_CODE);
+      attn.active = !!(d && d.attention && d.attention.active);
+      paintAttention();
+    } catch (_) {
+      /* keep last known state on a failed poll */
+    }
+  }
+  async function sendAttention(action) {
+    if (attn.busy) return;
+    attn.busy = true;
+    attn.active = action === "raise"; // optimistic
+    paintAttention();
+    try {
+      const d = await KitchenStore.attentionAction(action, ADMIN_CODE);
+      attn.active = !!(d && d.attention && d.attention.active);
+    } catch (_) {
+      toast("No se pudo enviar el aviso");
+      await pollAttention();
+    }
+    attn.busy = false;
+    paintAttention();
+  }
+  function startAttentionPoll() {
+    if (attn.timer) return;
+    $("#attnBtn")?.addEventListener("click", () => sendAttention(attn.active ? "clear" : "raise"));
+    $("#attnStop")?.addEventListener("click", () => sendAttention("clear"));
+    pollAttention();
+    attn.timer = setInterval(pollAttention, 3000);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") pollAttention();
+    });
+  }
+
   function startKitchenPoll() {
     stopKitchenPoll();
     // JSONBin GET is the costly call — 30s is enough for kitchen, much cheaper than 4s
@@ -2744,6 +2788,7 @@
     renderCatalog();
     setTab(state.tab || "kitchen");
     startKitchenPoll();
+    startAttentionPoll();
   }
 
   async function init() {

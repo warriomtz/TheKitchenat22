@@ -482,6 +482,22 @@
       if (!res.ok) throw new Error("tower_" + res.status);
       return res.json();
     },
+    /** "Atención" call between dashboards. */
+    async attentionView(code) {
+      const res = await fetch(apiUrl("/api/attention"), { headers: adminHeaders(code), cache: "no-store" });
+      if (!res.ok) throw new Error("attention_" + res.status);
+      return res.json();
+    },
+    async attentionAction(action, code) {
+      const res = await fetch(apiUrl("/api/attention"), {
+        method: "POST",
+        headers: adminHeaders(code, { "Content-Type": "application/json" }),
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "attention_" + res.status);
+      return data;
+    },
     /** Magnet tracker tab (which apartments already have a magnet). */
     async magnetsView(code) {
       const res = await fetch(apiUrl("/api/magnets"), { headers: adminHeaders(code), cache: "no-store" });
