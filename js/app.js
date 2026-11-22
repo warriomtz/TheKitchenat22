@@ -2298,7 +2298,6 @@ const DEFAULT_HOURS = {
     if (flags.includes("mozzaExtra")) {
       fields += `<div class="field">
         <span>${t("mozzaExtra")}</span>
-        <small class="field-hint">${t("extraChickenHint")}</small>
         <button type="button" class="chip chip--extra" id="mozzaExtraToggle"${isOut("mp-side-mozzarellaSticks") ? " disabled" : ""}>${t("mozzaExtraOption")}</button>
       </div>`;
     }
