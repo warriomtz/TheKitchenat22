@@ -1019,6 +1019,15 @@ export class KitchenStore extends DurableObject {
       inv.noShop1118 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Guacamole stuck as "agotado" with stock on hand (Mario 2026-11-22): reset its recipe to the default and clear any stale manual out flag.
+    if (!inv.guacFix1122) {
+      inv.recipes = inv.recipes || {};
+      inv.recipes["f-guac"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-guac"]));
+      const st = this.kvGet("stock", {});
+      if (Array.isArray(st.outOfStock) && st.outOfStock.includes("f-guac")) this.kvSet("stock", { ...st, outOfStock: st.outOfStock.filter((x) => String(x) !== "f-guac") });
+      inv.guacFix1122 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Pechuga Pomodoro: customer picks pasta Alfredo or Pesto (Mario 2026-11-18); each uses 1 portion of that sauce.
     if (!inv.pomodoroPasta1118) {
       const rec = inv.recipes["f-pechuga-pomodoro"];
