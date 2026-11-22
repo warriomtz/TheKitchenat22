@@ -2295,6 +2295,13 @@ const DEFAULT_HOURS = {
         <button type="button" class="chip chip--extra" id="extraChickenToggle">${t("extraChickenOption")}</button>
       </div>`;
     }
+    if (flags.includes("mozzaExtra")) {
+      fields += `<div class="field">
+        <span>${t("mozzaExtra")}</span>
+        <small class="field-hint">${t("extraChickenHint")}</small>
+        <button type="button" class="chip chip--extra" id="mozzaExtraToggle"${isOut("mp-side-mozzarellaSticks") ? " disabled" : ""}>${t("mozzaExtraOption")}</button>
+      </div>`;
+    }
     if (flags.includes("waffle")) {
       fields += chips("topping", t("topping"), [
         { v: "Nutella", k: "Nutella" },
@@ -2489,6 +2496,11 @@ const DEFAULT_HOURS = {
       refreshPrice();
     });
 
+    $("#mozzaExtraToggle")?.addEventListener("click", (e) => {
+      e.currentTarget.classList.toggle("is-selected");
+      refreshPrice();
+    });
+
     $("#extraChickenToggle")?.addEventListener("click", (e) => {
       e.currentTarget.classList.toggle("is-selected");
       refreshPrice();
@@ -2615,6 +2627,12 @@ const DEFAULT_HOURS = {
       if ($("#extraChickenToggle")?.classList.contains("is-selected")) {
         extra += 60;
         parts.push(t("extraChickenShort"));
+      }
+    }
+    if (f.includes("mozzaExtra")) {
+      if ($("#mozzaExtraToggle")?.classList.contains("is-selected")) {
+        extra += 60;
+        parts.push(t("mozzaExtraShort"));
       }
     }
     if (f.includes("waffle")) {
@@ -2879,6 +2897,7 @@ const DEFAULT_HOURS = {
         if (psx) o.pastaSauce = psx;
         if ($("#extraChickenToggle")?.classList.contains("is-selected")) o.extraChicken = "1";
         if ($("#burgerBaconToggle")?.classList.contains("is-selected")) o.bacon = "1";
+        if ($("#mozzaExtraToggle")?.classList.contains("is-selected")) o.mozzaExtra = "1";
         const picked = selectedAll("mpSides");
         if (picked.length) {
           o.mpSides = {};

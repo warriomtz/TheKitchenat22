@@ -31,6 +31,7 @@
     side: { salad: "Complemento: ensalada", fries: "Complemento: chips", french: "Complemento: papas a la francesa", wedges: "Complemento: papas gajo" },
     bacon: { 1: "Con tocino extra" },
     extraChicken: { 1: "Con pollo extra" },
+    mozzaExtra: { 1: "Con dedos de queso" },
     dressing: { cesar: "Aderezo César", ranch: "Aderezo ranch" },
     flavor: { buffalo: "Sabor Buffalo", bbq: "Sabor BBQ", cfa_original: "Sabor CFA original", cfa_bbq: "Sabor CFA BBQ", cfa_honey_mustard: "Sabor CFA honey mustard" },
     burgerSauce: { buffalo: "Salsa Buffalo", cfa_original: "Salsa CFA original", cfa_honey_mustard: "Salsa CFA honey mustard" },
@@ -181,6 +182,7 @@
         const q = Math.max(1, parseInt(it.qty, 10) || 1);
         add(String(it.id), q, it.opts, it.name);
         Object.entries((it.opts && it.opts.mpSides) || {}).forEach(([k, n]) => add("side:" + k, q * (Number(n) || 1), null, ""));
+        if (it.opts && it.opts.mozzaExtra === "1") add("side:mozzarellaSticks", q, null, "");
       });
     });
     return act;

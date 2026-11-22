@@ -1130,6 +1130,8 @@ export class KitchenStore extends DurableObject {
       for (const [k, n] of Object.entries((it.opts && it.opts.mpSides) || {})) {
         for (const r of inv.recipes["side:" + k] || []) add(r.ing, r.qty * n * mult);
       }
+      // "Dedos de queso" extra on street-food dishes uses one mozzarella-sticks side portion
+      if (it.opts && it.opts.mozzaExtra === "1") for (const r of inv.recipes["side:mozzarellaSticks"] || []) add(r.ing, r.qty * mult);
     }
     // orders that are NOT "dine in" (apartment / amenity): every dish goes in its own takeout container
     if (order && order.orderType && order.orderType !== "dinein") {
@@ -2233,6 +2235,25 @@ export class KitchenStore extends DurableObject {
     this.kvSet("stroopPhoto1118", true);
   }
   /** One-time (2026-11-18): Stroopwafel gets the "Nuevo" tag. */
+  /** One-time (2026-11-22): Dedos de queso (palitos de mozzarella) as a +$60 extra on papas trufadas / gajo / con queso, guacamole and boneless. */
+  seedMozzaExtra1122(menu) {
+    if (this.kvGet("mozzaExtra1122", false)) return;
+    const ids = new Set(["f-papas-t", "f-papas-g", "f-papas-queso", "f-guac", "f-boneless"]);
+    let n = 0;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (ids.has(it.id)) {
+            it.flags = Array.from(new Set([...(it.flags || []), "mozzaExtra"]));
+            n++;
+          }
+        }
+      }
+    }
+    if (n < ids.size) return;
+    this.kvSet("menu", menu);
+    this.kvSet("mozzaExtra1122", true);
+  }
   seedStroopwafelNew1118(menu) {
     if (this.kvGet("stroopNew1118", false)) return;
     let found = false;
@@ -2563,6 +2584,7 @@ export class KitchenStore extends DurableObject {
     if (pl) opts.paleta = pl;
     if (str(raw.extraChicken, 4).trim() === "1") opts.extraChicken = "1";
     if (str(raw.bacon, 4).trim() === "1") opts.bacon = "1";
+    if (str(raw.mozzaExtra, 4).trim() === "1") opts.mozzaExtra = "1";
     if (raw.mpSides && typeof raw.mpSides === "object") {
       const sides = {};
       for (const [k, v] of Object.entries(raw.mpSides).slice(0, 12)) {
@@ -3035,6 +3057,7 @@ export class KitchenStore extends DurableObject {
           this.seedBurritoSides1118(menu);
           this.seedStroopwafelPhoto1118(menu);
           this.seedStroopwafelNew1118(menu);
+          this.seedMozzaExtra1122(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
