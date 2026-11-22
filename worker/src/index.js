@@ -206,6 +206,7 @@ const INV_DEFAULT = {
     quinoa: { name: "Quinoa", unit: "unidades", group: "Complementos", qty: 2, min: 1 },
     edamames: { name: "Edamames preparados", unit: "g", group: "Verdura", qty: 1900, min: 440 },
     "rollos-primavera": { name: "Rollos primavera de vegetales", unit: "piezas", group: "Complementos", qty: 46, min: 10, supplier: "Costco", presentation: "paquete", packText: "50 piezas", packQty: 50 },
+    "palitos-mozzarella": { name: "Palitos de mozzarella", unit: "piezas", group: "Complementos", qty: null, min: 15, presentation: "caja", packText: "caja de 90 piezas", packQty: 90, packCost: 299 },
     "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
     "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
   },
@@ -272,6 +273,7 @@ const INV_DEFAULT = {
     "side:edamames": [{ ing: "edamames", qty: 100 }],
     "f-edamames": [{ ing: "edamames", qty: 220 }],
     "side:rollosPrimavera": [{ ing: "rollos-primavera", qty: 5 }],
+    "side:mozzarellaSticks": [{ ing: "palitos-mozzarella", qty: 5 }],
     "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "parmesano", qty: 50 }],
     "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }, { ing: "parmesano", qty: 50 }],
   },
@@ -913,6 +915,14 @@ export class KitchenStore extends DurableObject {
       inv.recipes = inv.recipes || {};
       inv.recipes["side:rollosPrimavera"] = [{ ing: "rollos-primavera", qty: 5 }];
       inv.rollosPrimavera = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Palitos de mozzarella (Mario 2026-11-22): new meal prep side, 5 pieces per portion, box of 90 for $299; stock not entered yet (qty null = not controlled).
+    if (!inv.mozzarella1122) {
+      if (!inv.items["palitos-mozzarella"]) inv.items["palitos-mozzarella"] = { name: "Palitos de mozzarella", unit: "piezas", group: "Complementos", qty: null, min: 15, presentation: "caja", packText: "caja de 90 piezas", packQty: 90, packCost: 299 };
+      inv.recipes = inv.recipes || {};
+      inv.recipes["side:mozzarellaSticks"] = [{ ing: "palitos-mozzarella", qty: 5 }];
+      inv.mozzarella1122 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Edamames preparados (Mario 2026-11-05): 1.9 kg on hand; 100 g per bowl side, 220 g per Street-food plate.

@@ -846,7 +846,7 @@ const DEFAULT_HOURS = {
 
   /* ---------- Meal Prep (pre-order / order now) ---------- */
   // Rollos primavera retirados del menú (Mario 2026-11-18): sin existencia, se vuelve a agregar "rollosPrimavera" al inicio cuando regresen.
-  const MEALPREP_SIDES = ["edamames", "ensalada", "arroz", "frijol", "quinoa", "sopaTomate", "cremaEspinacas", "vegetales"];
+  const MEALPREP_SIDES = ["mozzarellaSticks", "edamames", "ensalada", "arroz", "frijol", "quinoa", "sopaTomate", "cremaEspinacas", "vegetales"];
   // No minimum notice anymore (Mario 2026-11-02): scheduling is allowed for any moment that is not already in the past.
   const MEALPREP_MIN_LEAD_HOURS = 0;
   const MEALPREP_MAX_DAYS = 14;
@@ -2211,7 +2211,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "edamames",
+          isNew: k === "edamames" || k === "mozzarellaSticks",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: 2, hint: t("mpSidesHint") }
@@ -2231,6 +2231,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
+          isNew: k === "mozzarellaSticks",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: only ? 9 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }

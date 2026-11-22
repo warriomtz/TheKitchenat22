@@ -11,6 +11,7 @@
 
   const SIDE_LABELS = {
     rollosPrimavera: "Rollos primavera",
+    mozzarellaSticks: "Palitos de mozzarella",
     edamames: "Edamames preparados",
     ensalada: "Ensalada",
     arroz: "Arroz",

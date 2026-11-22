@@ -167,6 +167,7 @@
 
   const MEALPREP_SIDES = [
     { k: "rollosPrimavera", stockId: "mp-side-rollosPrimavera", label: "Rollos primavera" },
+    { k: "mozzarellaSticks", stockId: "mp-side-mozzarellaSticks", label: "Palitos de mozzarella" },
     { k: "edamames", stockId: "mp-side-edamames", label: "Edamames preparados" },
     { k: "ensalada", stockId: "mp-side-ensalada", label: "Ensalada" },
     { k: "arroz", stockId: "mp-side-arroz", label: "Arroz" },
