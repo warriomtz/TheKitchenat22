@@ -242,7 +242,7 @@ const INV_DEFAULT = {
     "side:ensalada": [{ ing: "ensalada", qty: 40 }, { ing: "tomate-cherry", qty: 30 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
-    "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 60 }], // 60 g of cheese is a placeholder until Mario confirms
+    "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 50 }], // 50 g per order (Mario 2026-11-22)
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -966,6 +966,13 @@ export class KitchenStore extends DurableObject {
       const st = this.kvGet("stock", {});
       if (Array.isArray(st.outOfStock) && st.outOfStock.includes("f-papas-queso")) this.kvSet("stock", { ...st, outOfStock: st.outOfStock.filter((x) => String(x) !== "f-papas-queso") });
       inv.quesoSuave1122 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Papas con queso: 50 g of soft cheese per order (Mario 2026-11-22), replaces the 60 g placeholder.
+    if (!inv.quesoSuave50_1122) {
+      const r = inv.recipes["f-papas-queso"];
+      if (Array.isArray(r)) for (const x of r) if (x.ing === "queso-suave") x.qty = 50;
+      inv.quesoSuave50_1122 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Tzatziki never blocks dishes (Mario 2026-11-22): it was still deducted, but only warns when low.
