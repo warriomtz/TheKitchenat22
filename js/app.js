@@ -2297,7 +2297,7 @@ const DEFAULT_HOURS = {
     }
     if (flags.includes("mozzaExtra")) {
       fields += `<div class="field">
-        <span>${t("mozzaExtra")}</span>
+        <span><em class="field-new">${escapeHtml(t("badgeNew"))}</em> ${t("mozzaExtra")}</span>
         <button type="button" class="chip chip--extra" id="mozzaExtraToggle"${isOut("mp-side-mozzarellaSticks") ? " disabled" : ""}>${t("mozzaExtraOption")}</button>
       </div>`;
     }
