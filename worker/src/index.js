@@ -961,8 +961,10 @@ export class KitchenStore extends DurableObject {
     if (!inv.quesoSuave1122) {
       if (!inv.items["queso-suave"]) inv.items["queso-suave"] = { name: "Queso amarillo suave", unit: "g", group: "Lácteos", qty: null, min: null };
       inv.recipes = inv.recipes || {};
-      const r = inv.recipes["f-papas-queso"];
-      if (Array.isArray(r) && !r.some((x) => x.ing === "queso-suave")) r.push({ ing: "queso-suave", qty: 60 });
+      // Reset to the default recipe (papas + queso) and clear any stale manual "agotado" flag: it was shown unavailable with papas in stock.
+      inv.recipes["f-papas-queso"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-papas-queso"]));
+      const st = this.kvGet("stock", {});
+      if (Array.isArray(st.outOfStock) && st.outOfStock.includes("f-papas-queso")) this.kvSet("stock", { ...st, outOfStock: st.outOfStock.filter((x) => String(x) !== "f-papas-queso") });
       inv.quesoSuave1122 = true;
       this.kvSet("kitchenInv", inv);
     }
