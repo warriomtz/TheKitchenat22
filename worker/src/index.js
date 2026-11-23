@@ -161,6 +161,7 @@ const INV_DEFAULT = {
     "pasta-cruda": { name: "Pasta sin hacer (empaque original)", unit: "paquetes", group: "Pastas", qty: 2, min: null },
     guacamole: { name: "Guacamole", unit: "porciones", group: "Verdura", qty: 2, min: 1, target: 2 },
     "queso-rayado": { name: "Queso rayado", unit: "g", group: "Lácteos", qty: 1300, min: 200 },
+    "queso-suave": { name: "Queso amarillo suave", unit: "g", group: "Lácteos", qty: null, min: null }, // Mario enters stock/cost (qty null = not controlled)
     "queso-suizo": { name: "Queso suizo", unit: "rebanadas", group: "Lácteos", qty: 37, min: 10 },
     salami: { name: "Salami", unit: "g", group: "Carnes frías", qty: 220, min: 36 },
     "papas-francesa": { name: "Papas a la francesa", unit: "g", group: "Papas", qty: 9900, min: 1300 },
@@ -241,7 +242,7 @@ const INV_DEFAULT = {
     "side:ensalada": [{ ing: "ensalada", qty: 40 }, { ing: "tomate-cherry", qty: 30 }],
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
-    "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
+    "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 60 }], // 60 g of cheese is a placeholder until Mario confirms
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -954,6 +955,15 @@ export class KitchenStore extends DurableObject {
         if (Array.isArray(inv.recipes[k])) inv.recipes[k] = inv.recipes[k].filter((x) => x.ing !== "salsa-cfa-honey");
       }
       inv.cfaHoneyGone1108 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Queso amarillo suave for the papas con queso (Mario 2026-11-22): new item, stock entered by Mario; 60 g per order is a placeholder.
+    if (!inv.quesoSuave1122) {
+      if (!inv.items["queso-suave"]) inv.items["queso-suave"] = { name: "Queso amarillo suave", unit: "g", group: "Lácteos", qty: null, min: null };
+      inv.recipes = inv.recipes || {};
+      const r = inv.recipes["f-papas-queso"];
+      if (Array.isArray(r) && !r.some((x) => x.ing === "queso-suave")) r.push({ ing: "queso-suave", qty: 60 });
+      inv.quesoSuave1122 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Tzatziki never blocks dishes (Mario 2026-11-22): it was still deducted, but only warns when low.

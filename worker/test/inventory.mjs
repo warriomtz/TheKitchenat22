@@ -35,6 +35,8 @@ ok(j.inventory.items.salmon.qty === 1, "reopen deducts again");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "add", id: "salmon", delta: 5 }, CODE);
 ok(s === 200 && j.inventory.items.salmon.qty === 6, "restock +5");
 [s, j] = await call("POST", "/api/orders", { action: "delete", orderId: oid }, CODE);
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["queso-suave"] && j.inventory.items["queso-suave"].group === "Lácteos" && j.inventory.recipes["f-papas-queso"].some((r) => r.ing === "queso-suave") && !j.autoOut.includes("f-papas-queso"), "queso suave en inventario y en receta de papas con queso, sin bloquear mientras no tenga existencia");
 await call("POST", "/api/kitchen-inventory", { action: "set", id: "tzatziki", qty: 500 }, CODE);
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 const outRich = [...j.autoOut].sort().join(",");
