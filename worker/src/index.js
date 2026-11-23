@@ -222,8 +222,8 @@ const INV_DEFAULT = {
     "m-lasagna": [{ ing: "lasagna", qty: 1 }],
     "m-sirloin": [{ ing: "res", qty: 1 }],
     "m-salmon": [{ ing: "salmon", qty: 1 }],
-    "f-burrito": [{ ing: "mix-burrito", qty: 1 }, { ing: "tortilla-harina", qty: 1 }, { ing: "queso-rayado", qty: 30 }, { ing: "tzatziki", qty: 30 }, { ing: "ensalada", qty: 20 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }], // mix = carne + arroz + frijol (100 g each); stock/cost entered by Mario
-    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 40 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-burrito": [{ ing: "mix-burrito", qty: 1 }, { ing: "tortilla-harina", qty: 1 }, { ing: "queso-rayado", qty: 30 }, { ing: "tzatziki", qty: 30, optional: true }, { ing: "ensalada", qty: 20 }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }], // mix = carne + arroz + frijol (100 g each); stock/cost entered by Mario
+    "f-club": [{ ing: "pollo-club", qty: 1 }, { ing: "pan-rebanada", qty: 3 }, { ing: "queso-suizo", qty: 1 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-empanadas": [{ ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     "f-salmon-plate": [{ ing: "salmon", qty: 1 }, { ing: "papas-gajo", qty: 140 }, { ing: "ensalada", qty: 30 }, { ing: "tomate-cherry", qty: 30 }, { ing: "zanahoria-baby", qty: 40 }],
     "f-waffle-m": [{ ing: "waffle", qty: 1 }, { ing: "boneless", qty: 210 }],
@@ -242,12 +242,12 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }],
-    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
       { ing: "pan-hamburguesa", qty: 1 },
       { ing: "queso-suizo", qty: 1 },
-      { ing: "tzatziki", qty: 30 },
+      { ing: "tzatziki", qty: 30, optional: true },
       { ing: "tocino", qty: 55, if: { bacon: "1" }, variant: true, outId: "burger-bacon" },
       { ing: "salsa-buffalo", qty: 45, if: { burgerSauce: "buffalo" }, variant: true, outId: "boneless-buffalo" },
       { ing: "salsa-cfa-original", qty: 45, if: { burgerSauce: "cfa_original" }, variant: true, outId: "boneless-cfa-original" },
@@ -261,7 +261,7 @@ const INV_DEFAULT = {
     "f-guac": [{ ing: "guacamole", qty: 1 }, { ing: "totopos", qty: 70 }],
     "f-pechuga-pomodoro": [{ ing: "pollo-empanizado", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "parmesano", qty: 30 }, { ing: "salsa-pomodoro", qty: 30 }, { ing: "salsa-alfredo", qty: 1, if: { pastaSauce: "alfredo" }, variant: true, outId: "pasta-sauce-alfredo" }, { ing: "salsa-pesto", qty: 1, if: { pastaSauce: "pesto" }, variant: true, outId: "pasta-sauce-pesto" }],
     "f-bagel-pizza": [{ ing: "bagel", qty: 1 }, { ing: "queso-rayado", qty: 80 }, { ing: "salami", qty: 18 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }, { ing: "salsa-pomodoro", qty: 60 }],
-    "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 30 }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
+    "f-bagel-h": [{ ing: "bagel", qty: 1 }, { ing: "huevo", qty: 2 }, { ing: "tocino", qty: 55 }, { ing: "tzatziki", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // 100 g chicken portions also feed these dishes; "optional" = the extra-chicken add-on (+1 portion, never blocks)
     "f-alfredo": [{ ing: "pollo-100", qty: 1 }, { ing: "pasta", qty: 1 }, { ing: "pollo-100", qty: 1, if: { extraChicken: "1" }, optional: true }, { ing: "parmesano", qty: 13 }, { ing: "salsa-alfredo", qty: 1 }],
     "f-bolognesa": [{ ing: "pasta", qty: 1 }, { ing: "carne-bolognesa", qty: 1 }, { ing: "parmesano", qty: 30 }], // 30 g parmesano like Pomodoro; salsa to be added once costed
@@ -956,6 +956,14 @@ export class KitchenStore extends DurableObject {
       inv.cfaHoneyGone1108 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Tzatziki never blocks dishes (Mario 2026-11-22): it was still deducted, but only warns when low.
+    if (!inv.tzatzikiOptional1122) {
+      for (const r of Object.values(inv.recipes || {})) {
+        if (Array.isArray(r)) for (const x of r) if (x && x.ing === "tzatziki") x.optional = true;
+      }
+      inv.tzatzikiOptional1122 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Dip Tzatziki (Mario 2026-11-10): the sandwiches/burgers/bagel actually use tzatziki, not ranch (same grams). Ranch stays for boneless and the ranch dressing options.
     if (!inv.tzatziki1110) {
       if (!inv.items.tzatziki) inv.items.tzatziki = { name: "Dip Tzatziki", unit: "g", group: "Salsas", qty: null, min: null };
@@ -964,12 +972,12 @@ export class KitchenStore extends DurableObject {
         if (!Array.isArray(r) || r.some((x) => x.ing === "tzatziki")) continue;
         const at = r.findIndex((x) => x.ing === "ranch" && !x.if);
         if (at >= 0) r[at] = { ...r[at], ing: "tzatziki" };
-        else r.push({ ing: "tzatziki", qty: k === "f-burger" ? 30 : 40 });
+        else r.push({ ing: "tzatziki", qty: k === "f-burger" ? 30 : 40, optional: true });
       }
       const bh = inv.recipes["f-bagel-h"];
       if (Array.isArray(bh) && !bh.some((x) => x.ing === "tzatziki")) {
         const at = bh.findIndex((x) => x.ing === "tocino");
-        bh.splice(at >= 0 ? at + 1 : bh.length, 0, { ing: "tzatziki", qty: 30 });
+        bh.splice(at >= 0 ? at + 1 : bh.length, 0, { ing: "tzatziki", qty: 30, optional: true });
       }
       inv.tzatziki1110 = true;
       this.kvSet("kitchenInv", inv);
