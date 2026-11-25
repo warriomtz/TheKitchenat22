@@ -2211,7 +2211,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "edamames" || k === "mozzarellaSticks",
+          isNew: k === "edamames" || k === "mozzarellaSticks" || k === "rollosPrimavera",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: 2, hint: t("mpSidesHint") }
@@ -2231,7 +2231,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "mozzarellaSticks",
+          isNew: k === "mozzarellaSticks" || k === "rollosPrimavera",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: only ? 9 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }
