@@ -16,6 +16,7 @@ await call("POST", "/api/admin/import", { data: { menu: { mealprep: { subcategor
 let [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 ok(s === 200 && j.inventory.items.salmon.qty === 3, "seeded salmon 3");
 ok(j.autoOut.includes("mp-side-sopaTomate"), "sopa de tomate auto agotada");
+ok(j.inventory.items["rollos-primavera"] && !j.inventory.items["rollos-primavera"].noShop && j.inventory.items["carne-molida"].noShop === true, "rollos primavera de vuelta en la lista de compras; carne molida sigue fuera");
 ok(j.inventory.items["palitos-mozzarella"] && j.inventory.items["palitos-mozzarella"].packQty === 90 && j.inventory.items["palitos-mozzarella"].packCost === 299 && j.inventory.recipes["side:mozzarellaSticks"][0].qty === 5 && !j.autoOut.includes("mp-side-mozzarellaSticks"), "palitos de mozzarella: item, caja 90 / $299, 5 pzas por complemento");
 [s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [
   { id: "m-salmon", name: "Salmón", qty: 2, opts: { mpSides: { arroz: 2, quinoa: 1 } } },

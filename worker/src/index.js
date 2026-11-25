@@ -1056,6 +1056,12 @@ export class KitchenStore extends DurableObject {
       inv.noShop1118 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
+    if (!inv.rollosBack1125) {
+      if (inv.items["rollos-primavera"]) delete inv.items["rollos-primavera"].noShop;
+      inv.rollosBack1125 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Guacamole stuck as "agotado" with stock on hand (Mario 2026-11-22): reset its recipe to the default and clear any stale manual out flag.
     if (!inv.guacFix1122) {
       inv.recipes = inv.recipes || {};
