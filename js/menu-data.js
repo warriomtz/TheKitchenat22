@@ -50,14 +50,13 @@ window.KITCHEN_MENU = {
           { id: "d-limon-fr", name: "Limonada Frutos Rojos", price: 65, notes: "", flags: ["waterType"], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-limon-fr.jpg" },
           { id: "d-naran-fr", name: "Naranjada Frutos Rojos", price: 65, notes: "", flags: ["waterType"], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-naran-fr.jpg" },
           { id: "d-jugo", name: "Jugo Verde", price: 65, notes: "", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-jugo.jpg" },
-          { id: "d-xipi-kombucha", name: "XI-PI Kombucha", price: 90, notes: "", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-xipi-kombucha.jpg" },
         ],
       },
       Milkshake: {
         label: "Milkshake",
         items: [
           { id: "d-ms-choc", name: "Milkshake de chocolate", price: 115, notes: "", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-ms-choc.jpg" },
-          { id: "d-ms-vain", name: "Milkshake de vainilla", price: 115, notes: "", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-ms-vain.jpg" },
+          { id: "d-ms-mazapan", name: "Milkshake de mazapán", price: 115, notes: "", flags: [], img: "assets/products/d-ms-mazapan.jpg" },
           { id: "d-ms-fr", name: "Milkshake de frutos rojos", price: 115, notes: "", flags: [], img: "https://raw.githubusercontent.com/warriomtz/TheKitchenat22/main/assets/products/d-ms-fr.jpg" },
         ],
       },

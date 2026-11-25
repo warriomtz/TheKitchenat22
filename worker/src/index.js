@@ -111,7 +111,6 @@ const BAR_GROUPS = [
     skus: [
       { id: "d-agua", name: "Agua mineral", aliases: [] },
       { id: "d-jugo", name: "Jugo verde", aliases: [] },
-      { id: "d-xipi-kombucha", name: "XI-PI Kombucha", aliases: ["kombucha", "xi-pi"] },
     ],
   },
 ];
@@ -2287,6 +2286,25 @@ export class KitchenStore extends DurableObject {
     this.kvSet("menu", menu);
     this.kvSet("mozzaExtra1122", true);
   }
+  /** One-time (2026-11-25): Milkshake de vainilla -> Milkshake de mazapán (same price) and XI-PI Kombucha removed from the menu. */
+  seedDrinks1125(menu) {
+    if (this.kvGet("drinks1125", false)) return;
+    let swapped = false;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        if (!Array.isArray(sb.items)) continue;
+        sb.items = sb.items.filter((it) => it.id !== "d-xipi-kombucha");
+        sb.items = sb.items.map((it) => {
+          if (it.id !== "d-ms-vain") return it;
+          swapped = true;
+          return { ...it, id: "d-ms-mazapan", name: "Milkshake de mazapán", img: "assets/products/d-ms-mazapan.jpg" };
+        });
+      }
+    }
+    if (!swapped && !JSON.stringify(menu || {}).includes("d-ms-mazapan")) return;
+    this.kvSet("menu", menu);
+    this.kvSet("drinks1125", true);
+  }
   seedStroopwafelNew1118(menu) {
     if (this.kvGet("stroopNew1118", false)) return;
     let found = false;
@@ -3091,6 +3109,7 @@ export class KitchenStore extends DurableObject {
           this.seedStroopwafelPhoto1118(menu);
           this.seedStroopwafelNew1118(menu);
           this.seedMozzaExtra1122(menu);
+          this.seedDrinks1125(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
