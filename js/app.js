@@ -845,9 +845,9 @@ const DEFAULT_HOURS = {
   }
 
   /* ---------- Meal Prep (pre-order / order now) ---------- */
-  // Sopa de tomate -> sopa de cebolla (Mario 2026-11-26).
+  // Sopa de cebolla nueva; la de tomate sigue mientras queden (Mario 2026-11-26).
   // Rollos primavera de vuelta (Mario 2026-11-25). Quinoa retirada del menú por ahora (Mario 2026-11-25): volver a agregar "quinoa" después de "frijol" cuando regrese.
-  const MEALPREP_SIDES = ["mozzarellaSticks", "rollosPrimavera", "edamames", "ensalada", "arroz", "frijol", "sopaCebolla", "cremaEspinacas", "vegetales"];
+  const MEALPREP_SIDES = ["mozzarellaSticks", "rollosPrimavera", "edamames", "ensalada", "arroz", "frijol", "sopaTomate", "sopaCebolla", "cremaEspinacas", "vegetales"];
   // No minimum notice anymore (Mario 2026-11-02): scheduling is allowed for any moment that is not already in the past.
   const MEALPREP_MIN_LEAD_HOURS = 0;
   const MEALPREP_MAX_DAYS = 14;
@@ -2212,7 +2212,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "edamames" || k === "mozzarellaSticks" || k === "rollosPrimavera",
+          isNew: k === "edamames" || k === "mozzarellaSticks" || k === "rollosPrimavera" || k === "sopaCebolla",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: 2, hint: t("mpSidesHint") }
@@ -2232,7 +2232,7 @@ const DEFAULT_HOURS = {
           k,
           v: t(`mpSide_${k}`),
           img: `assets/sides/${k}.jpg`,
-          isNew: k === "mozzarellaSticks" || k === "rollosPrimavera",
+          isNew: k === "mozzarellaSticks" || k === "rollosPrimavera" || k === "sopaCebolla",
           disabled: isOut(`mp-side-${k}`),
         })),
         { qty: true, max: only ? 9 : 3, hint: only ? t("mpSidesOnlyHint") : t("mpSides3Hint") }

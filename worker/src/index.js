@@ -1073,6 +1073,17 @@ export class KitchenStore extends DurableObject {
       inv.sopaCebolla1126 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Sopa de tomate stays on the menu until the last portions are sold (Mario 2026-11-26): back from "Fuera de menú",
+    // but not restocked (no shopping list); its ingredients stay off the menu.
+    if (!inv.sopaTomateBack1126) {
+      const st = inv.items["sopa-tomate"];
+      if (st) {
+        delete st.offMenu;
+        st.noShop = true;
+      }
+      inv.sopaTomateBack1126 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
     if (!inv.rollosBack1125) {
       if (inv.items["rollos-primavera"]) delete inv.items["rollos-primavera"].noShop;
