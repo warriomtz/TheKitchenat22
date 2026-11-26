@@ -1055,6 +1055,12 @@ export class KitchenStore extends DurableObject {
       inv.noShop1118 = true;
       this.kvSet("kitchenInv", inv);
     }
+    // Items no longer on the menu get their own "Fuera de menú" section (Mario 2026-11-25): carne molida (meal prep -> lasagna) and quinoa.
+    if (!inv.offMenu1125) {
+      for (const k of ["carne-molida", "quinoa"]) if (inv.items[k]) inv.items[k].offMenu = true;
+      inv.offMenu1125 = true;
+      this.kvSet("kitchenInv", inv);
+    }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
     if (!inv.rollosBack1125) {
       if (inv.items["rollos-primavera"]) delete inv.items["rollos-primavera"].noShop;
@@ -1183,9 +1189,11 @@ export class KitchenStore extends DurableObject {
       const it = inv.items[ing];
       if (!it || it.qty == null) continue;
       const before = it.qty;
+      const quiet = !!it.offMenu; // off-menu items never alert
       const after = Math.max(0, Math.round((before - q) * 100) / 100);
       it.qty = after;
       applied[ing] = Math.round((before - after) * 100) / 100;
+      if (quiet) continue;
       if (after <= 0 && before > 0) alerts.push(`🚫 AGOTADO: ${it.name}. Se bloquean en el menú los platillos que lo usan.`);
       else if (it.min != null && after <= it.min && before > it.min && it.lowMsg) alerts.push(String(it.lowMsg).replace("{n}", after).replace("{t}", it.target || ""));
       else if (it.min != null && after <= it.min && before > it.min) alerts.push(`⚠️ Inventario bajo: ${it.name} · quedan ${after} ${it.unit || ""}${it.target ? ` · resurtir a ${it.target}` : ""}`.trim());
@@ -1472,7 +1480,7 @@ export class KitchenStore extends DurableObject {
       bySup.get(sup).push({ rank, text });
     };
     for (const it of Object.values(inv.items || {})) {
-      if (it.qty == null || it.noShop) continue;
+      if (it.qty == null || it.noShop || it.offMenu) continue;
       const unit = it.unit ? " " + it.unit : "";
       if (it.buyWith) {
         // bought only when the dish it feeds is at its minimum (time to cook again)
@@ -1607,6 +1615,11 @@ export class KitchenStore extends DurableObject {
     } else if (act === "meta") {
       const it = inv.items[id];
       if (!it) return [404, { error: "not_found" }];
+      if ("offMenu" in data) {
+        // "Fuera de menú": item kept for the record but out of the shopping list, alerts and stock counts
+        if (data.offMenu === true || data.offMenu === "1") it.offMenu = true;
+        else delete it.offMenu;
+      }
       if ("supplier" in data) it.supplier = str(data.supplier, 60).trim();
       if ("itemNo" in data) it.itemNo = str(data.itemNo, 40).trim();
       if ("brand" in data) it.brand = str(data.brand, 60).trim();

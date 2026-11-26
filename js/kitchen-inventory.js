@@ -90,7 +90,11 @@
   const CONSIDER_RATIO = 1.5;
   const nearMin = (it) => it.qty != null && it.min != null && it.min > 0 && it.qty > it.min && it.qty <= it.min * CONSIDER_RATIO;
 
+  const OFF_GROUP = "Fuera de menú (sin inventario)";
+  const groupOf = (it) => (it.offMenu ? OFF_GROUP : it.group || "Otros");
+
   function status(it) {
+    if (it.offMenu) return ["Fuera de menú", "kinv-chip--off"];
     if (it.qty == null) return ["Sin control", "kinv-chip--off"];
     if (tiedIdle(it)) return ["Se compra al cocinar", "kinv-chip--ok"];
     if (it.qty <= 0) return ["Agotado", "kinv-chip--out"];
@@ -193,6 +197,7 @@
       <div class="kinv-row__name"><strong>${esc(it.name)}</strong>
         <span class="kinv-chip ${cls}">${label}</span>
         <small>${used.length ? "Se descuenta con: " + esc(used.join(", ")) : "Sin recetas asignadas"}</small>
+        <button type="button" class="kinv-offmenu" data-act="offmenu">${it.offMenu ? "↩️ Regresar al menú" : "📦 Mover a fuera de menú"}</button>
       </div>
       <label class="kinv-f">Cantidad (${esc(it.unit || "")})
         <input type="number" min="0" step="any" data-f="qty" value="${it.qty == null ? "" : it.qty}" placeholder="—" /></label>
@@ -217,9 +222,9 @@
       return;
     }
     const items = data.inventory.items || {};
-    const isOut = (i) => i.qty != null && i.qty <= 0 && !tiedIdle(i);
-    const isLow = (i) => i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min && !tiedIdle(i);
-    const isNear = (i) => nearMin(i) && !tiedIdle(i);
+    const isOut = (i) => !i.offMenu && i.qty != null && i.qty <= 0 && !tiedIdle(i);
+    const isLow = (i) => !i.offMenu && i.qty != null && i.qty > 0 && i.min != null && i.qty <= i.min && !tiedIdle(i);
+    const isNear = (i) => !i.offMenu && nearMin(i) && !tiedIdle(i);
     const near = Object.values(items).filter(isNear).length;
     const out = Object.values(items).filter(isOut).length;
     const low = Object.values(items).filter(isLow).length;
@@ -228,13 +233,19 @@
     const isPortion = (it) => !!(it.costFrom && items[it.costFrom]);
     const isSource = (id) => portionsOf(items, id).length > 0;
     const catCount = {};
-    for (const it of Object.values(items)) if (!isPortion(it)) catCount[it.group || "Otros"] = (catCount[it.group || "Otros"] || 0) + 1;
+    for (const it of Object.values(items)) if (!isPortion(it)) catCount[groupOf(it)] = (catCount[groupOf(it)] || 0) + 1;
     if (catFilter && !catCount[catFilter]) catFilter = ""; // category disappeared after a refresh
     for (const [id, it] of Object.entries(items)) {
       if (isPortion(it)) continue; // shown inside its source's card
-      if (catFilter && (it.group || "Otros") !== catFilter) continue;
+      if (catFilter && groupOf(it) !== catFilter) continue;
       const visible = isSource(id) ? pass(it) || portionsOf(items, id).some(([, x]) => pass(x)) : pass(it);
-      if (visible) (groups[it.group || "Otros"] = groups[it.group || "Otros"] || []).push([id, it]);
+      if (visible) (groups[groupOf(it)] = groups[groupOf(it)] || []).push([id, it]);
+    }
+    if (groups[OFF_GROUP]) {
+      // always last
+      const off = groups[OFF_GROUP];
+      delete groups[OFF_GROUP];
+      groups[OFF_GROUP] = off;
     }
     const btn = (k, label) => `<button type="button" class="kinv-filter${filter === k ? " is-active" : ""}" data-filter="${k}">${label}</button>`;
     let html = `<div class="kinv-filters">${btn("all", "Todos (" + Object.keys(items).length + ")")}${btn("need", "🛒 Por resurtir (" + (low + out) + ")")}${btn("low", "Bajo (" + low + ")")}${btn("out", "Agotado (" + out + ")")}${btn("consider", "👀 Considerar (" + near + ")")}</div><label class="kinv-cat">Categoría <select data-cat><option value="">Todas las categorías</option>${Object.entries(catCount).map(([g, n]) => `<option value="${esc(g)}"${catFilter === g ? " selected" : ""}>${esc(g)} (${n})</option>`).join("")}</select></label><p class="kinv-sum"><strong>${Object.keys(items).length}</strong> ingredientes · <span class="${low ? "is-low" : ""}">${low} bajos</span> · <span class="${out ? "is-empty" : ""}">${out} agotados</span> · <span class="${near ? "is-consider" : ""}">${near} por considerar</span></p>`;
@@ -366,6 +377,9 @@
         const idp = btn.closest(".kinv-buy").dataset.id;
         delete photos[idp];
         act(window.__kinvCode || code, { action: "photo_delete", id: idp });
+      } else if (btn.dataset.act === "offmenu") {
+        const cur = data.inventory.items[id];
+        if (cur) act(window.__kinvCode || code, { action: "meta", id, offMenu: !cur.offMenu });
       } else if (btn.dataset.act === "del") {
         const nm = data.inventory.items[id] && data.inventory.items[id].name;
         if (confirm(`¿Quitar "${nm}" del inventario? Sus recetas dejarán de descontarlo.`)) {

@@ -1876,3 +1876,5 @@
 @media (prefers-reduced-motion: reduce) {
   .attn-bar { animation-duration: 1.8s; }
 }
+.kinv-offmenu{display:block;margin-top:4px;padding:0;border:0;background:none;color:#9aa;font-size:.75rem;text-decoration:underline;cursor:pointer;text-align:left}
+.kinv-offmenu:hover{color:#ddd}
