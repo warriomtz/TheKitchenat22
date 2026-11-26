@@ -1899,8 +1899,8 @@ export class KitchenStore extends DurableObject {
         mk("m-pollo-200", "Pollo · 200 g", "Chicken · 200 g", "チキン · 200g", 179),
         mk("m-atun", "Atún · 1 pieza (~160 g)", "Tuna · 1 piece (~160 g)", "ツナ · 1枚 (約160g)", 169),
         mk("m-carne-molida", "Carne molida · 180 g", "Ground beef · 180 g", "牛ひき肉 · 180g", 199),
-        mk("m-sirloin", "Res · 1 pieza (230-250 g)", "Beef · 1 piece (230-250 g)", "牛肉 · 1枚 (230-250g)", 259),
-        mk("m-salmon", "Salmón · 1 pieza (180-200 g)", "Salmon · 1 piece (180-200 g)", "サーモン · 1枚 (180-200g)", 259),
+        mk("m-sirloin", "Res · 1 pieza (230-250 g)", "Beef · 1 piece (230-250 g)", "牛肉 · 1枚 (230-250g)", 269),
+        mk("m-salmon", "Salmón · 1 pieza (180-200 g)", "Salmon · 1 piece (180-200 g)", "サーモン · 1枚 (180-200g)", 269),
       ];
     }
     this.kvSet("menu", menu);
@@ -2376,6 +2376,22 @@ export class KitchenStore extends DurableObject {
     this.kvSet("sirloinRenamed", true);
   }
   /** One-time: Meal Prep "Res" is now called "Rib Eye" (Mario 2026-11-01; keeps id, price, photo and stock). Only if the name is still the one set by seedRenameSirloin. */
+  /** One-time (2026-11-25): Meal Prep Rib Eye (m-sirloin) and Salmón go to $269 (Mario already changed them in Clip). */
+  seedMealPrep269(menu) {
+    if (this.kvGet("mealPrep269", false)) return;
+    let n = 0;
+    for (const sb of Object.values((menu.mealprep && menu.mealprep.subcategories) || {})) {
+      for (const it of sb.items || []) {
+        if (it.id === "m-sirloin" || it.id === "m-salmon") {
+          it.price = 269;
+          n++;
+        }
+      }
+    }
+    if (!n) return;
+    this.kvSet("menu", menu);
+    this.kvSet("mealPrep269", true);
+  }
   seedRenameRibEye(menu) {
     if (this.kvGet("ribEyeRenamed", false)) return;
     let changed = false;
@@ -3082,6 +3098,7 @@ export class KitchenStore extends DurableObject {
           this.seedRenameSirloin(menu);
           this.seedRenameRibEye(menu);
           this.seedRibEyeWeight(menu);
+          this.seedMealPrep269(menu);
           this.seedSaladNoProtein(menu);
           this.seedCheeseFries(menu);
           this.seedPhotos2610(menu);
