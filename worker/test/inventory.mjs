@@ -46,6 +46,7 @@ await call("POST", "/api/kitchen-inventory", { action: "set", id: "tzatziki", qt
 ok([...j.autoOut].sort().join(",") === outRich, "tzatziki en 0 no cambia que platillos se bloquean (solo avisa)");
 [s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
 ok(j.inventory.items["carne-molida"].offMenu === true && j.inventory.items.quinoa.offMenu === true, "carne molida y quinoa marcadas fuera de menú");
+ok(j.inventory.items["sopa-cebolla"] && j.inventory.recipes["side:sopaCebolla"][0].ing === "sopa-cebolla" && !j.autoOut.includes("mp-side-sopaCebolla") && j.inventory.items["sopa-tomate"].offMenu === true && j.inventory.items["tomate-racimo"].offMenu === true, "sopa de cebolla en inventario; sopa de tomate y sus ingredientes fuera de menú");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "meta", id: "arroz", offMenu: true }, CODE);
 ok(s === 200 && j.inventory.items.arroz.offMenu === true, "se puede mover un item a fuera de menú");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "meta", id: "arroz", offMenu: false }, CODE);

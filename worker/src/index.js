@@ -208,6 +208,7 @@ const INV_DEFAULT = {
     "rollos-primavera": { name: "Rollos primavera de vegetales", unit: "piezas", group: "Complementos", qty: 46, min: 10, supplier: "Costco", presentation: "paquete", packText: "50 piezas", packQty: 50 },
     "palitos-mozzarella": { name: "Palitos de mozzarella", unit: "piezas", group: "Complementos", qty: null, min: 15, presentation: "caja", packText: "caja de 90 piezas", packQty: 90, packCost: 299 },
     "sopa-tomate": { name: "Sopa de tomate", unit: "unidades", group: "Complementos", qty: 0, min: 1 },
+    "sopa-cebolla": { name: "Sopa de cebolla", unit: "unidades", group: "Complementos", qty: null, min: 1 },
     "crema-espinaca": { name: "Sopa de espinaca", unit: "unidades", group: "Complementos", qty: 7, min: 2 },
   },
   recipes: {
@@ -275,6 +276,7 @@ const INV_DEFAULT = {
     "side:rollosPrimavera": [{ ing: "rollos-primavera", qty: 5 }],
     "side:mozzarellaSticks": [{ ing: "palitos-mozzarella", qty: 5 }],
     "side:sopaTomate": [{ ing: "sopa-tomate", qty: 1 }, { ing: "parmesano", qty: 50 }],
+    "side:sopaCebolla": [{ ing: "sopa-cebolla", qty: 1 }],
     "side:cremaEspinacas": [{ ing: "crema-espinaca", qty: 1 }, { ing: "parmesano", qty: 50 }],
   },
 };
@@ -1059,6 +1061,16 @@ export class KitchenStore extends DurableObject {
     if (!inv.offMenu1125) {
       for (const k of ["carne-molida", "quinoa"]) if (inv.items[k]) inv.items[k].offMenu = true;
       inv.offMenu1125 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Sopa de tomate replaced by sopa de cebolla con crotones (Mario 2026-11-26): new item (stock entered by Mario);
+    // the tomato soup and the ingredients bought only for it move to "Fuera de menú".
+    if (!inv.sopaCebolla1126) {
+      if (!inv.items["sopa-cebolla"]) inv.items["sopa-cebolla"] = { name: "Sopa de cebolla", unit: "unidades", group: "Complementos", qty: null, min: 1 };
+      inv.recipes = inv.recipes || {};
+      inv.recipes["side:sopaCebolla"] = [{ ing: "sopa-cebolla", qty: 1 }];
+      for (const [k, it] of Object.entries(inv.items)) if (k === "sopa-tomate" || it.buyWith === "sopa-tomate") it.offMenu = true;
+      inv.sopaCebolla1126 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.

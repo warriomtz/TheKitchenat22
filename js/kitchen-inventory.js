@@ -18,6 +18,7 @@
     frijol: "Frijol",
     quinoa: "Quinoa",
     sopaTomate: "Sopa de tomate",
+    sopaCebolla: "Sopa de cebolla",
     cremaEspinacas: "Sopa de espinaca",
     vegetales: "Vegetales",
   };

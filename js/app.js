@@ -845,8 +845,9 @@ const DEFAULT_HOURS = {
   }
 
   /* ---------- Meal Prep (pre-order / order now) ---------- */
+  // Sopa de tomate -> sopa de cebolla (Mario 2026-11-26).
   // Rollos primavera de vuelta (Mario 2026-11-25). Quinoa retirada del menú por ahora (Mario 2026-11-25): volver a agregar "quinoa" después de "frijol" cuando regrese.
-  const MEALPREP_SIDES = ["mozzarellaSticks", "rollosPrimavera", "edamames", "ensalada", "arroz", "frijol", "sopaTomate", "cremaEspinacas", "vegetales"];
+  const MEALPREP_SIDES = ["mozzarellaSticks", "rollosPrimavera", "edamames", "ensalada", "arroz", "frijol", "sopaCebolla", "cremaEspinacas", "vegetales"];
   // No minimum notice anymore (Mario 2026-11-02): scheduling is allowed for any moment that is not already in the past.
   const MEALPREP_MIN_LEAD_HOURS = 0;
   const MEALPREP_MAX_DAYS = 14;
