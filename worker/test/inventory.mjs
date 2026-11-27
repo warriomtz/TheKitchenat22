@@ -51,6 +51,8 @@ ok(j.inventory.items["sopa-cebolla"] && j.inventory.recipes["side:sopaCebolla"][
 ok(s === 200 && j.inventory.items.arroz.offMenu === true, "se puede mover un item a fuera de menú");
 [s, j] = await call("POST", "/api/kitchen-inventory", { action: "meta", id: "arroz", offMenu: false }, CODE);
 ok(s === 200 && !j.inventory.items.arroz.offMenu, "y regresarlo al menú");
+[s, j] = await call("GET", "/api/kitchen-inventory", null, CODE);
+ok(j.inventory.items["pulled-pork"].group === "Proteínas" && j.inventory.items["cebolla-curtida"].group === "Verdura" && j.inventory.recipes["f-pulled-pork"].some((r) => r.ing === "papas-gajo" && r.if.side === "wedges") && !j.autoOut.includes("f-pulled-pork"), "pulled pork: proteína + cebolla curtida + ensalada o papas gajo");
 await call("POST", "/api/kitchen-inventory", { action: "set", id: "palitos-mozzarella", qty: 12 }, CODE);
 [s, j] = await call("POST", "/api/orders", { orderType: "dinein", items: [ { id: "f-papas-t", name: "Papas trufadas", qty: 2, opts: { mozzaExtra: "1" } }, { id: "f-guac", name: "Guacamole", qty: 1 } ] });
 ok(s === 200 && j.order.items[0].opts && j.order.items[0].opts.mozzaExtra === "1", "extra dedos de queso llega en opts");

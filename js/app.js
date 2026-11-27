@@ -2275,6 +2275,9 @@ const DEFAULT_HOURS = {
       const sideOpts = [{ v: t("sideSalad"), k: "salad", disabled: isOut("side-salad") }];
       if (flags.includes("burger") || flags.includes("burgerSides")) {
         sideOpts.push({ v: t("sideFrench"), k: "french", disabled: isOut("side-french") }, { v: t("sideWedges"), k: "wedges", disabled: isOut("side-wedges") });
+      } else if (flags.includes("wedgeSide")) {
+        // ensalada o papas gajo (pulled pork)
+        sideOpts.push({ v: t("sideWedges"), k: "wedges", disabled: isOut("side-wedges") });
       } else {
         sideOpts.push({ v: t("sideFries"), k: "fries", disabled: isOut("side-fries") });
         if (chipsUpgradeItem(item)) sideOpts.push({ v: t("sideFrenchPlus"), k: "french", disabled: isOut("side-french") });

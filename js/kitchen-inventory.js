@@ -49,6 +49,7 @@
     "f-ensalada-sin": "Ensalada sin proteína",
     "f-papas-g": "Papas gajo picantes",
     "f-papas-queso": "Papas con queso suave",
+    "f-pulled-pork": "Pulled pork sandwich",
     "f-grilled": "Grilled cheese",
     "f-bagel-pizza": "Bagel pizza",
     "f-bagel-h": "Bagel de huevo con tocino",

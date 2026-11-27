@@ -172,6 +172,8 @@ const INV_DEFAULT = {
     huevo: { name: "Huevo", unit: "piezas", group: "Huevo", qty: 0, min: 2 },
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
+    "pulled-pork": { name: "Pulled pork", unit: "porciones", group: "Proteínas", qty: null, min: 2 }, // stock entered by Mario
+    "cebolla-curtida": { name: "Cebolla morada curtida", unit: "g", group: "Verdura", qty: null, min: null },
     "mix-burrito": { name: "Mix burrito (carne, arroz y frijol)", unit: "porciones", group: "Proteínas", qty: null, min: 2, packText: "1 cubo (100 g carne + 100 g arroz + 100 g frijol)", packQty: 1, cookAlert: true, lowMsg: "🌯 HAY QUE COCINAR MIX DE BURRITO (quedan {n})" },
     "tortilla-harina": { name: "Tortilla de harina", unit: "piezas", group: "Panes y harinas", qty: null, min: null, packText: "paquete de 10", packQty: 10, packCost: 52 },
     stroopwafel: { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null },
@@ -243,6 +245,7 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 50 }], // 50 g per order (Mario 2026-11-22)
+    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -1082,6 +1085,16 @@ export class KitchenStore extends DurableObject {
         st.noShop = true;
       }
       inv.sopaTomateBack1126 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pulled pork sandwich (Mario 2026-11-27): 1 portion of pulled pork + side (salad or potato wedges); stock entered by Mario.
+    if (!inv.pulledPork1127) {
+      if (!inv.items["pulled-pork"]) inv.items["pulled-pork"] = { name: "Pulled pork", unit: "porciones", group: "Proteínas", qty: null, min: 2 };
+      // 30 g per plate is a placeholder until Mario confirms; optional = never blocks the dish
+      if (!inv.items["cebolla-curtida"]) inv.items["cebolla-curtida"] = { name: "Cebolla morada curtida", unit: "g", group: "Verdura", qty: null, min: null };
+      inv.recipes = inv.recipes || {};
+      inv.recipes["f-pulled-pork"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-pulled-pork"]));
+      inv.pulledPork1127 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
@@ -2257,6 +2270,34 @@ export class KitchenStore extends DurableObject {
     this.kvSet("pomodoroName1118", true);
   }
   /** One-time (2026-11-18): Stroopwafel ($25) right after Galletas, before Paletas. */
+  /** One-time (2026-11-27): Pulled pork sandwich $189, NUEVO, right before the grilled cheese; side = salad or potato wedges. */
+  seedPulledPork1127(menu) {
+    if (this.kvGet("pulledPork1127", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        const items = sb.items || [];
+        const idx = items.findIndex((i) => i.id === "f-grilled");
+        if (idx < 0) continue;
+        if (!items.some((i) => i.id === "f-pulled-pork")) {
+          items.splice(idx, 0, {
+            id: "f-pulled-pork",
+            name: "Pulled pork sandwich",
+            price: 189,
+            notesKey: "pulledPorkNote",
+            flags: ["side", "wedgeSide"],
+            isNew: true,
+            img: "assets/products/f-pulled-pork.jpg",
+            name_en: "Pulled pork sandwich",
+            name_ja: "プルドポークサンド",
+          });
+        }
+        sb.items = items;
+        this.kvSet("menu", menu);
+        this.kvSet("pulledPork1127", true);
+        return;
+      }
+    }
+  }
   seedStroopwafel1118(menu) {
     if (this.kvGet("stroopwafel1118", false)) return;
     for (const cat of Object.values(menu || {})) {
@@ -3163,6 +3204,7 @@ export class KitchenStore extends DurableObject {
           this.seedStroopwafelNew1118(menu);
           this.seedMozzaExtra1122(menu);
           this.seedDrinks1125(menu);
+          this.seedPulledPork1127(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
