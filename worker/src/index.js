@@ -245,7 +245,7 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 50 }], // 50 g per order (Mario 2026-11-22)
-    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
+    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "pan-rebanada", qty: 2 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -1095,6 +1095,13 @@ export class KitchenStore extends DurableObject {
       inv.recipes = inv.recipes || {};
       inv.recipes["f-pulled-pork"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-pulled-pork"]));
       inv.pulledPork1127 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pulled pork uses 2 slices of the same sandwich bread as the club (Mario 2026-11-27).
+    if (!inv.pulledPorkPan1127) {
+      const r = inv.recipes["f-pulled-pork"];
+      if (Array.isArray(r) && !r.some((x) => x.ing === "pan-rebanada")) r.splice(1, 0, { ing: "pan-rebanada", qty: 2 });
+      inv.pulledPorkPan1127 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
