@@ -245,7 +245,7 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 50 }], // 50 g per order (Mario 2026-11-22)
-    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "pan-rebanada", qty: 2 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
+    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "pan-rebanada", qty: 2 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -1102,6 +1102,16 @@ export class KitchenStore extends DurableObject {
       const r = inv.recipes["f-pulled-pork"];
       if (Array.isArray(r) && !r.some((x) => x.ing === "pan-rebanada")) r.splice(1, 0, { ing: "pan-rebanada", qty: 2 });
       inv.pulledPorkPan1127 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Pulled pork also offers french fries as a side, no extra charge (Mario 2026-11-27).
+    if (!inv.pulledPorkFrench1127) {
+      const r = inv.recipes["f-pulled-pork"];
+      if (Array.isArray(r) && !r.some((x) => x.ing === "papas-francesa")) {
+        const at = r.findIndex((x) => x.ing === "papas-gajo");
+        r.splice(at < 0 ? r.length : at, 0, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" });
+      }
+      inv.pulledPorkFrench1127 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Rollos primavera back on the menu (Mario 2026-11-25): show them in the shopping list again.
@@ -2291,7 +2301,7 @@ export class KitchenStore extends DurableObject {
             name: "Pulled pork sandwich",
             price: 189,
             notesKey: "pulledPorkNote",
-            flags: ["side", "wedgeSide"],
+            flags: ["side", "burgerSides"],
             isNew: true,
             img: "assets/products/f-pulled-pork.jpg",
             name_en: "Pulled pork sandwich",
@@ -2302,6 +2312,22 @@ export class KitchenStore extends DurableObject {
         this.kvSet("menu", menu);
         this.kvSet("pulledPork1127", true);
         return;
+      }
+    }
+  }
+  /** One-time (2026-11-27): pulled pork side = salad, french fries or potato wedges (same as the burger, no extra charge). */
+  seedPulledPorkSides1127(menu) {
+    if (this.kvGet("pulledPorkSides1127", false)) return;
+    for (const cat of Object.values(menu || {})) {
+      for (const sb of Object.values((cat && cat.subcategories) || {})) {
+        for (const it of sb.items || []) {
+          if (it.id === "f-pulled-pork") {
+            it.flags = ["side", "burgerSides"];
+            this.kvSet("menu", menu);
+            this.kvSet("pulledPorkSides1127", true);
+            return;
+          }
+        }
       }
     }
   }
@@ -3212,6 +3238,7 @@ export class KitchenStore extends DurableObject {
           this.seedMozzaExtra1122(menu);
           this.seedDrinks1125(menu);
           this.seedPulledPork1127(menu);
+          this.seedPulledPorkSides1127(menu);
           return [200, { menu }];
         }
         case "/api/announcement":
