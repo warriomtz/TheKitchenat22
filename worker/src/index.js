@@ -173,7 +173,7 @@ const INV_DEFAULT = {
     tocino: { name: "Tocino", unit: "g", group: "Carnes frías", qty: 680, min: 165 },
     galletas: { name: "Galletas", unit: "piezas", group: "Dulces", qty: 6, min: 2 },
     "pulled-pork": { name: "Pulled pork", unit: "porciones", group: "Proteínas", qty: null, min: 2 }, // stock entered by Mario
-    "cebolla-curtida": { name: "Cebolla morada curtida", unit: "g", group: "Verdura", qty: null, min: null },
+    "cebolla-curtida": { name: "Cebolla morada curtida", unit: "porciones", group: "Verdura", qty: null, min: null },
     "mix-burrito": { name: "Mix burrito (carne, arroz y frijol)", unit: "porciones", group: "Proteínas", qty: null, min: 2, packText: "1 cubo (100 g carne + 100 g arroz + 100 g frijol)", packQty: 1, cookAlert: true, lowMsg: "🌯 HAY QUE COCINAR MIX DE BURRITO (quedan {n})" },
     "tortilla-harina": { name: "Tortilla de harina", unit: "piezas", group: "Panes y harinas", qty: null, min: null, packText: "paquete de 10", packQty: 10, packCost: 52 },
     stroopwafel: { name: "Stroopwafel", unit: "piezas", group: "Dulces", qty: null, min: null },
@@ -245,7 +245,7 @@ const INV_DEFAULT = {
     "f-papas-g": [{ ing: "papas-gajo", qty: 230 }],
     "f-papas-t": [{ ing: "papas-francesa", qty: 220 }, { ing: "parmesano", qty: 13 }],
     "f-papas-queso": [{ ing: "papas-francesa", qty: 220 }, { ing: "queso-suave", qty: 50 }], // 50 g per order (Mario 2026-11-22)
-    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "pan-rebanada", qty: 2 }, { ing: "cebolla-curtida", qty: 30, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
+    "f-pulled-pork": [{ ing: "pulled-pork", qty: 1 }, { ing: "pan-rebanada", qty: 2 }, { ing: "cebolla-curtida", qty: 1, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "papas-francesa", qty: 120, if: { side: "french" }, variant: true, outId: "side-french" }, { ing: "papas-gajo", qty: 130, if: { side: "wedges" }, variant: true, outId: "side-wedges" }],
     "f-grilled": [{ ing: "pan-rebanada", qty: 2 }, { ing: "queso-rayado", qty: 60 }, { ing: "tzatziki", qty: 40, optional: true }, { ing: "ensalada", qty: 40, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "tomate-cherry", qty: 30, if: { side: "salad" }, variant: true, outId: "side-salad" }, { ing: "chips", qty: 45, if: { side: "fries" }, variant: true, outId: "side-fries" }],
     // Burger patty is only used by the beef option; "variant" = blocks that option, never the whole dish
     "f-burger": [
@@ -1090,8 +1090,8 @@ export class KitchenStore extends DurableObject {
     // Pulled pork sandwich (Mario 2026-11-27): 1 portion of pulled pork + side (salad or potato wedges); stock entered by Mario.
     if (!inv.pulledPork1127) {
       if (!inv.items["pulled-pork"]) inv.items["pulled-pork"] = { name: "Pulled pork", unit: "porciones", group: "Proteínas", qty: null, min: 2 };
-      // 30 g per plate is a placeholder until Mario confirms; optional = never blocks the dish
-      if (!inv.items["cebolla-curtida"]) inv.items["cebolla-curtida"] = { name: "Cebolla morada curtida", unit: "g", group: "Verdura", qty: null, min: null };
+      // optional = never blocks the dish
+      if (!inv.items["cebolla-curtida"]) inv.items["cebolla-curtida"] = { name: "Cebolla morada curtida", unit: "porciones", group: "Verdura", qty: null, min: null };
       inv.recipes = inv.recipes || {};
       inv.recipes["f-pulled-pork"] = JSON.parse(JSON.stringify(INV_DEFAULT.recipes["f-pulled-pork"]));
       inv.pulledPork1127 = true;
@@ -1102,6 +1102,15 @@ export class KitchenStore extends DurableObject {
       const r = inv.recipes["f-pulled-pork"];
       if (Array.isArray(r) && !r.some((x) => x.ing === "pan-rebanada")) r.splice(1, 0, { ing: "pan-rebanada", qty: 2 });
       inv.pulledPorkPan1127 = true;
+      this.kvSet("kitchenInv", inv);
+    }
+    // Cebolla morada curtida is counted in portions, 1 per pulled pork (Mario 2026-11-27); replaces the 30 g placeholder.
+    if (!inv.cebollaPorcion1127) {
+      const r = inv.recipes["f-pulled-pork"];
+      if (Array.isArray(r)) for (const x of r) if (x.ing === "cebolla-curtida") x.qty = 1;
+      const it = inv.items["cebolla-curtida"];
+      if (it && it.unit === "g") it.unit = "porciones";
+      inv.cebollaPorcion1127 = true;
       this.kvSet("kitchenInv", inv);
     }
     // Pulled pork also offers french fries as a side, no extra charge (Mario 2026-11-27).
